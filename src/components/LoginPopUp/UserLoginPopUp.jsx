@@ -169,6 +169,9 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img onClick={() => setShowLogin(false)} src={assets.google} alt="Google Login" />
                 </button>
+                <button id="button2">
+                    {currentState !== "Sign Up" ? "Fogot Pasword" : "Sign Up With Google"}                  
+                </button>
                 <div className="login-popup-condition">
                     <input type="checkbox" required />
                     <p>By continuing, I agree to the terms of use & privacy policy.</p>

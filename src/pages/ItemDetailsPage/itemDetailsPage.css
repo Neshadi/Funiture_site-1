@@ -13,6 +13,7 @@ html, body {
   margin: auto;
   padding: 20px;
   box-sizing: border-box;
+  margin-top: 8vw;
 }
 
 .product {
@@ -178,6 +179,7 @@ html, body {
   margin: 0 auto;
   max-width: 256px;
   width: 100%;
+  width: 60%;
 }
 
 
