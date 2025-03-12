@@ -14,10 +14,12 @@ const ItemDetails = () => {
   // Fetch product details
   useEffect(() => {
     const fetchItemDetails = async () => {
+
+      console.log("ID:", id);
       try {
         const response = await axios.get(
           `https://new-sever.vercel.app/api/products/${id}`
-          `http://localhost:5000/api/products/${id}`
+          //`http://localhost:5000/api/products/${id}`
         );
         if (response.status === 200) {
           setProduct(response.data);
@@ -28,7 +30,7 @@ const ItemDetails = () => {
       }
     };
     fetchItemDetails();
-  }, [id]);
+  },[id]);
 
   // Handle Add to Cart action
   const handleAddToCart = () => {
