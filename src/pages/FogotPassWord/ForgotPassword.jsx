@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "./ForgotPassword.css";
+import { useNavigate } from "react-router-dom";
 
 function ForgotPassword() {
   const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [sending ,setSending]= useState(false);
+  const navigate= useNavigate();
 
 
 
@@ -25,6 +28,7 @@ function ForgotPassword() {
       setError("Email not valid");
       return
     }
+    setSending(true);
 
     try {
       console.log("Sending email to:", email);
@@ -33,9 +37,14 @@ function ForgotPassword() {
         { email }
       );
 
+      setSending(false);
+
       if (result.status === 200) {
         setSuccessMessage("Email sent successfully!");
         setError(""); // Clear errors
+
+        setTimeout(() => navigate("/reset-password"), 2000); // Navigate after 2 seconds
+
       } else if (result.status === 404) {
         console.log(result.data);
 
@@ -60,7 +69,7 @@ function ForgotPassword() {
           placeholder="Enter Your Email"
           onChange={(e) => setEmail(e.target.value)}
         />
-        <button className="send-button" onClick={sendEmail}>
+        <button className="send-button" onClick={sendEmail} disabled={sending}>
           Send
         </button>
         {error && <p className="error">{error}</p>}

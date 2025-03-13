@@ -20,6 +20,7 @@ import PaymentSuccess from './pages/DeliveryDetailsCheckout/PaymentSuccess';
 import MyOrders from './pages/MyOrders/MyOrders';
 import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
 import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
+import ResetPassword from './pages/resetPassword/ResetPassword';
 import ItemDisplay from './components/ItemDisplay/ItemDisplay';
 
 const App = () => {
@@ -90,12 +91,20 @@ const App = () => {
             <ItemDetailsPage />
           </>
           } />
-          
+           {/* Fogot Password Page */}
           <Route path='/forgot-password'
           element={<>
            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
           <Fogotpassword/>
            </>} />
+
+           {/* Reset Password Page */}
+           <Route path='/reset-password'
+          element={<>
+           <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+          <ResetPassword/>
+           </>} />
+
         {/* <Route
           path="/cart"
           element={
