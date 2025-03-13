@@ -7,14 +7,7 @@ function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const test = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/");
-      console.log("Backend test response:", response.data);
-    } catch (err) {
-      console.error("Backend is not reachable:", err);
-    }
-  };
+
 
   const checkIsEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -58,7 +51,7 @@ function ForgotPassword() {
   };
 
   return (
-    <div className="container">
+    <div className="container" data-testid='test_id-1'>
       <div className="form">
         <h1>Enter Your Email</h1>
         <input
