@@ -1,9 +1,7 @@
 import axios from 'axios';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import navigate
 import { assets } from '../../assets/assets';
-import { auth } from '../../firebase/firebaseConfig';
 import './UserLoginPopUp.css';
 
 const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
@@ -34,10 +32,12 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
 
         try {
-            await axios.post('http://localhost:5000/api/users/', {
+            console.log("log 1");
+            await axios.post('https://new-sever.vercel.app/api/users/', {
                 name: username,
                 email: email,
                 password: password
+                
             });
 
             setSuccessMessage('Account created successfully!');
@@ -58,7 +58,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
       
 
         try {
-            const result = await axios.post('http://localhost:5000/api/users/auth', {
+            const result = await axios.post('https://new-sever.vercel.app/api/users/auth', {
                 email: email,
                 password: password
             }, {
@@ -87,7 +87,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         setSuccessMessage('');
 
         try {
-            const result = await axios.post('http://localhost:5000/api/users/adminauth', {
+            const result = await axios.post('https://new-sever.vercel.app/api/users/adminauth', {
                 email: email,
                 password: password
             }, {
@@ -117,15 +117,6 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             logIn(e);
         }
     };
-
-    
-    function googleLogin() {
-    const provider = new GoogleAuthProvider(); 
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log(result);  
-        })
-}
 
     return (
         <div className="login-popup">
@@ -174,14 +165,10 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                 <button type="submit" id="button1">
                     {currentState === "Sign Up" ? "Create Account" : "Log In"}
                 </button>
-                <button id="button2" onClick={() => {
-                    googleLogin();
-                }}>
+                <button id="button2">
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
-                    <img src={assets.google} alt="Google Login" />
+                    <img onClick={() => setShowLogin(false)} src={assets.google} alt="Google Login" />
                 </button>
-
-
                 <div className="login-popup-condition">
                     <input type="checkbox" required />
                     <p>By continuing, I agree to the terms of use & privacy policy.</p>
