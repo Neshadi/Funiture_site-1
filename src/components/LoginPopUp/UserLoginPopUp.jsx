@@ -3,7 +3,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import navigate
 import { assets } from '../../assets/assets';
-import { auth } from '../../FireBase/firebaseConfig';
+import { auth } from '../../fireBase/firebaseConfig';
 import './UserLoginPopUp.css';
 
 const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
