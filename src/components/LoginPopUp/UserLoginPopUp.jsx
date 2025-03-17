@@ -32,7 +32,6 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
 
         try {
-            console.log("log 1");
             await axios.post('https://new-sever.vercel.app/api/users/', {
                 name: username,
                 email: email,
@@ -68,7 +67,8 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             if (result.status === 200) {
                 setSuccessMessage('Logged in successfully!');
                 setUserType('user'); // Set user type to 'user'
-                setShowLogin(false); // Close the login popup
+                
+                (false); // Close the login popup
                 setIsLoggedIn(true);
                 // console.log(isLoggedIn);
                 // navigate('/cart');
@@ -76,7 +76,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                 setError('Invalid login credentials. Please try again.');
             }
         } catch (err) {
-            setError('Error during login. Please try again.');
+            setError('Error during  . Please try again.');
         }
     };
 
@@ -117,6 +117,16 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             logIn(e);
         }
     };
+
+
+    //fogot password function 
+
+    const fogotPassowrdHandler = () => {
+        setShowLogin(false); // Close the login popup
+        navigate('/forgot-password'); // Navigate to forgot password page
+    };
+    
+
 
     return (
         <div className="login-popup">
@@ -168,6 +178,11 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                 <button id="button2">
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img onClick={() => setShowLogin(false)} src={assets.google} alt="Google Login" />
+                </button>
+                <button id="button3" onClick={
+                   fogotPassowrdHandler}>
+                    
+                    Fogot Password            
                 </button>
                 <div className="login-popup-condition">
                     <input type="checkbox" required />
