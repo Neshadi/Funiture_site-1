@@ -33,7 +33,7 @@ function ResetPassword(){
     try {
       console.log("Sending Password to:", password);
       const result = await axios.put(
-        "http://localhost:5000/api/users/resetpassword",
+        "https://new-sever.vercel.app/api/users/resetpassword",
         {   resetToken,
             password 
         }
