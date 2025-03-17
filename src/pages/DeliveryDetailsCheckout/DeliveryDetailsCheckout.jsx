@@ -53,7 +53,7 @@ function DeliveryDetailsCheckout() {
     console.log('Order Details:', orderData);
     
     try {
-      let response = await axios.post("http://localhost:5000/api/order", orderData, { withCredentials: true } );
+      let response = await axios.post("https://new-sever.vercel.app/api/order", orderData, { withCredentials: true } );
       
       if (response.status === 200 && response.data.success) {
         alert("Order successfully placed!");
@@ -83,7 +83,7 @@ function DeliveryDetailsCheckout() {
     };
 
     try {
-      let response = await axios.post("http://localhost:5000/api/checkout", orderData, { headers: { token } });
+      let response = await axios.post("https://new-sever.vercel.app/api/checkout", orderData, { headers: { token } });
       if (response.data.success) {
         const { session_url } = response.data;
         window.location.replace(session_url);

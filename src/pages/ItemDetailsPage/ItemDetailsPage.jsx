@@ -19,7 +19,7 @@ const ItemDetails = () => {
       try {
         const response = await axios.get(
           `https://new-sever.vercel.app/api/products/${id}`
-          //`http://localhost:5000/api/products/${id}`
+          //`https://new-sever.vercel.app/api/products/${id}`
         );
         if (response.status === 200) {
           setProduct(response.data);
