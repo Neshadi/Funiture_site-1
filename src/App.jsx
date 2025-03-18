@@ -17,6 +17,12 @@ import List from './pages/List/List';
 import Mobileapp from './pages/Mobileapp/Mobileapp';
 import Orders from './pages/Orders/Orders';
 import Profile from './User/Profile/Profile';
+import PaymentSuccess from './pages/DeliveryDetailsCheckout/PaymentSuccess';
+import MyOrders from './pages/MyOrders/MyOrders';
+import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
+import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
+import ResetPassword from './pages/resetPassword/ResetPassword';
+import ItemDisplay from './components/ItemDisplay/ItemDisplay';
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
