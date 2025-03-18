@@ -30,6 +30,14 @@ import table from './table.png'
 import task from './task.png'
 import upload from './upload.png'
 import wall_art from './wall_art.jpg'
+import herovideo from './Herovideo.mp4'
+import kitchen2 from './kitchen2.jpg'
+import bathware2 from './bathware2.jpg'
+import wallart2 from './wallart2.jpg'
+import appstore from './appstore.png'
+import playstore from './playstore.png'
+import mobile from './3dmobile.png'
+import box from './box.png'
 
 export const assets = {
     logo_black,
@@ -64,6 +72,15 @@ export const assets = {
     ellipse3,
     ellipse4,
     ellipse5,
+    herovideo,
+    bathware2,
+    kitchen2,
+    wallart2,
+    furnitures,
+    appstore,
+    playstore,
+    mobile,
+    box
 }
 
 export const category_list=[

@@ -34,7 +34,6 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
 
         try {
-            console.log("log 1");
             await axios.post('https://new-sever.vercel.app/api/users/', {
                 name: username,
                 email: email,
@@ -119,7 +118,6 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
     };
 
-<<<<<<< HEAD
     
 //     function googleLogin() {
 //     const provider = new GoogleAuthProvider(); 
@@ -145,8 +143,6 @@ function googleLogin() {
 
 
 
-=======
->>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
     return (
         <div className="login-popup">
             <form onSubmit={checkSubmission} className="login-popup-container">
@@ -199,15 +195,10 @@ function googleLogin() {
                     setShowLogin(false);
                 }}>
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
-<<<<<<< HEAD
                     <img src={assets.google} alt="Google Login" />
                 </button>
 
 
-=======
-                    <img onClick={() => setShowLogin(false)} src={assets.google} alt="Google Login" />
-                </button>
->>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
                 <div className="login-popup-condition">
                     <input type="checkbox" required />
                     <p>By continuing, I agree to the terms of use & privacy policy.</p>

@@ -17,13 +17,10 @@ import List from './pages/List/List';
 import Mobileapp from './pages/Mobileapp/Mobileapp';
 import Orders from './pages/Orders/Orders';
 import Profile from './User/Profile/Profile';
-<<<<<<< HEAD
 import PaymentSuccess from './pages/DeliveryDetailsCheckout/PaymentSuccess';
 import MyOrders from './pages/MyOrders/MyOrders';
 import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
 import ResetPassword from './pages/resetPassword/ResetPassword';
-=======
->>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
@@ -51,7 +48,7 @@ const App = () => {
                 handleLogout={handleLogout}
                 setShowLogin={setShowLogin}
               />
-           
+
               <Home />
               <ItemDisplay category={"All"}/> 
               {/* <ItemDetailsPage/>  */}
@@ -75,7 +72,7 @@ const App = () => {
           path="/mobile-app"
           element={
             <>
-              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout}  setShowLogin={setShowLogin} />
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
               <Mobileapp />
             </>
           }
@@ -87,7 +84,27 @@ const App = () => {
         </>
 
         }/>
-        <Route
+        <Route path='/Item-Page/:id'
+          element={<>
+            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
+            <ItemDetailsPage />
+          </>
+          } />
+           {/* Fogot Password Page */}
+          <Route path='/forgot-password'
+          element={<>
+           <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+          <Fogotpassword/>
+           </>} />
+
+           {/* Reset Password Page */}
+           <Route path='/reset-password'
+          element={<>
+           <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+          <ResetPassword/>
+           </>} />
+
+        {/* <Route
           path="/cart"
           element={
             <>
@@ -95,36 +112,59 @@ const App = () => {
               <Cart />
             </>
           }
+        /> */}
+        <Route
+          path="/cart"
+          element={
+            isLoggedIn ? (
+              <>
+                <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+                <Cart />
+              </>
+            ) : (
+
+              <UserLoginPopUp
+                setShowLogin={setShowLogin}
+                setIsLoggedIn={setIsLoggedIn}
+                setUserType={setUserType}
+              />
+
+            )
+          }
         />
-    <Route
-  path="/cart"
-  element={
-    isLoggedIn ? (
-      <>
-        <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-        <Cart />
-      </>
-    ) : (
-     
-        <UserLoginPopUp
-          setShowLogin={setShowLogin}
-          setIsLoggedIn={setIsLoggedIn}
-          setUserType={setUserType}
-        />
-      
-    )
-  }
-/>
 
-
-
+        {/* Payment Checkout Page */}
 
         <Route
           path="/deliverydetailscheckout"
           element={
             <>
-              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout}  setShowLogin={setShowLogin}/>
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
               <DeliveryDetailsCheckout />
+            </>
+          }
+        />
+
+        {/* Payment Success Page */}
+
+        <Route
+          path="/paymentSuccess"
+          element={
+            <>
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+              <PaymentSuccess />
+            </>
+          }
+        />
+
+        {/* My Orders Page */}
+
+        <Route
+          path="/my-orders"
+          element={
+            <>
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+              <MyOrders />
             </>
           }
         />
@@ -134,7 +174,7 @@ const App = () => {
           path="/about-us"
           element={
             <>
-              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout}  setShowLogin={setShowLogin} />
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
               <AboutUs />
             </>
           }
@@ -145,7 +185,7 @@ const App = () => {
           path="/profile"
           element={
             <>
-              <NavBar isLoggedIn={true} handleLogout={handleLogout}  setShowLogin={setShowLogin}/>
+              <NavBar isLoggedIn={true} handleLogout={handleLogout} setShowLogin={setShowLogin} />
               <Profile />
             </>
           }

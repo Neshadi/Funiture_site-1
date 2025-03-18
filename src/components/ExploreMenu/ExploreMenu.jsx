@@ -59,6 +59,8 @@ const ExploreMenu = ({ category, setCategory }) => {
         }
     };
 
+
+
     return (
         <div className="explore-menu" id="explore-menu">
             <hr />
@@ -81,7 +83,8 @@ const ExploreMenu = ({ category, setCategory }) => {
                 {categories.map((cat, index) => (
                     <div
                         key={index}
-                        className={`explore-menu-category-item ${category === cat.name ? "active" : ""}`}
+                        className={`explore-menu-category-item ${category === cat.name ? "active" : ""
+                            }`}
                         onClick={() => handleCategoryClick(cat.name)}
                     >
                         <img src={cat.image} alt={cat.name} />
@@ -97,14 +100,14 @@ const ExploreMenu = ({ category, setCategory }) => {
                 {filteredProducts.length > 0 ? (
                     filteredProducts.map((product) => (
                         <Item
-                            key={product._id}
-                            id={product._id}
-                            name={product.name}
-                            description={product.description}
-                            price={product.price}
-                            image={product.image}
-                            rating={product.rating}
-                            reviews={product.reviews}
+                        key={product._id}
+                        id={product._id}
+                        name={product.name}
+                        description={product.description}
+                        price={product.price}
+                        image={product.image}
+                        rating={product.rating}
+                        reviews={product.reviews}
                         />
                     ))
                 ) : (

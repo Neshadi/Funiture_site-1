@@ -14,13 +14,12 @@ const ItemDetails = () => {
   // Fetch product details
   useEffect(() => {
     const fetchItemDetails = async () => {
+
+      console.log("ID:", id);
       try {
         const response = await axios.get(
           `https://new-sever.vercel.app/api/products/${id}`
-<<<<<<< HEAD
           //`https://new-sever.vercel.app/api/products/${id}`
-=======
->>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
         );
         if (response.status === 200) {
           setProduct(response.data);
@@ -31,7 +30,7 @@ const ItemDetails = () => {
       }
     };
     fetchItemDetails();
-  }, [id]);
+  },[id]);
 
   // Handle Add to Cart action
   const handleAddToCart = () => {
