@@ -125,11 +125,7 @@ const Profile = ({ setUserType }) => {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
-<<<<<<< HEAD
         withCredentials: true,
-=======
-        withCredentials: true,  
->>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
         withCredentials: true,  
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
