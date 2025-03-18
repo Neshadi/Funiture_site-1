@@ -20,7 +20,10 @@ const ItemDetails = () => {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
           //`https://new-sever.vercel.app/api/products/${id}`
+=======
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
