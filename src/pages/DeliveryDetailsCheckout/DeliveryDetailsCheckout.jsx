@@ -27,22 +27,29 @@ function DeliveryDetailsCheckout({ cartTotals }) {
   const handleCheckout = async () => {
     try {
 <<<<<<< HEAD
+<<<<<<< HEAD
       let response = await axios.post("https://new-sever.vercel.app/api/order", orderData, { withCredentials: true } );
       
       if (response.status === 200 && response.data.success) {
 =======
+=======
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
       const response = await axios.post("https://new-sever.vercel.app/api/checkout", {
         deliveryDetails,
         totals: cartTotals,
       });
 
       if (response.status === 200) {
+<<<<<<< HEAD
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
+=======
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
         alert("Order successfully placed!");
       }
     } catch (error) {
       console.error("Error during checkout:", error);
     }
+<<<<<<< HEAD
 <<<<<<< HEAD
     
 
@@ -76,6 +83,8 @@ function DeliveryDetailsCheckout({ cartTotals }) {
     }
 
     console.log(deliveryDetailsCheckout); */}
+=======
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
   };
