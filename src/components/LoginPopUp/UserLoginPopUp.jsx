@@ -121,6 +121,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     
 //     function googleLogin() {
 //     const provider = new GoogleAuthProvider(); 
@@ -146,6 +147,8 @@ function googleLogin() {
 
 
 
+=======
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
@@ -211,6 +214,9 @@ function googleLogin() {
                     <img onClick={() => setShowLogin(false)} src={assets.google} alt="Google Login" />
                 </button>
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
+=======
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
 =======
 >>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
