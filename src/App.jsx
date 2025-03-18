@@ -13,6 +13,7 @@ import Cart from './pages/Cart/Cart';
 import Category from './pages/Category/Category';
 import DeliveryDetailsCheckout from './pages/DeliveryDetailsCheckout/DeliveryDetailsCheckout';
 import Home from './pages/Home/Home';
+import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
 import List from './pages/List/List';
 import Mobileapp from './pages/Mobileapp/Mobileapp';
 import Orders from './pages/Orders/Orders';
@@ -51,7 +52,7 @@ const App = () => {
 
               <Home />
               <ItemDisplay category={"All"}/> 
-              {/* <ItemDetailsPage/>  */}
+              <ItemDetailsPage/> 
             </>
           }
         />
