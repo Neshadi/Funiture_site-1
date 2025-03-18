@@ -17,7 +17,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 
     // Password validation function
     const validatePassword = (password) => {
-        return /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@!#$%^&()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@!#$%^&*()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&*()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
     };
 
     // Sign-up logic
