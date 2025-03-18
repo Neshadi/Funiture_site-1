@@ -20,7 +20,6 @@ const ItemDisplay = ({ category }) => {
                             price={item.price}
                             image={item.image} />
                     }
-
                 })
                 }
             </div>

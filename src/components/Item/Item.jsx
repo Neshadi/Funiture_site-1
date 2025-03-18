@@ -102,7 +102,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
         <div className='item'>
             <div className="item-img-container" onClick={itemDetailPageNavigation}>
                 <img className='item-img' src={image} alt={name} />
-                <div className='item-counter'>
+                {/* <div className='item-counter'>
                     <img 
                         onClick={decrementQuantity}
                         src={assets.minus_red}
@@ -114,7 +114,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
                         src={assets.add_green}
                         alt="Increase Quantity"
                     />
-                </div>
+                </div> */}
             </div>
             <div className="item-info">
                 <p className='item-name'>{name}</p>
