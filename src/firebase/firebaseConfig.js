@@ -1,9 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-
 
 // Replace with your actual Firebase config object from Firebase Console
 const firebaseConfig = {
@@ -22,8 +20,5 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase Storage
 const storage = getStorage(app);
 const db = getFirestore(app);
-const auth =getAuth();
 
-
-export { auth, db, storage };
-
+export { db, storage };

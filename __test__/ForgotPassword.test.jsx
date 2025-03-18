@@ -45,7 +45,7 @@ test("should call API when a valid email is entered", async () => {
   fireEvent.click(button);
 
   expect(axios.post).toHaveBeenCalledWith(
-    "https://new-sever.vercel.app/api/users/forgotpassword",
+    "http://localhost:5000/api/users/forgotpassword",
     { email: "test@example.com" }
   );
 });

@@ -1,9 +1,7 @@
 import axios from 'axios';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import navigate
 import { assets } from '../../assets/assets';
-import { auth } from '../../FireBase/firebaseConfig';
 import './UserLoginPopUp.css';
 
 const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
@@ -19,7 +17,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 
     // Password validation function
     const validatePassword = (password) => {
-        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@!#$%^&*()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&*()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
+        return /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@!#$%^&()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
     };
 
     // Sign-up logic
@@ -38,6 +36,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                 name: username,
                 email: email,
                 password: password
+                
             });
 
             setSuccessMessage('Account created successfully!');
@@ -68,7 +67,8 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             if (result.status === 200) {
                 setSuccessMessage('Logged in successfully!');
                 setUserType('user'); // Set user type to 'user'
-                setShowLogin(false); // Close the login popup
+                
+                (false); // Close the login popup
                 setIsLoggedIn(true);
                 // console.log(isLoggedIn);
                 // navigate('/cart');
@@ -76,7 +76,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                 setError('Invalid login credentials. Please try again.');
             }
         } catch (err) {
-            setError('Error during login. Please try again.');
+            setError('Error during  . Please try again.');
         }
     };
 
@@ -118,29 +118,14 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
     };
 
+
+    //fogot password function 
+
+    const fogotPassowrdHandler = () => {
+        setShowLogin(false); // Close the login popup
+        navigate('/forgot-password'); // Navigate to forgot password page
+    };
     
-//     function googleLogin() {
-//     const provider = new GoogleAuthProvider(); 
-//     signInWithPopup(auth, provider)
-//         .then((result) => {
-//             console.log(result);  
-//         })
-// }
-
-function googleLogin() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("Google Sign-In Successful:", result);
-        })
-        .catch((error) => {
-            console.error("Google Sign-In Error:", error);
-            alert("Error during Google Sign-In: " + error.message);
-        });
-}
-
-
-
 
 
     return (
@@ -190,15 +175,15 @@ function googleLogin() {
                 <button type="submit" id="button1">
                     {currentState === "Sign Up" ? "Create Account" : "Log In"}
                 </button>
-                <button id="button2" onClick={() => {
-                    googleLogin();
-                    setShowLogin(false);
-                }}>
+                <button id="button2">
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
-                    <img src={assets.google} alt="Google Login" />
+                    <img onClick={() => setShowLogin(false)} src={assets.google} alt="Google Login" />
                 </button>
-
-
+                <button id="button3" onClick={
+                   fogotPassowrdHandler}>
+                    
+                    Fogot Password            
+                </button>
                 <div className="login-popup-condition">
                     <input type="checkbox" required />
                     <p>By continuing, I agree to the terms of use & privacy policy.</p>
