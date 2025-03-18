@@ -11,18 +11,21 @@ const Profile = ({ setUserType }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   // const [displayName, setDisplayName] = useState(' ');
-  const [address, setaddress] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
   const [areaDistrict, setAreaDistrict] = useState('');
   const [stateProvince, setStateProvince] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [contactNumber, setcontactNumber] = useState('');
+  const [contactNumber1, setContactNumber1] = useState('');
+  const [contactNumber2, setContactNumber2] = useState('');
   const [error, setError] = useState('');
   const [error1, setError1] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
   // Shipping address as an object
   const shippingAddress = {
-    address,
+    addressLine1,
+    addressLine2,
     district: areaDistrict,
     province: stateProvince,
     zipCode,
@@ -46,17 +49,19 @@ const Profile = ({ setUserType }) => {
         setFirstName(userData.firstName);
         setLastName(userData.lastName);
         // setDisplayName(userData.displayName);
-        setaddress(userData.shippingAddress.address);
+        setAddressLine1(userData.shippingAddress.addressLine1);
+        setAddressLine2(userData.shippingAddress.addressLine2);
         setAreaDistrict(userData.shippingAddress.district);
         setStateProvince(userData.shippingAddress.province);
         setZipCode(userData.shippingAddress.zipCode);
-        setcontactNumber(userData.contactNumber);
+        setContactNumber1(userData.contactNumber1);
+        setContactNumber2(userData.contactNumber2);
       } catch (err) {
         setError('Error fetching user data');
       }
     };
 
-
+    
     // Call the async function
     fetchUserData();
   }, []); // Empty array ensures this runs only once after the initial render
@@ -115,8 +120,8 @@ const Profile = ({ setUserType }) => {
 
   const handleResetClick = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users/profile', {
-        withCredentials: true,
+      const response = await axios.get('https://new-sever.vercel.app/api/users/profile', {
+        withCredentials: true,  
       });
       const userData = response.data;
       console.log(userData);
@@ -129,11 +134,13 @@ const Profile = ({ setUserType }) => {
       setFirstName(userData.firstName);
       setLastName(userData.lastName);
       // setDisplayName(userData.displayName);
-      setaddress(userData.shippingAddress.address);
+      setAddressLine1(userData.shippingAddress.addressLine1);
+      setAddressLine2(userData.shippingAddress.addressLine2);
       setAreaDistrict(userData.shippingAddress.district);
       setStateProvince(userData.shippingAddress.province);
       setZipCode(userData.shippingAddress.zipCode);
-      setcontactNumber(userData.contactNumber);
+      setContactNumber1(userData.contactNumber1);
+      setContactNumber2(userData.contactNumber2);
     } catch (err) {
       setError('Error fetching user data');
     }
@@ -145,13 +152,16 @@ const Profile = ({ setUserType }) => {
     setError('');
     setSuccessMessage('');
 
+
+
     try {
       const result = await axios.put('https://new-sever.vercel.app/api/users/profile', {
         name: userName,
         email: email,
         firstName: firstName,
         lastName: lastName,
-        contactNumber: contactNumber,
+        contactNumber1: contactNumber1,
+        contactNumber2: contactNumber2,
         shippingAddress: shippingAddress,
         password: password
       }, {
@@ -168,17 +178,6 @@ const Profile = ({ setUserType }) => {
       console.error('Error during saving:', err);
       setError('Error during saving. Please try again.');
     }
-
-    console.log('Current State After Save:', {
-      userName,
-      email,
-      firstName,
-      lastName,
-      contactNumber,
-      shippingAddress,
-      password,
-    });
-    
   };
   const handleProvinceChange = (province) => {
     setStateProvince(province);
@@ -237,16 +236,25 @@ const Profile = ({ setUserType }) => {
             </div>
             <br></br>
             <div className="form-group">
-              <label>Your Address:</label>
+              <label>Address Line 1:</label>
               <input
                 type="text"
-                value={address}
-                onChange={(e) => setaddress(e.target.value)}
-                onFocus={() => handleFocus(setaddress)}  // Clears when clicked
-                placeholder='Your Address'
+                value={addressLine1}
+                onChange={(e) => setAddressLine1(e.target.value)}
+                onFocus={() => handleFocus(setAddressLine1)}  // Clears when clicked
+                placeholder='Line 1'
               />
             </div>
-            <br></br>
+            <div className="form-group">
+              <label>Address Line 2:</label>
+              <input
+                type="text"
+                value={addressLine2}
+                onChange={(e) => setAddressLine2(e.target.value)}
+                onFocus={() => handleFocus(setAddressLine2)}  // Clears when clicked
+                placeholder='Line 2'
+              />
+            </div>
             <div className="form-group">
               <label>Province:</label>
               <select
@@ -298,22 +306,41 @@ const Profile = ({ setUserType }) => {
               />
             </div>
             <br></br>
-
             <div className="form-group">
-              <label>Contact Number:</label>
+              <label>Contact Number 1:</label>
               <input
                 type="tel"  // Keep type as 'tel'
-                value={contactNumber}
+                value={contactNumber1}
                 onChange={(e) => {
                   const { value } = e.target;
                   // Allow only digits and the '+' sign
                   if (/^[+\d]*$/.test(value)) {
-                    setcontactNumber(value);
+                    setContactNumber1(value);
+                  }
+                  else {
+                    setError("Please enter a valid number")
+                  }
+                }}
+                onFocus={() => handleFocus(setContactNumber1)}  // Clears when clicked
+                placeholder='Type here'
+              />
+              {error && <p className="error-message" style={{ color: 'red' }}>{error}</p>}
+            </div>
+            <div className="form-group">
+              <label>Contact Number 2:</label>
+              <input
+                type="tel"  // Keep type as 'tel'
+                value={contactNumber2}
+                onChange={(e) => {
+                  const { value } = e.target;
+                  // Allow only digits and the '+' sign
+                  if (/^[+\d]*$/.test(value)) {
+                    setContactNumber2(value);
                   } else {
                     setError1("Please enter a valid number");
                   }
                 }}
-                onFocus={() => handleFocus(setcontactNumber)}  // Clears when clicked
+                onFocus={() => handleFocus(setContactNumber2)}  // Clears when clicked
                 placeholder="Type here"
               />
               {error1 && <p className="error-message" style={{ color: 'red' }}>{error1}</p>}
@@ -346,7 +373,8 @@ const Profile = ({ setUserType }) => {
         </div>
       </div>
     </div>
-  );
-};
-
-export default Profile;
+    );
+  };
+  
+  export default Profile;
+  

@@ -16,7 +16,6 @@ function Cart() {
         const response = await axios.get("https://new-sever.vercel.app/api/cart", {
           withCredentials: true,
         });
-console.log(response);
 
         if (response.status !== 200) {
           throw new Error("Failed to fetch cart items");
@@ -42,7 +41,6 @@ console.log(response);
     fetchCartItems();
   }, []);
 
-  // Function to handle removing an item from the cart
   const handleRemoveItem = async (productId) => {
     try {
       // Send DELETE request to remove the item from the cart
@@ -70,7 +68,7 @@ console.log(response);
   };
 
   const handleCheckout = () => {
-    navigate('/deliverydetailscheckout', { state: { cartTotals: totals, cartItems: cartItems } }); 
+    navigate('/deliverydetailscheckout'); 
 };
   
 

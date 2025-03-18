@@ -11,7 +11,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
     const [notification, setNotification] = useState(''); // Notification message state
     const Navigate =useNavigate();
 
-    {/* useEffect(() => {
+    useEffect(() => {
         checkCartStatus();
     }, []);
 
@@ -27,7 +27,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
         } catch (error) {
             console.error('Error checking cart status:', error);
         }
-    }; */}
+    };
 
     const addToCart = async () => {
         try {
