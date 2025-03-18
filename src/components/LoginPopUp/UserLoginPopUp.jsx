@@ -32,7 +32,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
 
         try {
-            await axios.post('https://new-sever.vercel.app/api/users/', {
+            await axios.post('http://localhost:5000/api/users/', {
                 name: username,
                 email: email,
                 password: password
@@ -57,7 +57,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
       
 
         try {
-            const result = await axios.post('https://new-sever.vercel.app/api/users/auth', {
+            const result = await axios.post('http://localhost:5000/api/users/auth', {
                 email: email,
                 password: password
             }, {
@@ -87,7 +87,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         setSuccessMessage('');
 
         try {
-            const result = await axios.post('https://new-sever.vercel.app/api/users/adminauth', {
+            const result = await axios.post('http://localhost:5000/api/users/adminauth', {
                 email: email,
                 password: password
             }, {
