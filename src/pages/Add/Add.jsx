@@ -42,8 +42,6 @@ const Add = ({ url }) => {
   const onSubmitHandler = async (event) => { 
     event.preventDefault(); 
 
-    
-
     if (!image) { 
       toast.error("Please select an image"); 
       return; 
@@ -54,26 +52,24 @@ const Add = ({ url }) => {
     } 
 
     const storageRef = ref(storage, `images/${image.name}`);
-    
+    try {
       await uploadBytes(storageRef, image); // Upload image to Firebase Storage
       const url = await getDownloadURL(storageRef); // Get image download URL
       console.log(url);
-      console.log(`ImageUrl: ${data.ImageUrl}`);
-
-      const itemData = { 
-        name: data.name, 
-        description: data.description, 
-        price: Number(data.price), 
-        category: data.category, 
-        image: base64Image, 
-        imageUrl: url,
-        modelUrl: data.modelImageUrl, // Include the 3D model URL 
-      }; 
-    
-
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image.");
       
+    }
 
-    
+    const itemData = { 
+      name: data.name, 
+      description: data.description, 
+      price: Number(data.price), 
+      category: data.category, 
+      image: base64Image, 
+      modelImageUrl: data.modelImageUrl, // Include the 3D model URL 
+    }; 
 
     try { 
       const token = localStorage.getItem('token'); // Retrieve token from local storage (or your preferred method)
@@ -98,8 +94,7 @@ const Add = ({ url }) => {
           description: '', 
           price: '', 
           category: '', 
-          modelImageUrl: '',
-          ImageUrl: '', 
+          modelImageUrl: '', 
         }); 
         setImage(null); 
         setBase64Image(''); 

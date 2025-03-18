@@ -1,22 +1,14 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import "./DeliveryDetailsCheckout.css";
-import { StoreContext } from "../../context/StoreContext";
 
-function DeliveryDetailsCheckout() {
-  const { token } = useContext(StoreContext);
-  const location = useLocation();
-  const navigate = useNavigate();  // ✅ Initialize navigate
-
-  const cartTotals = location.state?.cartTotals || { subTotal: 0, deliveryFee: 500, total: 0 };
-  const receivedCartItems = location.state?.cartItems || [];
-
+function DeliveryDetailsCheckout({ cartTotals }) {
+  
   const [deliveryDetails, setDeliveryDetails] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    address: "",
+    street: "",
     city: "",
     province: "",
     zipCode: "",
@@ -26,44 +18,32 @@ function DeliveryDetailsCheckout() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setDeliveryDetails((prevDetails) => ({ ...prevDetails, [name]: value }));
+    setDeliveryDetails((prevDetails) => ({
+      ...prevDetails,
+      [name]: value,
+    }));
   };
 
-  const handleCheckout = async (e) => {
-    e.preventDefault();
-
-    let deliveryDetailsCheckout = receivedCartItems.map((item) => ({
-      ...item,
-      quantity: item.quantity,
-    }));
-
-    let orderData = {
-      orderItems: deliveryDetailsCheckout, 
-      shippingAddress: deliveryDetails,
-      paymentMethod: "Cash on Delivery",
-      totalPrice: cartTotals.total,
-    };
-
-    // ✅ Save the order data to localStorage
-    localStorage.setItem("latestOrder", JSON.stringify(orderData));
-
-    // ✅ Navigate to PaymentSuccess page
-    navigate('/paymentSuccess', { state: { orderData } });
-    console.log('Delivery Details:', deliveryDetailsCheckout);
-    console.log('Order Details:', orderData);
-    
+  const handleCheckout = async () => {
     try {
+<<<<<<< HEAD
       let response = await axios.post("https://new-sever.vercel.app/api/order", orderData, { withCredentials: true } );
       
       if (response.status === 200 && response.data.success) {
+=======
+      const response = await axios.post("https://new-sever.vercel.app/api/checkout", {
+        deliveryDetails,
+        totals: cartTotals,
+      });
+
+      if (response.status === 200) {
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
         alert("Order successfully placed!");
-      } else {
-        alert("Error processing your order");
       }
     } catch (error) {
-      console.error("Checkout Error:", error);
-      alert("Something went wrong. Please try again.");
+      console.error("Error during checkout:", error);
     }
+<<<<<<< HEAD
     
 
     {/*After creating Stripe Process uncomment this*/ }
@@ -96,73 +76,111 @@ function DeliveryDetailsCheckout() {
     }
 
     console.log(deliveryDetailsCheckout); */}
+=======
+>>>>>>> parent of 23499c1 (Merge branch 'parakkrama_2')
   };
 
   return (
     <div className="delivery-checkout-container">
       <div className="delivery-form">
         <h3>DELIVERY INFORMATION</h3>
-        <form onSubmit={handleCheckout}>
+        <form>
           <div className="form-row">
-            <input required type="text" name="firstName" placeholder="First Name" value={deliveryDetails.firstName} onChange={handleInputChange} />
-            <input required type="text" name="lastName" placeholder="Last Name" value={deliveryDetails.lastName} onChange={handleInputChange} />
+            <input
+              type="text"
+              name="firstName"
+              placeholder="First Name"
+              value={deliveryDetails.firstName}
+              onChange={handleInputChange}
+            />
+            <input
+              type="text"
+              name="lastName"
+              placeholder="Last Name"
+              value={deliveryDetails.lastName}
+              onChange={handleInputChange}
+            />
           </div>
-          <input required type="email" name="email" placeholder="Email Address" value={deliveryDetails.email} onChange={handleInputChange} />
-          <input required type="text" name="address" placeholder="address" value={deliveryDetails.address} onChange={handleInputChange} />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            value={deliveryDetails.email}
+            onChange={handleInputChange}
+          />
+          <input
+            type="text"
+            name="street"
+            placeholder="Street"
+            value={deliveryDetails.street}
+            onChange={handleInputChange}
+          />
           <div className="form-row">
-            <input required type="text" name="city" placeholder="City" value={deliveryDetails.city} onChange={handleInputChange} />
-            <input required type="text" name="province" placeholder="Province" value={deliveryDetails.province} onChange={handleInputChange} />
+            <input
+              type="text"
+              name="city"
+              placeholder="City"
+              value={deliveryDetails.city}
+              onChange={handleInputChange}
+            />
+            <input
+              type="text"
+              name="province"
+              placeholder="Province"
+              value={deliveryDetails.province}
+              onChange={handleInputChange}
+            />
           </div>
           <div className="form-row">
-            <input required type="text" name="zipCode" placeholder="Zip Code" value={deliveryDetails.zipCode} onChange={handleInputChange} />
-            <input required type="text" name="country" placeholder="Country" value={deliveryDetails.country} onChange={handleInputChange} />
+            <input
+              type="text"
+              name="zipCode"
+              placeholder="Zip Code"
+              value={deliveryDetails.zipCode}
+              onChange={handleInputChange}
+            />
+            <input
+              type="text"
+              name="country"
+              placeholder="Country"
+              value={deliveryDetails.country}
+              onChange={handleInputChange}
+            />
           </div>
-          <input required type="text" name="phone" placeholder="Phone" value={deliveryDetails.phone} onChange={handleInputChange} />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone"
+            value={deliveryDetails.phone}
+            onChange={handleInputChange}
+          />
         </form>
       </div>
 
-      <div className="place-order-right">
-        <div className="cart-total-delivery">
-          <h3>CART TOTALS</h3>
-          <div className="cart-totals-with-promo-delivery">
-            <div className="cart-totals-delivery">
-              <table>
-                <tbody>
-                  <tr>
-                    <td>Sub Total</td>
-                    <td className="td1">Rs. {cartTotals.subTotal.toLocaleString()}</td>
-                  </tr>
-                  <tr>
-                    <td>Delivery fee</td>
-                    <td className="td1">Rs. {cartTotals.deliveryFee.toLocaleString()}</td>
-                  </tr>
-                  <tr>
-                    <td>Total</td>
-                    <td className="td1">Rs. {cartTotals.total.toLocaleString()}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <button type="submit" className="checkout-btn-delivery" onClick={handleCheckout}>
-                Proceed to Payment
-              </button>
-            </div>
-
-            <div className="promo-code">
-              <p>
-                If you have a promo code <a href="/cart">ENTER IT HERE</a>
-              </p>
-              <div>
-                <input type="text" placeholder="Promo Code" />
-                <button className="btn-submit">Submit</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* <div className="cart-totals-section">
+        <h3>CART TOTALS</h3>
+        <table>
+          <tbody>
+            <tr>
+              <td>Sub Total</td>
+              <td>Rs. {cartTotals.subTotal.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td>Delivery fee</td>
+              <td>Rs. {cartTotals.deliveryFee.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td>Total</td>
+              <td>Rs. {cartTotals.total.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+        <button className="checkout-btn" onClick={handleCheckout}>
+          Proceed to Checkout
+        </button>
+      </div> */}
     </div>
   );
 }
 
 export default DeliveryDetailsCheckout;
-
-
