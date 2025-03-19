@@ -16,6 +16,10 @@ html, body {
   margin-top: 8vw;
 }
 
+.Item_Name{
+  text-decoration: underline;
+}
+
 .product {
   display: flex;
   flex-wrap: wrap; /* Allow wrapping for small screens */
@@ -148,6 +152,13 @@ html, body {
 
 }
 
+.no-review{
+  text-align: center;
+  font-size: large;
+  padding-bottom: 15px;
+
+}
+
 .add-to-cart {
   background-color: #007bff;
 }
@@ -162,6 +173,24 @@ html, body {
 
 .buy-now:hover {
   background-color: #218838;
+}
+
+.QrCode{
+  height: 256px;
+  width: 265px;
+}
+.QRCode_Container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 250px; /* Add spacing between items */
+}
+
+
+.Scanme_text{
+
+  text-align: center;
+  font-weight: 500;
 }
 
 .reviews {

@@ -48,7 +48,6 @@ const App = () => {
            
               <Home />
               <ItemDisplay category={"All"}/> 
-              <ItemDetailsPage/> 
             </>
           }
         />

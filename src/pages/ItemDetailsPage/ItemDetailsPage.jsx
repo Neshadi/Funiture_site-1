@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import "./ItemDetailsPage.css";
 import axios from "axios";
 import QRCode from "react-qr-code";
+import Loading from "../../components/Loading/Loading";
 
 const ItemDetails = () => {
   const { id } = useParams();
@@ -67,9 +68,9 @@ const ItemDetails = () => {
 
             {/* Product Details */}
             <div className="details">
-              <h2>{_product.name}</h2>
+              <h1 className="Item_Name">{_product.name}</h1>
               <p className="description">{_product.description}</p>
-              <p className="price">${_product.price?.toFixed(2)}</p>
+              <p className="price">Rs : {_product.price?.toFixed(2)}</p>
               <p
                 className={`stock ${
                   _product.stock > 0 ? "in-stock" : "out-of-stock"
@@ -119,8 +120,8 @@ const ItemDetails = () => {
                 <button className="button buy-now">Buy Now</button>
               </div>
             </div>
-            <div className="">
-              <div className="QrCode" style={{}}>
+            <div className="QRCode_Container">
+              <div className="QrCode">
                 <QRCode
                   size={256}
                   style={{ height: "auto", maxWidth: "100%", width: "100%" }}
@@ -128,11 +129,13 @@ const ItemDetails = () => {
                   viewBox={`0 0 16 16`}
                 />
               </div>
+              <p className="Scanme_text">Scan me to watch live</p>
             </div>
+
             {/* Reviews Section */}
           </div>
         ) : (
-          <p>Loading product details...</p>
+          <Loading />
         )}
       </div>
       {/* Reviews Section */}
@@ -148,12 +151,16 @@ const ItemDetails = () => {
                 .map((key) => review[key]) // Get character values
                 .join(""); // Join characters into a string
 
-              return <li className="single_review" key={index}>{reviewText}</li>;
+              return (
+                <li className="single_review" key={index}>
+                  {reviewText}
+                </li>
+              );
             })}
           </ul>
         </div>
       ) : (
-        <p>No reviews available.</p>
+        <p className="no-review">No reviews available.</p>
       )}
     </div>
   );
