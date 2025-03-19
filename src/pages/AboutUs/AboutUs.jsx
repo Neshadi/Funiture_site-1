@@ -167,3 +167,4 @@ const AboutUs = () => {
 };
 
 export default AboutUs;
+/* How It Works Section */
