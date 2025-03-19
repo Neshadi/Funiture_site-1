@@ -1,0 +1,98 @@
+.success-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .success-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    transform: translateY(30px);
+    opacity: 0;
+    animation: slideUp 0.6s ease forwards;
+  }
+  
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    background: #f0f9f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+  }
+  
+  .success-title {
+    color: #2d3748;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  
+  .success-message {
+    color: #718096;
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  
+  .orders-button {
+    background: var(--green);
+    color: white;
+    padding: 12px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .orders-button:hover {
+    background: #4338ca;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(79, 70, 229, 0.3);
+  }
+  
+  .orders-button:active {
+    transform: translateY(0);
+  }
+  
+  @keyframes slideUp {
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 20px rgba(52, 211, 153, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+    }
+  }
+  
+  .confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+  }
+
+  /* Replace with an even darker shade */
