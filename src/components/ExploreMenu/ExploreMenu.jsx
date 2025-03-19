@@ -111,7 +111,22 @@ const ExploreMenu = ({ category, setCategory }) => {
                         />
                     ))
                 ) : (
-                    <p>No products found.</p>
+                  
+                    <div class="spinner-container">
+                    <div class="spinner">
+                      <div></div>   
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                      <div></div>    
+                    </div>
+                  </div>
+                  
                 )}
             </div>
         </div>
