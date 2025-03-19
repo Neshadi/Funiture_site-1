@@ -12,12 +12,10 @@ const Orders = ({ url }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get("http://localhost:5000/api/order/all", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
+      const response = await axios.get("http://localhost:5000/api/order",{
+        withCredentials: true
+    });
+      console.log(response.data);
       if (response.data.success) {
         setOrders(response.data.data);
         console.log(response.data.data);
@@ -39,13 +37,9 @@ const Orders = ({ url }) => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.put(`http://localhost:5000/api/order/status/${orderId}`, 
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+      const response = await axios.put(`http://localhost:5000/api/order/status/${orderId}`,{
+        withCredentials: true
+    }
       );
       
       if (response.data.success) {

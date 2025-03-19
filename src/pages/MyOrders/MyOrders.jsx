@@ -20,10 +20,7 @@ const MyOrders = ({ }) => {
       setLoading(true);
   
       const response = await axios.get("http://localhost:5000/api/order", {
-        withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        withCredentials: true
       });
   
       let fetchedOrders = response.data.success ? response.data.data : [];
