@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { assets } from "../../assets/assets";
 import Item from "../Item/Item";
 import "./ExploreMenu.css";
+import Loading from "../Loading/Loading";
 
 const ExploreMenu = ({ category, setCategory }) => {
     const [products, setProducts] = useState([]);
@@ -109,20 +110,7 @@ const ExploreMenu = ({ category, setCategory }) => {
                     ))
                 ) : (
                   
-                    <div class="spinner-container">
-                    <div class="spinner">
-                      <div></div>   
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                      <div></div>    
-                    </div>
-                  </div>
+                    <Loading/>
                   
                 )}
             </div>
