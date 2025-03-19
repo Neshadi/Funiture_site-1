@@ -98,7 +98,7 @@ const App = () => {
           <Fogotpassword/>
            </>} />
 
-           {/* Reset Password Page */}
+           {/* Reset Password Page add  */}
            <Route path='/reset-password'
           element={<>
            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
