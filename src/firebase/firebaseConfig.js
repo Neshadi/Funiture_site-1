@@ -26,4 +26,3 @@ const auth =getAuth();
 
 
 export { auth, db, storage };
-

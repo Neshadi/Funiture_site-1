@@ -3,7 +3,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import navigate
 import { assets } from '../../assets/assets';
-import { auth } from '../../FireBase/firebaseConfig';
+import { auth } from '../../firebase/firebaseConfig';
 import './UserLoginPopUp.css';
 
 const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
@@ -19,7 +19,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 
     // Password validation function
     const validatePassword = (password) => {
-        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@!#$%^&*()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&*()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
+        return /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@!#$%^&()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
     };
 
     // Sign-up logic

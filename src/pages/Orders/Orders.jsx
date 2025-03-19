@@ -45,7 +45,7 @@ const Orders = ({ url }) => {
               </p>
               <p className="order-item-name">{order.address.firstName+" "+order.adress.lastName}</p>
             <div className="order-item-address">
-              <p>{order.address+","}</p>
+              <p>{order.address.street+","}</p>
               <p>{order.address.city+", "+order.address.state+", "+order.address.country+", "+order.address.zipCode}</p>
             </div>
             <p className='order-item-phone'>{order.address.phone}</p>
@@ -53,7 +53,7 @@ const Orders = ({ url }) => {
             <p>Items : {order.items.length}</p>
             <p>${order.amount}</p>
             <select>
-              <option value="Item Packing"></option>
+              <option value="Item Preparing"></option>
               <option value="Out for Delivery"></option>
               <option value="Delivered"></option>
             </select>

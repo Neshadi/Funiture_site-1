@@ -40,11 +40,9 @@ const ItemDetails = () => {
   // Fetch product details
   useEffect(() => {
     const fetchItemDetails = async () => {
-      console.log("ID:", id);
       try {
         const response = await axios.get(
           `https://new-sever.vercel.app/api/products/${id}`
-          //`https://new-sever.vercel.app/api/products/${id}`
         );
         if (response.status === 200) {
           setProduct(response.data);
