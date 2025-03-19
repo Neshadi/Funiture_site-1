@@ -18,6 +18,8 @@ import List from './pages/List/List';
 import Mobileapp from './pages/Mobileapp/Mobileapp';
 import Orders from './pages/Orders/Orders';
 import Profile from './User/Profile/Profile';
+import ForgotPassword from './pages/FogotPassWord/ForgotPassword';
+import ResetPassword from './pages/resetPassword/ResetPassword';
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
@@ -90,7 +92,7 @@ const App = () => {
           <Route path='/forgot-password'
           element={<>
            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-          <Fogotpassword/>
+          <ForgotPassword/>
            </>} />
 
            {/* Reset Password Page add  */}
