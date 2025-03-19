@@ -132,6 +132,7 @@ function googleLogin() {
     signInWithPopup(auth, provider)
         .then((result) => {
             console.log("Google Sign-In Successful:", result);
+            setShowLogin(false);
         })
         .catch((error) => {
             console.error("Google Sign-In Error:", error);
@@ -190,12 +191,9 @@ function googleLogin() {
                 <button type="submit" id="button1">
                     {currentState === "Sign Up" ? "Create Account" : "Log In"}
                 </button>
-                <button id="button2" onClick={() => {
-                    googleLogin();
-                    setShowLogin(false);
-                }}>
-                    {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
-                    <img src={assets.google} alt="Google Login" />
+                <button id="button2" onClick={googleLogin}>
+                {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
+                <img src={assets.google} alt="Google Login" />
                 </button>
 
 
