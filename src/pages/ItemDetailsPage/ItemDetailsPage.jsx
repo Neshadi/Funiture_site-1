@@ -15,7 +15,7 @@ const ItemDetails = () => {
   const addToCart = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/cart",
+        "https://new-sever.vercel.app/api/cart",
         {
           productId: id,
           quantity: quantity,
