@@ -18,7 +18,7 @@ import Mobileapp from './pages/Mobileapp/Mobileapp';
 import Orders from './pages/Orders/Orders';
 import Profile from './User/Profile/Profile';
 import PaymentSuccess from './pages/DeliveryDetailsCheckout/PaymentSuccess';
-//import MyOrders from './pages/MyOrders/MyOrders';
+import MyOrders from './pages/MyOrders/MyOrders';
 import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
 import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
 import ResetPassword from './pages/resetPassword/ResetPassword';
@@ -165,7 +165,7 @@ const App = () => {
           element={
             <>
               <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-             {/* <MyOrders /> */}
+             <MyOrders />
             </>
           }
         />
