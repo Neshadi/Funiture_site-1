@@ -139,6 +139,10 @@ function googleLogin() {
         });
 }
 
+const fogotpasswordNavigate=()=>{
+        navigate('/forgot-password');
+        setShowLogin(false); 
+}
 
 
 
@@ -196,6 +200,10 @@ function googleLogin() {
                 }}>
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img src={assets.google} alt="Google Login" />
+                </button>
+                <button onClick={fogotpasswordNavigate}>
+
+                        Forgot Password ?
                 </button>
 
 
