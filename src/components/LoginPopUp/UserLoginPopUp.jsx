@@ -127,18 +127,32 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 //         })
 // }
 
-function googleLogin() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("Google Sign-In Successful:", result);
-            setShowLogin(false);
-        })
-        .catch((error) => {
-            console.error("Google Sign-In Error:", error);
-            alert("Error during Google Sign-In: " + error.message);
-        });
-}
+// function googleLogin() {
+//     const provider = new GoogleAuthProvider();
+//     signInWithPopup(auth, provider)
+//         .then((result) => {
+//             console.log("Google Sign-In Successful:", result);
+//             setShowLogin(false);
+//         })
+//         .catch((error) => {
+//             console.error("Google Sign-In Error:", error);
+//             alert("Error during Google Sign-In: " + error.message);
+//         });
+// }
+
+const googleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" }); // Force account selection
+      
+      const result = await signInWithPopup(auth, provider);
+      console.log("Google Sign-In Successful:", result.user);
+      
+      setShowLogin(false); // Hide login modal after login
+    } catch (error) {
+      console.error("Google Sign-In Error:", error.message);
+    }
+  };
 
 
 
