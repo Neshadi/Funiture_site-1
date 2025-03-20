@@ -58,18 +58,19 @@ const ItemDetails = ({ onCartUpdate }) => {
         const productResponse = await axios.get(
           `http://localhost:5000/api/products/${id}`
         );
-        
+
         if (productResponse.status === 200) {
           setProduct(productResponse.data);
-          
+
           // Fetch reviews for this product
           try {
             const reviewsResponse = await axios.get(
-              `http://localhost:5000/api/review/product/${id}`
+              `http://localhost:5000/api/products/reviews/${id}`
             );
-            
+
             if (reviewsResponse.status === 200) {
-              setReviews(reviewsResponse.data.data || []);
+              setReviews(reviewsResponse.data || []);
+              console.log(reviews);
             }
           } catch (reviewErr) {
             console.error("Error fetching reviews:", reviewErr);
@@ -81,21 +82,10 @@ const ItemDetails = ({ onCartUpdate }) => {
         setLoading(false);
       }
     };
-    
+
     fetchItemDetails();
   }, [id]);
 
-  // Calculate average rating from reviews
-  const calculateAverageRating = () => {
-    if (!reviews || reviews.length === 0) {
-      return product?.ratings || 0;
-    }
-    
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return totalRating / reviews.length;
-  };
-
-  const averageRating = calculateAverageRating();
 
   return (
     <div>
@@ -104,7 +94,7 @@ const ItemDetails = ({ onCartUpdate }) => {
           {notification}
         </div>
       )}
-      
+
       <div className="container">
         {loading ? (
           <div className="loading-container">
@@ -124,9 +114,8 @@ const ItemDetails = ({ onCartUpdate }) => {
               <p className="description">{product.description}</p>
               <p className="price">${product.price?.toFixed(2)}</p>
               <p
-                className={`stock ${
-                  product.stock > 0 ? "in-stock" : "out-of-stock"
-                }`}
+                className={`stock ${product.stock > 0 ? "in-stock" : "out-of-stock"
+                  }`}
               >
                 {product.stock > 0
                   ? `In Stock (${product.stock} left)`
@@ -142,7 +131,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   -
                 </button>
                 <span>{quantity}</span>
-                <button 
+                <button
                   onClick={() => setQuantity((prev) => prev + 1)}
                   disabled={quantity >= product.stock}
                 >
@@ -156,27 +145,27 @@ const ItemDetails = ({ onCartUpdate }) => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`star ${averageRating >= star ? 'filled' : ''}`}
-                      fill={averageRating >= star ? "#FFD700" : "none"}
-                      stroke={averageRating >= star ? "#FFD700" : "currentColor"}
+                      className={`star ${reviews.rating >= star ? 'filled' : ''}`}
+                      fill={reviews.rating >= star ? "#FFD700" : "none"}
+                      stroke={reviews.rating >= star ? "#FFD700" : "currentColor"}
                       size={24}
                     />
                   ))}
                 </div>
-                <span className="rating-value">{averageRating.toFixed(1)}</span>
-                <span className="review-count">({reviews.length} reviews)</span>
+                <span className="rating-value">{reviews.rating.toFixed(1)}</span>
+                <span className="review-count">({reviews.numReviews} reviews)</span>
               </div>
 
               {/* Action Buttons */}
               <div className="actions">
-                <button 
-                  onClick={addToCart} 
+                <button
+                  onClick={addToCart}
                   className="button add-to-cart"
                   disabled={product.stock <= 0}
                 >
                   Add to Cart
                 </button>
-                <button 
+                <button
                   className="button buy-now"
                   disabled={product.stock <= 0}
                 >
@@ -184,7 +173,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="qr-code-container">
               <div className="QrCode">
                 <QRCode
@@ -200,14 +189,14 @@ const ItemDetails = ({ onCartUpdate }) => {
           <p>Product not found.</p>
         )}
       </div>
-      
+
       {/* Reviews Section */}
       <div className="reviews-section">
         <h3>Customer Reviews</h3>
-        
-        {reviews && reviews.length > 0 ? (
+
+        {reviews.reviews && reviews.reviews.length > 0 ? (
           <div className="reviews-list">
-            {reviews.map((review, index) => (
+            {reviews.reviews.map((review, index) => (
               <div className="review-item" key={index}>
                 <div className="review-header">
                   <div className="review-rating">
@@ -222,14 +211,14 @@ const ItemDetails = ({ onCartUpdate }) => {
                     ))}
                   </div>
                   <div className="review-user">
-                    <span className="user-name">{review.userName || "Anonymous"}</span>
+                    <span className="user-name">{review.name || "Anonymous"}</span>
                     <span className="review-date">
                       {new Date(review.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
                 <div className="review-content">
-                  {review.review}
+                  {review.comment}
                 </div>
               </div>
             ))}
