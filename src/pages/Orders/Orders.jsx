@@ -12,7 +12,7 @@ const Orders = ({ url }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get("http://localhost:5000/api/order",{
+      const response = await axios.get("https://new-sever.vercel.app/api/order",{
         withCredentials: true
     });
       console.log(response.data);
@@ -37,7 +37,7 @@ const Orders = ({ url }) => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.put(`http://localhost:5000/api/order/status/${orderId}`,{
+      const response = await axios.put(`https://new-sever.vercel.app/api/order/status/${orderId}`,{
         withCredentials: true
     }
       );

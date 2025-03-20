@@ -19,7 +19,7 @@ const MyOrders = ({ }) => {
       const token = localStorage.getItem('token');
       setLoading(true);
   
-      const response = await axios.get("http://localhost:5000/api/order", {
+      const response = await axios.get("https://new-sever.vercel.app/api/order", {
         withCredentials: true
       });
   

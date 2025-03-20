@@ -26,7 +26,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const addToCart = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/cart",
+        "https://new-sever.vercel.app/api/cart",
         {
           productId: id,
           quantity: quantity,
@@ -57,7 +57,7 @@ const ItemDetails = ({ onCartUpdate }) => {
       try {
         setLoading(true);
         const productResponse = await axios.get(
-          `http://localhost:5000/api/products/${id}`
+          `https://new-sever.vercel.app/api/products/${id}`
         );
         
         if (productResponse.status === 200) {
@@ -66,7 +66,7 @@ const ItemDetails = ({ onCartUpdate }) => {
           // Fetch reviews for this product
           try {
             const reviewsResponse = await axios.get(
-              `http://localhost:5000/api/review/product/${id}`
+              `https://new-sever.vercel.app/api/review/product/${id}`
             );
             
             if (reviewsResponse.status === 200) {
