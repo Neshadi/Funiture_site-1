@@ -26,6 +26,7 @@
     "react-icons": "^5.4.0",
     "react-qr-code": "^2.0.15",
     "react-router-dom": "^6.26.0",
+    "lucide-react": "^0.1.0",
     "react-toastify": "^10.0.6",
     "stripe": "^17.6.0"
   },
