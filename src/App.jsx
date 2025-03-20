@@ -19,6 +19,7 @@ import Orders from './pages/Orders/Orders';
 import Profile from './User/Profile/Profile';
 import PaymentSuccess from './pages/DeliveryDetailsCheckout/PaymentSuccess';
 import MyOrders from './pages/MyOrders/MyOrders';
+import AddReview from './pages/AddReview/AddReview';
 import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
 import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
 import ResetPassword from './pages/resetPassword/ResetPassword';
@@ -170,7 +171,19 @@ const App = () => {
           }
         />
 
+        {/* Add a Review Page */}
+
+        <Route
+          path="/add-review/:orderId"
+          element={
+            <>
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+              <AddReview />
+            </>
+          } />
+
         {/* About Us Page */}
+
         <Route
           path="/about-us"
           element={
@@ -182,6 +195,7 @@ const App = () => {
         />
 
         {/* Profile Page (Accessible to both User and Admin) */}
+
         <Route
           path="/profile"
           element={
@@ -193,6 +207,7 @@ const App = () => {
         />
 
         {/* Admin Dashboard */}
+
         <Route
           path="/admin/*"
           element={

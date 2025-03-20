@@ -170,6 +170,15 @@
     margin-top: -20px;
 }
 
+.fogotPasswordButton{
+    height: 25px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.adminlogin_text{
+    text-align: center;
+}
+
 /* Add some responsive behavior */
 @media (max-width: 480px) {
     .login-popup-container {
