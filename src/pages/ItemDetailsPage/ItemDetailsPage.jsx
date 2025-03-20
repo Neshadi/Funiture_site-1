@@ -1,16 +1,27 @@
 import { useEffect, useState } from "react";
-import { FaRegStar, FaStar, FaStarHalfAlt } from "react-icons/fa";
 import { useParams } from "react-router-dom";
+import { Star } from "lucide-react";
 import "./ItemDetailsPage.css";
 import axios from "axios";
 import QRCode from "react-qr-code";
 import Loading from "../../components/Loading/Loading";
 
-const ItemDetails = () => {
+const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
-  const maxStars = 5;
-  const [_product, setProduct] = useState(null); // State for product data
+  const [product, setProduct] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [isAdded, setIsAdded] = useState(false);
+  const [notification, setNotification] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Function to hide notification after 3 seconds
+  const hideNotification = () => {
+    setTimeout(() => {
+      setNotification("");
+      setIsAdded(false);
+    }, 3000);
+  };
 
   const addToCart = async () => {
     try {
@@ -35,49 +46,91 @@ const ItemDetails = () => {
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
+      setNotification("Failed to add item to cart.");
+      hideNotification();
     }
   };
 
-  // Fetch product details
+  // Fetch product details and reviews
   useEffect(() => {
     const fetchItemDetails = async () => {
       try {
-        const response = await axios.get(
+        setLoading(true);
+        const productResponse = await axios.get(
           `https://new-sever.vercel.app/api/products/${id}`
         );
-        if (response.status === 200) {
-          setProduct(response.data);
-          console.log("Product Data:", response.data); // Logs all data
+        
+        if (productResponse.status === 200) {
+          setProduct(productResponse.data);
+          
+          // Fetch reviews for this product
+          try {
+            const reviewsResponse = await axios.get(
+              `https://new-sever.vercel.app/api/review/product/${id}`
+            );
+            
+            if (reviewsResponse.status === 200) {
+              setReviews(reviewsResponse.data.data || []);
+            }
+          } catch (reviewErr) {
+            console.error("Error fetching reviews:", reviewErr);
+          }
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching product data:", err);
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchItemDetails();
   }, [id]);
 
+  // Calculate average rating from reviews
+  const calculateAverageRating = () => {
+    if (!reviews || reviews.length === 0) {
+      return product?.ratings || 0;
+    }
+    
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return totalRating / reviews.length;
+  };
+
+  const averageRating = calculateAverageRating();
+
   return (
     <div>
+      {notification && (
+        <div className={`notification ${isAdded ? "success" : "error"}`}>
+          {notification}
+        </div>
+      )}
+      
       <div className="container">
-        {_product ? (
+        {loading ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading product details...</p>
+          </div>
+        ) : product ? (
           <div className="product">
             {/* Product Image */}
             <div className="product-image">
-              <img src={_product.image} alt={_product.name} />
+              <img src={product.image} alt={product.name} />
             </div>
 
             {/* Product Details */}
             <div className="details">
-              <h1 className="Item_Name">{_product.name}</h1>
-              <p className="description">{_product.description}</p>
-              <p className="price">Rs : {_product.price?.toFixed(2)}</p>
+              <h2>{product.name}</h2>
+              <p className="description">{product.description}</p>
+              <p className="price">${product.price?.toFixed(2)}</p>
               <p
                 className={`stock ${
-                  _product.stock > 0 ? "in-stock" : "out-of-stock"
+                  product.stock > 0 ? "in-stock" : "out-of-stock"
                 }`}
               >
-                {_product.stock > 0
-                  ? `In Stock (${_product.stock} left)`
+                {product.stock > 0
+                  ? `In Stock (${product.stock} left)`
                   : "Out of Stock"}
               </p>
 
@@ -85,84 +138,112 @@ const ItemDetails = () => {
               <div className="quantity">
                 <button
                   onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
+                  disabled={quantity <= 1}
                 >
                   -
                 </button>
                 <span>{quantity}</span>
-                <button onClick={() => setQuantity((prev) => prev + 1)}>
+                <button 
+                  onClick={() => setQuantity((prev) => prev + 1)}
+                  disabled={quantity >= product.stock}
+                >
                   +
                 </button>
               </div>
 
-              {/* Reviews & Rating */}
-              <div className="reviews">
-                {[...Array(maxStars)].map((_, index) => {
-                  const starValue = index + 1;
-                  return (
-                    <span key={index}>
-                      {_product.ratings >= starValue ? (
-                        <FaStar color="gold" />
-                      ) : _product.ratings >= starValue - 0.5 ? (
-                        <FaStarHalfAlt color="gold" />
-                      ) : (
-                        <FaRegStar color="gray" />
-                      )}
-                    </span>
-                  );
-                })}
+              {/* Rating Display */}
+              <div className="rating-display">
+                <div className="rating-stars">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`star ${averageRating >= star ? 'filled' : ''}`}
+                      fill={averageRating >= star ? "#FFD700" : "none"}
+                      stroke={averageRating >= star ? "#FFD700" : "currentColor"}
+                      size={24}
+                    />
+                  ))}
+                </div>
+                <span className="rating-value">{averageRating.toFixed(1)}</span>
+                <span className="review-count">({reviews.length} reviews)</span>
               </div>
 
               {/* Action Buttons */}
               <div className="actions">
-                <button onClick={addToCart} className="button add-to-cart">
+                <button 
+                  onClick={addToCart} 
+                  className="button add-to-cart"
+                  disabled={product.stock <= 0}
+                >
                   Add to Cart
                 </button>
-                <button className="button buy-now">Buy Now</button>
+                <button 
+                  className="button buy-now"
+                  disabled={product.stock <= 0}
+                >
+                  Buy Now
+                </button>
               </div>
             </div>
-            <div className="QRCode_Container">
+            
+            <div className="qr-code-container">
               <div className="QrCode">
                 <QRCode
                   size={256}
                   style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                  value={_product.name}
+                  value={product.name}
                   viewBox={`0 0 16 16`}
                 />
               </div>
-              <p className="Scanme_text">Scan me to watch live</p>
             </div>
-
-            {/* Reviews Section */}
           </div>
         ) : (
-          <Loading />
+          <p>Product not found.</p>
         )}
       </div>
+      
       {/* Reviews Section */}
-      {_product && _product.reviews && _product.reviews.length > 0 ? (
-        <div className="reviews_list">
-          <h3>Customer Reviews</h3>
-          <ul className="review_comment ">
-            {_product.reviews.map((review, index) => {
-              // Extract only the character values and join them
-              const reviewText = Object.keys(review)
-                .filter((key) => key !== "_id") // Ignore `_id`
-                .sort((a, b) => a - b) // Sort keys numerically
-                .map((key) => review[key]) // Get character values
-                .join(""); // Join characters into a string
-
-              return (
-                <li className="single_review" key={index}>
-                  {reviewText}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : (
-        <p className="no-review">No reviews available.</p>
-      )}
+      <div className="reviews-section">
+        <h3>Customer Reviews</h3>
+        
+        {reviews && reviews.length > 0 ? (
+          <div className="reviews-list">
+            {reviews.map((review, index) => (
+              <div className="review-item" key={index}>
+                <div className="review-header">
+                  <div className="review-rating">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`star-small ${review.rating >= star ? 'filled' : ''}`}
+                        fill={review.rating >= star ? "#FFD700" : "none"}
+                        stroke={review.rating >= star ? "#FFD700" : "currentColor"}
+                        size={16}
+                      />
+                    ))}
+                  </div>
+                  <div className="review-user">
+                    <span className="user-name">{review.userName || "Anonymous"}</span>
+                    <span className="review-date">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="review-content">
+                  {review.review}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-reviews">
+            <p>No reviews available for this product yet.</p>
+            <p className="review-prompt">Purchase this item to leave a review!</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
 export default ItemDetails;

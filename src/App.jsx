@@ -92,19 +92,6 @@ const App = () => {
             <ItemDetailsPage />
           </>
           } />
-           {/* Fogot Password Page */}
-          <Route path='/forgot-password'
-          element={<>
-           <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-          <Fogotpassword/>
-           </>} />
-
-           {/* Reset Password Page add  */}
-           <Route path='/reset-password'
-          element={<>
-           <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-          <ResetPassword/>
-           </>} />
 
         {/* <Route
           path="/cart"

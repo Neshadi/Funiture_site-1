@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { ChevronRight } from 'lucide-react';
 import { assets } from '../../assets/assets';
+import { useNavigate } from 'react-router-dom';
 import './MyOrders.css';
 
 const MyOrders = ({ }) => {
@@ -11,6 +12,7 @@ const MyOrders = ({ }) => {
     previous: []
   });
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const fetchMyOrders = async () => {
     try {
@@ -18,10 +20,7 @@ const MyOrders = ({ }) => {
       setLoading(true);
   
       const response = await axios.get("https://new-sever.vercel.app/api/order", {
-        withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        withCredentials: true
       });
   
       let fetchedOrders = response.data.success ? response.data.data : [];
@@ -74,7 +73,7 @@ const MyOrders = ({ }) => {
   };
 
   useEffect(() => {
-    fetchMyOrders(); // ✅ Call the function instead of redefining it
+    fetchMyOrders(); 
   }, []);
 
   const formatDate = (dateString) => {
@@ -84,6 +83,10 @@ const MyOrders = ({ }) => {
       month: '2-digit',
       year: 'numeric'
     }).replace(/\//g, '/');
+  };
+
+  const handleAddReview = (orderId) => {
+    navigate(`/add-review/${orderId}`);
   };
 
   if (loading) {
@@ -131,9 +134,11 @@ const MyOrders = ({ }) => {
                 {order.status}
               </div>
 
-              <button className="track-order-btn">
-                Track Order
-              </button>
+              <div className="order-actions">
+                <button className="track-order-btn">
+                  Track Order
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -148,7 +153,7 @@ const MyOrders = ({ }) => {
           orders.previous.map((order, index) => (
             <div className="order-row" key={index}>
               <div className="order-icon">
-                <img src="/box-icon.png" alt="Package" />
+                <img src={assets.box || "/box-icon.png"} alt="Package" />
               </div>
 
               <div className="order-items">
@@ -177,9 +182,17 @@ const MyOrders = ({ }) => {
                 Delivered
               </div>
 
-              <button className="view-details-btn">
-                <ChevronRight size={20} />
-              </button>
+              <div className="order-actions">
+                <button className="view-details-btn">
+                  <ChevronRight size={20} />
+                </button>
+                <button 
+                  className="add-review-btn"
+                  onClick={() => handleAddReview(order._id || index)}
+                >
+                  Add a Review
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -189,5 +202,3 @@ const MyOrders = ({ }) => {
 };
 
 export default MyOrders;
-// add to main 
-/* add to main */
