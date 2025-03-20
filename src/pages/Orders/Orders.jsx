@@ -11,14 +11,13 @@ const Orders = ({ url }) => {
   const fetchAllOrders = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.get("http://localhost:5000/api/order",{
+      // Since we're using withCredentials, we don't need to send token in headers
+      const response = await axios.get("http://localhost:5000/api/order", {
         withCredentials: true
-    });
-      console.log(response.data);
+      });
+      
       if (response.data.success) {
         setOrders(response.data.data);
-        console.log(response.data.data);
       } else {
         toast.error("Error fetching orders");
       }
@@ -36,10 +35,11 @@ const Orders = ({ url }) => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await axios.put(`http://localhost:5000/api/order/status/${orderId}`,{
-        withCredentials: true
-    }
+      // Fix: Add the new status in the request body
+      const response = await axios.put(
+        `http://localhost:5000/api/order/${orderId}`, 
+        { status: newStatus },
+        { withCredentials: true }
       );
       
       if (response.data.success) {
@@ -75,7 +75,12 @@ const Orders = ({ url }) => {
                 <img src={assets.box2} alt="order" />
                 <div>
                   <p className='order-item-item'>
-                    {order.orderItems && order.orderItems.map((item, idx) => (
+                    {order.items ? order.items.map((item, idx) => (
+                      <span key={idx}>
+                        {item.name} x{item.quantity}
+                        {idx < order.items.length - 1 ? ', ' : ''}
+                      </span>
+                    )) : order.orderItems && order.orderItems.map((item, idx) => (
                       <span key={idx}>
                         {item.name} x{item.quantity}
                         {idx < order.orderItems.length - 1 ? ', ' : ''}
@@ -83,30 +88,30 @@ const Orders = ({ url }) => {
                     ))}
                   </p>
                   <p className="order-item-name">
-                    {order.shippingAddress.firstName + " " + order.shippingAddress.lastName}
+                    {order.shippingAddress?.firstName + " " + order.shippingAddress?.lastName}
                   </p>
                   <div className="order-item-address">
-                    <p>{order.shippingAddress.address + ","}</p>
+                    <p>{order.shippingAddress?.address + ","}</p>
                     <p>
-                      {order.shippingAddress.city + ", " + 
-                       order.shippingAddress.province + ", " + 
-                       order.shippingAddress.country + ", " + 
-                       order.shippingAddress.zipCode}
+                      {order.shippingAddress?.city + ", " + 
+                       order.shippingAddress?.province + ", " + 
+                       order.shippingAddress?.country + ", " + 
+                       order.shippingAddress?.zipCode}
                     </p>
                   </div>
-                  <p className='order-item-phone'>{order.shippingAddress.phone}</p>
-                  <p className='order-item-email'>{order.shippingAddress.email}</p>
+                  <p className='order-item-phone'>{order.shippingAddress?.phone}</p>
+                  <p className='order-item-email'>{order.shippingAddress?.email}</p>
                 </div>
                 <p>Payment Method: {order.paymentMethod || "Cash on Delivery"}</p>
-                <p>Items: {order.orderItems ? order.orderItems.length : 0}</p>
-                <p>Rs. {order.totalPrice ? order.totalPrice.toLocaleString() : '0'}</p>
-                <p>Current Status: <span className={`status-${order.status?.toLowerCase().replace(' ', '-')}`}>{order.status || 'Item Preparing'}</span></p>
+                <p>Items: {order.items ? order.items.length : (order.orderItems ? order.orderItems.length : 0)}</p>
+                <p>Rs. {order.amount ? order.amount.toLocaleString() : (order.totalPrice ? order.totalPrice.toLocaleString() : '0')}</p>
+                <p>Current Status: <span className={`status-${(order.status || 'Item Preparing').toLowerCase().replace(/\s+/g, '-')}`}>{order.status || 'Item Preparing'}</span></p>
                 <select 
                   value={order.status || 'Item Preparing'}
                   onChange={(e) => handleStatusChange(order._id, e.target.value)}
                 >
                   <option value="Item Preparing">Item Preparing</option>
-                  <option value="Packing">Item Packing</option>
+                  <option value="Item Packing">Item Packing</option>
                   <option value="Out for Delivery">Out for Delivery</option>
                   <option value="Delivered">Delivered</option>
                 </select>
