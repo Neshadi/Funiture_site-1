@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GoogleAuthProvider, signInWithPopup,signInWithRedirect } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import navigate
 import { assets } from '../../assets/assets';
@@ -116,24 +116,63 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
         }
     };
 
-    // Google login logic
+    //Google login logic
     const googleLogin = () => {
         const provider = new GoogleAuthProvider();
-        signInWithRedirect (auth, provider)
+        signInWithPopup(auth, provider)
             .then((result) => {
                 console.log("Google Sign-In Successful:", result);
+                 
+            
                 // Set user state and navigate to the next page
                 setIsLoggedIn(true);
                 setTimeout(() => {
                     setShowLogin(false);
                 }, 100);
+                // login(e);
+                
                 navigate('/'); // Example navigation after login
             })
             .catch((error) => {
                 console.error("Google Sign-In Error:", error);
-            });
+            }
+        );
 
      };
+
+    // const googleLogin = () => {
+    //     const provider = new GoogleAuthProvider();
+    //     signInWithPopup(auth, provider)
+    //         .then(async (result) => {
+    //             console.log("Google Sign-In Successful:", result);
+    
+    //             const user = result.user;
+    //             const googleEmail = user.email;
+    //             const password = user.password;
+    
+    //             try {
+    //                 // Send only email (no password needed)
+    //                 const loginResponse = await axios.post('https://new-sever.vercel.app/api/users/auth', {
+    //                     email: googleEmail,
+    //                     password: password
+    //                 }, { withCredentials: true });
+    
+    //                 if (loginResponse.status === 200) {
+    //                     setIsLoggedIn(true);
+    //                     setShowLogin(false);
+    //                     setUserType('user'); // Set user type if needed
+    //                     navigate('/');
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Google Login Backend Error:", error);
+    //                 setError(error.response?.data?.message || 'Google login failed. Please try again.');
+    //             }
+    //         })
+    //         .catch((error) => {
+    //             console.error("Google Sign-In Error:", error);
+    //         });
+    // };
+    
 
     const forgotPasswordNavigate = () => {
         navigate('/forgot-password');
