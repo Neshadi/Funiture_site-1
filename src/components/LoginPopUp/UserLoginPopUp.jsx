@@ -128,9 +128,9 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
 
                 // You can update the state here as needed, such as:
                 const user = result.user;
-                setUserType('user'); // Set the user type after Google login
+                // setUserType('user'); // Set the user type after Google login
                 setIsLoggedIn(false);
-                console.log("User logged in: ", user);
+                // console.log("User logged in: ", user);
 
                
             })
