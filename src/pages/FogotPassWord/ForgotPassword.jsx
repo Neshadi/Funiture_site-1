@@ -33,7 +33,7 @@ function ForgotPassword() {
     try {
       console.log("Sending email to:", email);
       const result = await axios.post(
-        "http://new-sever.vercel.app/api/users/forgotpassword",
+        "https://new-sever.vercel.app/api/users/forgotpassword",
         { email }
       );
 
