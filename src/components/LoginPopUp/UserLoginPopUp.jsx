@@ -6,7 +6,7 @@ import { assets } from '../../assets/assets';
 import { auth } from '../../firebase/firebaseConfig';
 import './UserLoginPopUp.css';
 
-const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
+const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -55,7 +55,6 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
-      
 
         try {
             const result = await axios.post('https://new-sever.vercel.app/api/users/auth', {
@@ -64,22 +63,17 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             }, {
                 withCredentials: true
             });
-    
 
             if (result.status === 200) {
                 setSuccessMessage('Logged in successfully!');
                 setUserType('user'); // Set user type to 'user'
                 setShowLogin(false); // Close the login popup
                 setIsLoggedIn(true);
-                // console.log(isLoggedIn);
                 // navigate('/cart');
-            } 
-
-            else {
+            } else {
                 setError('Invalid login credentials. Please try again.');
             }
         } catch (err) {
-            
             setError(err.response.data.message);
         }
     };
@@ -122,52 +116,49 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         }
     };
 
-    
-//     function googleLogin() {
-//     const provider = new GoogleAuthProvider(); 
-//     signInWithPopup(auth, provider)
-//         .then((result) => {
-//             console.log(result);  
-//         })
-// }
+    // Google login logic
+    const googleLogin = () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                console.log("Google Sign-In Successful:", result);
 
-function 
-googleLogin() {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("Google Sign-In Successful:", result);
-        })
-        .catch((error) => {
-            console.error("Google Sign-In Error:", error);
-            alert("Error during Google Sign-In: " + error.message);
-        });
-}
+                // Close the login popup
+                setShowLogin(false); // Close the login popup
 
-const fogotpasswordNavigate=()=>{
+                // You can update the state here as needed, such as:
+                const user = result.user;
+                setUserType('user'); // Set the user type after Google login
+                setIsLoggedIn(true); // Set the logged-in state to true
+                console.log("User logged in: ", user);
+
+                // Optionally navigate to another page after successful login
+                // navigate('/dashboard');
+            })
+            .catch((error) => {
+                console.error("Google Sign-In Error:", error);
+                alert("Error during Google Sign-In: " + error.message);
+            });
+    };
+
+    const forgotPasswordNavigate = () => {
         navigate('/forgot-password');
-        setShowLogin(false); 
-}
-
-
-
+        setShowLogin(false); // Close the login popup
+    };
 
     return (
         <div className="login-popup">
             <form onSubmit={checkSubmission} className="login-popup-container">
                 <div className="login-popup-title">
                     <h2>{currentState}</h2>
-                    {/* <img onClick={() => setShowLogin(false)} src={assets.close} alt="close" /> */}
                     <img 
                         onClick={() => {
                             console.log('Close button clicked');
                             setShowLogin(false);
-                           
                         }} 
                         src={assets.close} 
                         alt="close" 
                     />
-                    
                 </div>
                 <div className="login-popup-inputs">
                     {currentState === "Sign Up" && (
@@ -199,18 +190,13 @@ const fogotpasswordNavigate=()=>{
                 <button type="submit" id="button1">
                     {currentState === "Sign Up" ? "Create Account" : "Log In"}
                 </button>
-                <button id="button2" onClick={() => {
-                    googleLogin();
-                    //setShowLogin(false);
-                }}>
+                <button id="button2" onClick={googleLogin}>
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img src={assets.google} alt="Google Login" />
                 </button>
-                <button onClick={fogotpasswordNavigate} className='fogotPasswordButton'>
-
-                        Forgot Password ?
+                <button onClick={forgotPasswordNavigate} className='fogotPasswordButton'>
+                    Forgot Password ?
                 </button>
-
 
                 <div className="login-popup-condition">
                     <input type="checkbox" required />
