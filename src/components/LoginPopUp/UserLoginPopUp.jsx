@@ -122,23 +122,16 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
         signInWithPopup(auth, provider)
             .then((result) => {
                 console.log("Google Sign-In Successful:", result);
-
-                // Close the login popup
-                // setShowLogin(false); // Close the login popup
-
-                // You can update the state here as needed, such as:
-                const user = result.user;
-                // setUserType('user'); // Set the user type after Google login
-                setIsLoggedIn(false);
-                // console.log("User logged in: ", user);
-
-               
+                // Set user state and navigate to the next page
+                setIsLoggedIn(true);
+                setShowLogin(false);
+                navigate('/'); // Example navigation after login
             })
             .catch((error) => {
                 console.error("Google Sign-In Error:", error);
-                // alert("Error during Google Sign-In: " + error.message);
             });
-    };
+
+     };
 
     const forgotPasswordNavigate = () => {
         navigate('/forgot-password');
