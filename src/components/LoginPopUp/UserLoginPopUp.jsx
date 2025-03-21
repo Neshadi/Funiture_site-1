@@ -124,7 +124,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
                 console.log("Google Sign-In Successful:", result);
 
                 // Close the login popup
-                setShowLogin(false); // Close the login popup
+                // setShowLogin(false); // Close the login popup
 
                 // You can update the state here as needed, such as:
                 const user = result.user;
