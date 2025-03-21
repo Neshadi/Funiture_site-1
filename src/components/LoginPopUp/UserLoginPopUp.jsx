@@ -124,7 +124,9 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
                 console.log("Google Sign-In Successful:", result);
                 // Set user state and navigate to the next page
                 setIsLoggedIn(true);
-                setShowLogin(false);
+                setTimeout(() => {
+                    setShowLogin(false);
+                }, 100);
                 navigate('/'); // Example navigation after login
             })
             .catch((error) => {
