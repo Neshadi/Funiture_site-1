@@ -8,7 +8,7 @@
     place-items: center;
     top: 0;
     left: 0;
-    overflow: hidden; /* Prevent background scroll */
+    overflow: hidden; /* Prevent background scroll add this again  */
 }
 
 .login-popup-container {
@@ -168,6 +168,15 @@
     font-family: candara;
     text-align: center;
     margin-top: -20px;
+}
+
+.fogotPasswordButton{
+    height: 25px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.adminlogin_text{
+    text-align: center;
 }
 
 /* Add some responsive behavior */

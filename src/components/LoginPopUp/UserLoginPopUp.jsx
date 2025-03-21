@@ -19,7 +19,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 
     // Password validation function
     const validatePassword = (password) => {
-        return /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@!#$%^&()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@!#$%^&()_+{}[\]:;"'<>,.?/])[A-Za-z\d@!#$%^&()_+{}[\]:;"'<>,.?/]{8,}$/.test(password);
     };
 
     // Sign-up logic
@@ -34,7 +34,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
         // }
 
         try {
-            await axios.post('https://new-sever.vercel.app/api/users/', {
+            await axios.post('http://localhost:5000/api/users/', {
                 name: username,
                 email: email,
                 password: password
@@ -46,7 +46,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             setPassword('');
             setCurrentState("LOG IN");
         } catch (err) {
-            setError(err.response?.data?.error || 'Error during sign-up. Please try again.');
+            setError(err.response.data.message);
         }
     };
 
@@ -64,6 +64,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
             }, {
                 withCredentials: true
             });
+    
 
             if (result.status === 200) {
                 setSuccessMessage('Logged in successfully!');
@@ -72,11 +73,14 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
                 setIsLoggedIn(true);
                 // console.log(isLoggedIn);
                 // navigate('/cart');
-            } else {
+            } 
+
+            else {
                 setError('Invalid login credentials. Please try again.');
             }
         } catch (err) {
-            setError('Error during login. Please try again.');
+            
+            setError(err.response.data.message);
         }
     };
 
@@ -139,6 +143,10 @@ function googleLogin() {
         });
 }
 
+const fogotpasswordNavigate=()=>{
+        navigate('/forgot-password');
+        setShowLogin(false); 
+}
 
 
 
@@ -197,6 +205,10 @@ function googleLogin() {
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img src={assets.google} alt="Google Login" />
                 </button>
+                <button onClick={fogotpasswordNavigate} className='fogotPasswordButton'>
+
+                        Forgot Password ?
+                </button>
 
 
                 <div className="login-popup-condition">
@@ -211,7 +223,7 @@ function googleLogin() {
                     )
                 )}
                 {currentState === "LOG IN" && (
-                    <a>Login As an Admin <span onClick={() => setCurrentState("ADMIN LOGIN")}>CLICK HERE</span></a>
+                    <a className='adminlogin_text'>Login As an Admin <span onClick={() => setCurrentState("ADMIN LOGIN")}>CLICK HERE</span></a>
                 )}
             </form>
         </div>

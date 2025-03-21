@@ -1,13 +1,13 @@
 import { test, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-import ForgotPassword from "../src/pages/FogotPassWord/ForgotPassword";
+import ForgotPassword from "../src/pages/FogotPassWord/ForgotPassword.jsx";
 import axios from "axios";
 
 vi.mock("axios"); // Mock axios
 afterEach(cleanup);
 
 test("should render the ForgotPassword component", () => {
-  render(<ForgotPassword />);
+  render(<ForgotPassword/>);
   const testElement = screen.getByTestId("test_id-1");
   expect(testElement).not.to.be.null;
 });
