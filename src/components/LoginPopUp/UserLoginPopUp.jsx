@@ -129,15 +129,14 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
                 // You can update the state here as needed, such as:
                 const user = result.user;
                 setUserType('user'); // Set the user type after Google login
-                setIsLoggedIn(true); // Set the logged-in state to true
+                setIsLoggedIn(false);
                 console.log("User logged in: ", user);
 
-                // Optionally navigate to another page after successful login
-                // navigate('/dashboard');
+               
             })
             .catch((error) => {
                 console.error("Google Sign-In Error:", error);
-                alert("Error during Google Sign-In: " + error.message);
+                // alert("Error during Google Sign-In: " + error.message);
             });
     };
 
