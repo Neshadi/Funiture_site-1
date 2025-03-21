@@ -102,6 +102,19 @@ const App = () => {
             </>
           }
         /> */}
+        <Route path='/forgot-password'
+          element={<>
+            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
+            <Fogotpassword />
+          </>
+          } />
+        <Route path='/reset-password'
+          element={<>
+            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
+            <ResetPassword />
+          </>
+          } />
+          
         <Route
           path="/cart"
           element={
