@@ -131,7 +131,8 @@ const UserLoginPopUp = ({ setShowLogin, setUserType,setIsLoggedIn }) => {
 //         })
 // }
 
-function googleLogin() {
+function 
+googleLogin() {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
         .then((result) => {
@@ -200,7 +201,7 @@ const fogotpasswordNavigate=()=>{
                 </button>
                 <button id="button2" onClick={() => {
                     googleLogin();
-                    setShowLogin(false);
+                    //setShowLogin(false);
                 }}>
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img src={assets.google} alt="Google Login" />
