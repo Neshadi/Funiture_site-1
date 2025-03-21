@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup,signInWithRedirect } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import navigate
 import { assets } from '../../assets/assets';
@@ -119,7 +119,7 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
     // Google login logic
     const googleLogin = () => {
         const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider)
+        signInWithRedirect (auth, provider)
             .then((result) => {
                 console.log("Google Sign-In Successful:", result);
                 // Set user state and navigate to the next page
