@@ -21,6 +21,24 @@
     gap: 1.5rem;
 }
 
+.crossed-order {
+    position: relative;
+    opacity: 0.5; /* Optional: Make it look unavailable */
+    pointer-events: none; /* Disable interaction */
+  }
+  
+  /* .crossed-order::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: red;
+    transform: translateY(-50%);
+  } */
+  
+
 .order-item {
     display: grid;
     grid-template-columns: auto 1fr auto auto auto;
