@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 function VerifyEmail() {
   const [error, setError] = useState("");
   const [code,setCode] = useState("");
+  const [email,setEmail] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [sending ,setSending]= useState(false);
   const navigate= useNavigate();
@@ -18,7 +19,7 @@ function VerifyEmail() {
     e.preventDefault();
 
     if (code.length==0) {
-      setError("Enter Code");
+      f("Enter Code");
       return
     }
     setSending(true);
@@ -27,27 +28,27 @@ function VerifyEmail() {
       console.log("Sending email to:", code);
       const result = await axios.post(
         "https://new-sever.vercel.app/api/users/verify-Email",
-        { code }
+        { code , email}
       );
 
       setSending(false);
 
       if (result.status === 200) {
-        setSuccessMessage("Email sent successfully!");
+        setSuccessMessage("Verify Email successfully!");
         setError(""); // Clear errors
 
-        setTimeout(() => navigate("/reset-password"), 2000); // Navigate after 2 seconds
+        setTimeout(() => navigate("/"), 2000); // Navigate after 2 seconds
 
       } else if (result.status === 404) {
         console.log(result.data);
 
-        setError("Email not found. Please try again.");
+        setError("code not valid. Please try again.");
         setSuccessMessage("");
       }
     } catch (err) {
       console.error("Error response:", err.response);
       setError(
-        err.response?.data?.error || "Error sending email. Please try again."
+        err.response?.data?.error || "Error sending code. Please try again."
       );
     }
   };
@@ -55,9 +56,15 @@ function VerifyEmail() {
   return (
     <div className="container" data-testid='test_id-1'>
       <div className="form">
-        <h1>Enter verify code</h1>
+        <h1>Verify Your Email</h1>
         <input
           type="email"
+          value={email}
+          placeholder="Enter your Email"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="text"
           value={code}
           placeholder="Enter verify Code"
           onChange={(e) => setCode(e.target.value)}
