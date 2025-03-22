@@ -23,6 +23,7 @@ import AddReview from './pages/AddReview/AddReview';
 import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
 import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
 import ResetPassword from './pages/resetPassword/ResetPassword';
+import VerifyEmail from './pages/verifyEmail/verifyEmail';
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
@@ -102,6 +103,12 @@ const App = () => {
           element={<>
             <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
             <ResetPassword />
+          </>
+          } />
+        <Route path='/verify-Email'
+          element={<>
+            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
+            <VerifyEmail />
           </>
           } />
 
