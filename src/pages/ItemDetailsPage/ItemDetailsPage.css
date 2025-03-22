@@ -16,11 +16,6 @@ html, body {
   margin-top: 8vw;
 }
 
-.Item_Name{
-  text-decoration: underline;
-  font-family: candara;
-}
-
 .product {
   display: flex;
   flex-wrap: wrap; /* Allow wrapping for small screens */
@@ -51,8 +46,6 @@ html, body {
   max-width: 600px;
   text-align: center;
   padding: 20px;
-  font-family: candara;
-  font-weight: 400;
 }
 
 .details h2 {

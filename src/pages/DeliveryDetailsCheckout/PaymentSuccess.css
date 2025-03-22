@@ -1,4 +1,5 @@
 .success-container {
+  margin-top: 7vw;
     min-height: 100vh;
     background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
     display: flex;
@@ -68,6 +69,98 @@
   .orders-button:active {
     transform: translateY(0);
   }
+
+  .order-summary {
+    width: 100%;
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .summary-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #1e293b;
+    text-align: center;
+  }
+  
+  .summary-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .summary-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  
+  .section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #334155;
+  }
+  
+  .section-header svg {
+    margin-right: 8px;
+  }
+  
+  .items-list {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  
+  .order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+  
+  .item-name {
+    flex: 2;
+    font-weight: 500;
+  }
+  
+  .item-qty {
+    flex: 1;
+    text-align: center;
+    color: #64748b;
+  }
+  
+  .item-price {
+    flex: 1;
+    text-align: right;
+    font-weight: 500;
+  }
+  
+  .delivery-address {
+    color: #334155;
+    line-height: 1.5;
+  }
+  
+  .payment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .payment-row {
+    display: flex;
+    justify-content: space-between;
+    color: #334155;
+  }
+  
+  .total-amount {
+    font-weight: 600;
+    color: #047857;
+  }
+
   
   @keyframes slideUp {
     to {
@@ -94,5 +187,3 @@
     height: 10px;
     opacity: 0;
   }
-
-  /* Replace with an even darker shade */

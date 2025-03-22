@@ -84,7 +84,7 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
         <div className="profile-dropdown" ref={dropdownRef}>
           <ul>
             <li><Link to="/profile" onClick={() => setShowDropdown(false)}>Edit Profile</Link></li>
-            <li><Link to="/orders" onClick={() => setShowDropdown(false)}>My Orders</Link></li>
+            <li><Link to="/my-orders" onClick={() => setShowDropdown(false)}>My Orders</Link></li>
             <li><Link to="/report-issue" onClick={() => setShowDropdown(false)}>Report an Issue</Link></li>
             <li onClick={handleSignOut}>Sign Out</li>
           </ul>

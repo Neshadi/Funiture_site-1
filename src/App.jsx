@@ -178,7 +178,7 @@ const App = () => {
           element={
             <>
               <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-             <MyOrders />
+              <MyOrders />
             </>
           }
         />

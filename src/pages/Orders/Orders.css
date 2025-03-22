@@ -99,6 +99,25 @@
     padding: 0.5rem;
 }
 
+.status-dropdown {
+    min-width: 150px;
+  }
+  
+.status-select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+  }
+  
+.status-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  }
+
 /* Responsive Design */
 @media screen and (max-width: 968px) {
     .order-item {
