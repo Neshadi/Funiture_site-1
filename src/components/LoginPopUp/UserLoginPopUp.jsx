@@ -46,6 +46,8 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
             setPassword('');
             setCurrentState("LOG IN");
             setTimeout(1000);
+            setShowLogin(false);
+            setIsLoggedIn(true);
             navigate('/verify-Email'); 
         } catch (err) {
             setError(err.response.data.message);

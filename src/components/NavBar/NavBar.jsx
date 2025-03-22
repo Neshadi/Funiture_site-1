@@ -45,7 +45,9 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
 
   return (
     <div className='navbar'>
-      <img src={assets.logo_black} alt="logo" className="logo" />
+      <img src={assets.logo_black} alt="logo" className="logo" onClick={()=>{
+        navigate('/');
+      }}/>
       <ul className='navbar-menu'>
         <li onClick={() => setMenu("home")} className={menu === "home" ? "active" : ""}>
           <Link to="/">Home</Link>

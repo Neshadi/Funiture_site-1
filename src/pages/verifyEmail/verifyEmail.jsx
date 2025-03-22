@@ -11,15 +11,11 @@ function VerifyEmail() {
   const [sending ,setSending]= useState(false);
   const navigate= useNavigate();
 
-
-
- 
-
   const verifyEmail = async (e) => {
     e.preventDefault();
 
     if (code.length==0) {
-      f("Enter Code");
+        setError("Enter Code");
       return
     }
     setSending(true);
