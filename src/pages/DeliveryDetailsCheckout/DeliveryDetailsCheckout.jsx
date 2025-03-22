@@ -53,7 +53,7 @@ function DeliveryDetailsCheckout() {
     console.log('Order Details:', orderData);
     
     try {
-      let response = await axios.post("https://new-sever.vercel.app/api/order", orderData, { withCredentials: true } );
+      let response = await axios.post("https://new-sever.vercel.app/api/", orderData, { withCredentials: true } );
       
       if (response.status === 200 && response.data.success) {
         alert("Order successfully placed!");
