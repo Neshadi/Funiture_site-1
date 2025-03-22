@@ -21,7 +21,7 @@ const MyOrders = () => {
       setLoading(true);
       
       // Get orders from API
-      const response = await axios.get("https://new-sever.vercel.app/api/order", {
+      const response = await axios.get("https://new-sever.vercel.app/api/myorders", {
         withCredentials: true
       });
       
