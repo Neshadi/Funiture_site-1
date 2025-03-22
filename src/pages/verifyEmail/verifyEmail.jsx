@@ -28,10 +28,11 @@ function VerifyEmail() {
       console.log("Sending email to:", code);
       const result = await axios.post(
         "https://new-sever.vercel.app/api/users/verify-Email",
-        { code , email}
+        { token:code , email:email}
       );
 
       setSending(false);
+      console.log("result1");
 
       if (result.status === 200) {
         setSuccessMessage("Verify Email successfully!");
