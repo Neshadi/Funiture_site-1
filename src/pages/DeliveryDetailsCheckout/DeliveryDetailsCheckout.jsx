@@ -23,6 +23,7 @@ function DeliveryDetailsCheckout() {
     country: "",
     phone: "",
   });
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,6 +36,7 @@ function DeliveryDetailsCheckout() {
     let deliveryDetailsCheckout = receivedCartItems.map((item) => ({
       ...item,
       quantity: item.quantity,
+      countInStock: item.countInStock - item.quantity, // Deduct stock based on quantity
     }));
 
     let orderData = {
@@ -53,10 +55,19 @@ function DeliveryDetailsCheckout() {
     console.log('Order Details:', orderData);
     
     try {
-      let response = await axios.post("https://new-sever.vercel.app/api/", orderData, { withCredentials: true } );
+      let response = await axios.post("https://new-sever.vercel.app/api/order/", orderData, { withCredentials: true } );
       
       if (response.status === 200 && response.data.success) {
         alert("Order successfully placed!");
+        localStorage.setItem("orderPlaced", "true");  // ✅ Store order flag
+        //✅ Update stock in the database after successful order placement
+      await Promise.all(
+        receivedCartItems.map(async (item) => {
+          await axios.put(`https://new-sever.vercel.app/api/products/${item.id}`, {
+            countInStock: item.countInStock - item.quantity, // Update stock on the server
+          });
+        })
+      );
       } else {
         alert("Error processing your order");
       }

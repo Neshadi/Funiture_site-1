@@ -19,7 +19,7 @@ const Add = ({ url }) => {
     price: '', 
     category: '', 
     modelImageUrl: '', // Added field for 3D model URL 
-    stock: '',
+    countInStock: '',
   }); 
 
   function convertToBase64(e) { 
@@ -70,7 +70,7 @@ const Add = ({ url }) => {
       category: data.category, 
       image: base64Image, 
       modelImageUrl: data.modelImageUrl, // Include the 3D model URL 
-      stock: Number(data.stock),
+      countInStock: Number(data.countInStock),
     }; 
 
     try { 
@@ -97,7 +97,7 @@ const Add = ({ url }) => {
           price: '', 
           category: '', 
           modelImageUrl: '',
-          stock: '', 
+          countInStock: '', 
         }); 
         setImage(null); 
         setBase64Image(''); 
@@ -208,9 +208,10 @@ const Add = ({ url }) => {
             <div className="add-price flex-col"> 
               <p>Product Stock :</p> 
               <input 
-                value={data.stock} 
+                onChange={onChangeHandler}
+                value={data.countInStock} 
                 type="number" 
-                name="stock" 
+                name="countInStock" 
                 placeholder="Stock" 
                 required 
               /> 

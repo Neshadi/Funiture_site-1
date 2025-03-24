@@ -5,7 +5,7 @@ import './Item.css';
 import { useNavigate } from 'react-router-dom';
 
 
-const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews}) => {
+const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews,countInStock}) => {
     const [quantity, setQuantity] = useState(1);
     const [isAdded, setIsAdded] = useState(false);
     const [notification, setNotification] = useState(''); // Notification message state
@@ -34,6 +34,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
             const response = await axios.post('https://new-sever.vercel.app/api/cart', {
                 productId: id,
                 quantity: quantity,
+                // countInStock: countInStock,  // Passing countInStock
             }, {
                 withCredentials: true
             });
@@ -54,7 +55,9 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
     const updateCart = async () => {
         try {
             const response = await axios.put(`https://new-sever.vercel.app/api/cart/${id}`, {
-                quantity: quantity
+                quantity: quantity,
+                // countInStock: countInStock,  // Passing countInStock
+
             }, {
                 withCredentials: true
             });
