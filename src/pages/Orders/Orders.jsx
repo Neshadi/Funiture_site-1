@@ -15,6 +15,8 @@ const Orders = ({ url }) => {
       const response = await axios.get("https://new-sever.vercel.app/api/order", {
         withCredentials: true
       });
+
+      
       
       if (response.data.success) {
         setOrders(response.data.data);
@@ -85,6 +87,12 @@ const Orders = ({ url }) => {
     }
   };
   
+  // Filter out non-delivered and delivered orders
+  const nonDeliveredOrders = orders.filter(order => order.status !== "Delivered");
+  const deliveredOrders = orders.filter(order => order.status === "Delivered");
+
+  // Combine the non-delivered orders and delivered orders, non-delivered comes first
+  const sortedOrders = [...nonDeliveredOrders, ...deliveredOrders];
   
 
   return (
@@ -97,10 +105,10 @@ const Orders = ({ url }) => {
         </div>
       ) : (
         <div className="order-list">
-          {orders.length === 0 ? (
+          {sortedOrders.length === 0 ? (
             <p className="no-orders-message">No orders available</p>
           ) : (
-            orders.map((order, index) => (
+            sortedOrders.map((order, index) => (
               <div className={`order-item ${order.status === "Delivered" ? "crossed-order" : ""}`} key={order._id || index}>
                 <img src={assets.box} alt="order" />
                 <div>

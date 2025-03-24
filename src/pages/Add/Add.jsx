@@ -19,6 +19,7 @@ const Add = ({ url }) => {
     price: '', 
     category: '', 
     modelImageUrl: '', // Added field for 3D model URL 
+    countInStock: '',
   }); 
 
   function convertToBase64(e) { 
@@ -69,6 +70,7 @@ const Add = ({ url }) => {
       category: data.category, 
       image: base64Image, 
       modelImageUrl: data.modelImageUrl, // Include the 3D model URL 
+      countInStock: Number(data.countInStock),
     }; 
 
     try { 
@@ -94,7 +96,8 @@ const Add = ({ url }) => {
           description: '', 
           price: '', 
           category: '', 
-          modelImageUrl: '', 
+          modelImageUrl: '',
+          countInStock: '', 
         }); 
         setImage(null); 
         setBase64Image(''); 
@@ -201,6 +204,17 @@ const Add = ({ url }) => {
                 required 
               /> 
               <span className="currency-label">LKR</span> 
+            </div> 
+            <div className="add-price flex-col"> 
+              <p>Product Stock :</p> 
+              <input 
+                onChange={onChangeHandler}
+                value={data.countInStock} 
+                type="number" 
+                name="countInStock" 
+                placeholder="Stock" 
+                required 
+              /> 
             </div> 
           </div> 
 

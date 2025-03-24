@@ -16,7 +16,7 @@ function Cart() {
         const response = await axios.get("https://new-sever.vercel.app/api/cart", {
           withCredentials: true,
         });
-console.log(response);
+        console.log(response);
 
         if (response.status !== 200) {
           throw new Error("Failed to fetch cart items");
