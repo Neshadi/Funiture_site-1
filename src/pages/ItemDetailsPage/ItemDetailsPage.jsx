@@ -46,6 +46,7 @@ const ItemDetails = ({ onCartUpdate }) => {
         // updateStock();
         // Update stock after adding to cart
       const updatedStock = product.countInStock - quantity;
+      localStorage.setItem(`product-${id}`, updatedStock);
       setProduct((prevProduct) => ({
         ...prevProduct,
         countInStock: updatedStock,
@@ -71,6 +72,15 @@ const ItemDetails = ({ onCartUpdate }) => {
           console.log("Fetched product:", productResponse.data); // Log the product data
 
           setProduct(productResponse.data);
+          // Check for any updates in local storage and update the stock accordingly
+        const savedStock = localStorage.getItem(`product-${id}`);
+        if (savedStock) {
+          setProduct((prevProduct) => ({
+            ...prevProduct,
+            countInStock: parseInt(savedStock, 10),
+          }));
+        }
+
 
           // Fetch reviews for this product
           try {
