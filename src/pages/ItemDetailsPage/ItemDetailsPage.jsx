@@ -13,8 +13,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
-  const [hasFetched, setHasFetched] = useState(false); 
-
+ 
   // Function to hide notification after 3 seconds
   const hideNotification = () => {
     setTimeout(() => {
@@ -43,6 +42,7 @@ const ItemDetails = ({ onCartUpdate }) => {
           onCartUpdate(); // Update cart count in navbar
         }
         hideNotification();
+        
         // updateStock();
         // Update stock after adding to cart
       const updatedStock = product.countInStock - quantity;
