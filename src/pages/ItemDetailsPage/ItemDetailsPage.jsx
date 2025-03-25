@@ -87,13 +87,13 @@ const ItemDetails = ({ onCartUpdate }) => {
 
           setProduct(productResponse.data);
           // Check for any updates in local storage and update the stock accordingly
-        const savedStock = localStorage.getItem(`product-${id}`);
-        if (savedStock) {
-          setProduct((prevProduct) => ({
-            ...prevProduct,
-            countInStock: parseInt(savedStock, 10),
-          }));
-        }
+        // const savedStock = localStorage.getItem(`product-${id}`);
+        // if (savedStock) {
+        //   setProduct((prevProduct) => ({
+        //     ...prevProduct,
+        //     countInStock: parseInt(savedStock, 10),
+        //   }));
+        // }
 
 
           // Fetch reviews for this product
