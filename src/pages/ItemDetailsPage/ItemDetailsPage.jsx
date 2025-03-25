@@ -155,7 +155,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             <div className="details">
               <h2>{product.name}</h2>
               <p className="description">{product.description}</p>
-              <p className="price">${product.price?.toFixed(2)}</p>
+              <p className="price">Rs.{product.price?.toFixed(2)}</p>
               <p
                 className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"
                   }`}
