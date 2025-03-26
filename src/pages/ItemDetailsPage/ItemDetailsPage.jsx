@@ -61,7 +61,12 @@ const ItemDetails = ({ onCartUpdate }) => {
   
         if (updateStockResponse.status === 200) {
           console.log("Stock updated on backend:", updateStockResponse.data);
-          fetchItemDetails();
+          const productResponse = await axios.get(
+            `https://new-sever.vercel.app/api/products/${id}`
+          );
+          if (productResponse.status === 200) {
+            setProduct(productResponse.data); // Update product details
+          }
         } else {
           console.error("Failed to update stock on backend");
         }
@@ -118,15 +123,13 @@ const ItemDetails = ({ onCartUpdate }) => {
       }
     };
 
-    
-  }, );
+    fetchItemDetails();
+  }, [id]);
 
-    // UseEffect to fetch product details when the page loads or stock is updated
-    useEffect(() => {
-      fetchItemDetails();
-    }, [id]); // Re-fetch when id or stockUpdated changes
-
-
+  // Call fetchItemDetails in useEffect
+//  useEffect(() => {
+//   fetchItemDetails();
+// }, [id]);
 
   
   // Log the product count in stock whenever the product state changes
