@@ -61,14 +61,14 @@ const ItemDetails = ({ onCartUpdate }) => {
   
         if (updateStockResponse.status === 200) {
           console.log("Stock updated on backend:", updateStockResponse.data);
-           fetchItemDetails();
+          fetchItemDetails();
         } else {
           console.error("Failed to update stock on backend");
         }
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      setNotification("Failed to add item to cart.");
+      //setNotification("Failed to add item to cart.");
       hideNotification();
     }
   };
@@ -118,13 +118,13 @@ const ItemDetails = ({ onCartUpdate }) => {
       }
     };
 
-    
-  }, );
+    fetchItemDetails();
+  }, [id]);
 
   // Call fetchItemDetails in useEffect
-  useEffect(() => {
-  fetchItemDetails();
-  }, [id]);
+//  useEffect(() => {
+//   fetchItemDetails();
+// }, [id]);
 
   
   // Log the product count in stock whenever the product state changes
