@@ -126,6 +126,33 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
         signInWithPopup(auth, provider)
             .then((result) => {
                 console.log("Google Sign-In Successful:", result);
+
+
+                const user = result.user;
+                const userData = {
+                    uid: user.uid,
+                    name: user.displayName,
+                    email: user.email,
+                };
+
+
+                try {
+                    const result = axios.post('http://localhost:5000/api/users/google-login', {
+                        uid: user.uid,
+                        name: user.displayName,
+                        email: user.email,
+                    }, {
+                        withCredentials: true
+                    });
+        
+                    if (result.status === 200) {
+                        setSuccessMessage('GOOGLE logged in successfully!');
+                    } else {
+                        setError('GOOGLE LOGIN FIILE. Please try again.');
+                    }
+                } catch (err) {
+                    setError('Error during GOOGLE login. Please try again.');
+                }
                  
             
                 // Set user state and navigate to the next page
