@@ -118,7 +118,12 @@ const ItemDetails = ({ onCartUpdate }) => {
       }
     };
 
-    fetchItemDetails();
+   
+  }, );
+
+  // Call fetchItemDetails in useEffect
+  useEffect(() => {
+  fetchItemDetails();
   }, [id]);
 
   
