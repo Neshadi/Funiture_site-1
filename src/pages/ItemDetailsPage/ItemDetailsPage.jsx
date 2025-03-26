@@ -61,7 +61,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   
         if (updateStockResponse.status === 200) {
           console.log("Stock updated on backend:", updateStockResponse.data);
-          await fetchItemDetails();
+           fetchItemDetails();
         } else {
           console.error("Failed to update stock on backend");
         }
@@ -118,8 +118,8 @@ const ItemDetails = ({ onCartUpdate }) => {
       }
     };
 
-    fetchItemDetails();
-  }, [id]);
+    
+  }, );
 
   // Call fetchItemDetails in useEffect
   useEffect(() => {
