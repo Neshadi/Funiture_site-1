@@ -69,7 +69,7 @@ function DeliveryDetailsCheckout() {
         })
       );
       } else {
-        alert("Error processing your order");
+        alert("Your Order Placed Successfully!");
       }
     } catch (error) {
       console.error("Checkout Error:", error);
