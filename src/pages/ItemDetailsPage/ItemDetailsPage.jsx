@@ -118,13 +118,15 @@ const ItemDetails = ({ onCartUpdate }) => {
       }
     };
 
-    fetchItemDetails();
-  }, [id]);
+    
+  }, );
 
-  // Call fetchItemDetails in useEffect
-//  useEffect(() => {
-//   fetchItemDetails();
-// }, [id]);
+    // UseEffect to fetch product details when the page loads or stock is updated
+    useEffect(() => {
+      fetchItemDetails();
+    }, [id, stockUpdated]); // Re-fetch when id or stockUpdated changes
+
+
 
   
   // Log the product count in stock whenever the product state changes
