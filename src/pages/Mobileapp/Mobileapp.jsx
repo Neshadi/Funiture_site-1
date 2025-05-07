@@ -3,6 +3,15 @@ import './Mobileapp.css';
 import { assets } from '../../assets/assets';
 
 const Mobileapp = () => {
+
+
+  const downloadApp = () => {
+    const fileId = "1VONLNG3PeyAesmqgpsMt5puPomGvxZ8m";
+    const directDownloadURL = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    window.open(directDownloadURL, "_blank");
+  };
+  
+
   const features = [
     {
       title: "Scan Your Space",
@@ -70,7 +79,7 @@ const Mobileapp = () => {
             Experience furniture and decor in your space before you buy.
             Our AR app makes home design simple and fun.
           </p>
-          <button className="download-button">
+          <button className="download-button" onClick={downloadApp}>
             Download Now
             <span>→</span>
           </button>
