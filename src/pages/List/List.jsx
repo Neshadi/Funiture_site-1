@@ -13,7 +13,8 @@ const List = ({ url }) => {
     category: '',
     description: '',
     price: '',
-    image: ''
+    image: '',
+    countInStock: '',
   });
 
   const fetchList = async () => {
@@ -54,7 +55,8 @@ const List = ({ url }) => {
       category: item.category,
       description: item.description,
       price: item.price,
-      image: item.image
+      image: item.image,
+      countInStock: item.countInStock,
     });
   };
 
@@ -87,7 +89,8 @@ const List = ({ url }) => {
       category: '',
       description: '',
       price: '',
-      image: ''
+      image: '',
+      countInStock: '',
     });
   };
 
@@ -141,6 +144,7 @@ const List = ({ url }) => {
             <b>Category</b>
             <b>Description</b>
             <b>Price</b>
+            <b>Quantity</b>
             <b>Actions</b>
           </div>
           {list.length > 0 ? (
@@ -186,6 +190,13 @@ const List = ({ url }) => {
                       type="number"
                       name="price"
                       value={editFormData.price}
+                      onChange={handleEditChange}
+                      className="edit-input"
+                    />
+                    <input
+                      type="number"
+                      name="countInStock"
+                      value={editFormData.countInStock}
                       onChange={handleEditChange}
                       className="edit-input"
                     />

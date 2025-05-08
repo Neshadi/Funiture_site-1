@@ -13,7 +13,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
-
+ 
   // Function to hide notification after 3 seconds
   const hideNotification = () => {
     setTimeout(() => {
@@ -42,10 +42,38 @@ const ItemDetails = ({ onCartUpdate }) => {
           onCartUpdate(); // Update cart count in navbar
         }
         hideNotification();
+   
+      const updatedStock = product.countInStock - quantity;
+      //localStorage.setItem(`product-${id}`, updatedStock);
+      setProduct((prevProduct) => ({
+        ...prevProduct,
+        countInStock: updatedStock,
+      }));
+      
+        // Now update the stock on the backend as well
+        const updateStockResponse = await axios.put(
+          `https://new-sever.vercel.app/api/products/${id}`,
+          {
+            countInStock: updatedStock, // Update the backend stock with the updated value
+          },
+          { withCredentials: true }
+        );
+  
+        if (updateStockResponse.status === 200) {
+          console.log("Stock updated on backend:", updateStockResponse.data);
+          const productResponse = await axios.get(
+            `https://new-sever.vercel.app/api/products/${id}`
+          );
+          if (productResponse.status === 200) {
+            setProduct(productResponse.data); // Update product details
+          }
+        } else {
+          console.error("Failed to update stock on backend");
+        }
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      setNotification("Failed to add item to cart.");
+      //setNotification("Failed to add item to cart.");
       hideNotification();
     }
   };
@@ -60,7 +88,18 @@ const ItemDetails = ({ onCartUpdate }) => {
         );
 
         if (productResponse.status === 200) {
+          console.log("Fetched product:", productResponse.data); // Log the product data
+
           setProduct(productResponse.data);
+          // Check for any updates in local storage and update the stock accordingly
+        const savedStock = localStorage.getItem(`product-${id}`);
+        if (savedStock) {
+          setProduct((prevProduct) => ({
+            ...prevProduct,
+            countInStock: parseInt(savedStock, 10),
+          }));
+        }
+
 
           // Fetch reviews for this product
           try {
@@ -80,11 +119,25 @@ const ItemDetails = ({ onCartUpdate }) => {
         console.error("Error fetching product data:", err);
       } finally {
         setLoading(false);
+        // setHasFetched(true); 
       }
     };
 
     fetchItemDetails();
   }, [id]);
+
+  // Call fetchItemDetails in useEffect
+//  useEffect(() => {
+//   fetchItemDetails();
+// }, [id]);
+
+  
+  // Log the product count in stock whenever the product state changes
+  useEffect(() => {
+    if (product) {
+      console.log("Count in Stock:", product.countInStock);
+    }
+  }, [product]);
 
 
   return (
@@ -112,13 +165,13 @@ const ItemDetails = ({ onCartUpdate }) => {
             <div className="details">
               <h2>{product.name}</h2>
               <p className="description">{product.description}</p>
-              <p className="price">${product.price?.toFixed(2)}</p>
+              <p className="price">LKR.{product.price?.toFixed(2)}</p>
               <p
-                className={`stock ${product.stock > 0 ? "in-stock" : "out-of-stock"
+                className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"
                   }`}
               >
-                {product.stock > 0
-                  ? `In Stock (${product.stock} left)`
+                {product.countInStock > 0
+                  ? `In Stock (${product.countInStock} available)`
                   : "Out of Stock"}
               </p>
 
@@ -133,11 +186,13 @@ const ItemDetails = ({ onCartUpdate }) => {
                 <span>{quantity}</span>
                 <button
                   onClick={() => setQuantity((prev) => prev + 1)}
-                  disabled={quantity >= product.stock}
+                  disabled={quantity >= product.countInStock}
                 >
                   +
                 </button>
               </div>
+{/* 
+              {console.log("Count in Stock:", product.countInStock)} */}
 
               {/* Rating Display */}
               <div className="rating-display">
@@ -161,13 +216,13 @@ const ItemDetails = ({ onCartUpdate }) => {
                 <button
                   onClick={addToCart}
                   className="button add-to-cart"
-                  disabled={product.stock <= 0}
+                  disabled={product.countInStock <= 0}
                 >
                   Add to Cart
                 </button>
                 <button
                   className="button buy-now"
-                  disabled={product.stock <= 0}
+                  disabled={product.countInStock <= 0}
                 >
                   Buy Now
                 </button>

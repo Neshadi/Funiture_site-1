@@ -27,7 +27,7 @@
 
 .list-table-format {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 3fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 3fr 1fr 1fr 1fr;
     /* Adjust based on your content */
     gap: 1rem;
     padding: 1rem;

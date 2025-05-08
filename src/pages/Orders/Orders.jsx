@@ -15,6 +15,8 @@ const Orders = ({ url }) => {
       const response = await axios.get("https://new-sever.vercel.app/api/order", {
         withCredentials: true
       });
+
+      
       
       if (response.data.success) {
         setOrders(response.data.data);
@@ -33,20 +35,48 @@ const Orders = ({ url }) => {
     fetchAllOrders();
   }, [url]);
 
+  // const handleStatusChange = async (orderId, newStatus) => {
+  //   try {
+  //     // Fix: Add the new status in the request body
+  //     const response = await axios.put(
+  //       `https://new-sever.vercel.app/api/order/${orderId}`, 
+  //       { status: newStatus },
+  //       { withCredentials: true }
+  //     );
+      
+  //     if (response.data.success) {
+  //       // Update the local state
+  //       setOrders(orders.map(order => 
+  //         order._id === orderId ? { ...order, status: newStatus } : order
+  //       ));
+  //       toast.success(`Order status updated to ${newStatus}`);
+  //     } else {
+  //       toast.error("Failed to update order status");
+  //     }
+  //   } catch (error) {
+  //     toast.error("Error occurred while updating order status");
+  //     console.error(error);
+  //   }
+  // };
+
+  
+ 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      // Fix: Add the new status in the request body
       const response = await axios.put(
         `https://new-sever.vercel.app/api/order/${orderId}`, 
         { status: newStatus },
         { withCredentials: true }
       );
-      
+  
       if (response.data.success) {
-        // Update the local state
-        setOrders(orders.map(order => 
-          order._id === orderId ? { ...order, status: newStatus } : order
-        ));
+        setOrders(prevOrders =>
+          prevOrders
+            .map(order => 
+              order._id === orderId ? { ...order, status: newStatus } : order
+            )
+            // .filter(order => order.status !== "Delivered") // Remove delivered orders
+        );
         toast.success(`Order status updated to ${newStatus}`);
       } else {
         toast.error("Failed to update order status");
@@ -56,6 +86,14 @@ const Orders = ({ url }) => {
       console.error(error);
     }
   };
+  
+  // Filter out non-delivered and delivered orders
+  const nonDeliveredOrders = orders.filter(order => order.status !== "Delivered");
+  const deliveredOrders = orders.filter(order => order.status === "Delivered");
+
+  // Combine the non-delivered orders and delivered orders, non-delivered comes first
+  const sortedOrders = [...nonDeliveredOrders, ...deliveredOrders];
+  
 
   return (
     <div className='order add'>
@@ -67,12 +105,12 @@ const Orders = ({ url }) => {
         </div>
       ) : (
         <div className="order-list">
-          {orders.length === 0 ? (
+          {sortedOrders.length === 0 ? (
             <p className="no-orders-message">No orders available</p>
           ) : (
-            orders.map((order, index) => (
-              <div className="order-item" key={order._id || index}>
-                <img src={assets.box2} alt="order" />
+            sortedOrders.map((order, index) => (
+              <div className={`order-item ${order.status === "Delivered" ? "crossed-order" : ""}`} key={order._id || index}>
+                <img src={assets.box} alt="order" />
                 <div>
                   <p className='order-item-item'>
                     {order.items ? order.items.map((item, idx) => (
