@@ -24,6 +24,7 @@ import ItemDetailsPage from './pages/ItemDetailsPage/ItemDetailsPage';
 import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
 import ResetPassword from './pages/resetPassword/ResetPassword';
 import VerifyEmail from './pages/verifyEmail/verifyEmail';
+import NotFound from './pages/404/NotFound';
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
@@ -258,6 +259,17 @@ const App = () => {
             )
           }
         />
+
+         {/* 404 Not Found Route (MUST BE LAST) */}
+  <Route
+    path="*"
+    element={
+      <>
+        <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+        <NotFound />
+      </>
+    }
+  />
       </Routes>
       {showLogin && (
         <UserLoginPopUp

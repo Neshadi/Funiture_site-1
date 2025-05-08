@@ -28,10 +28,10 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
         setError('');
         setSuccessMessage('');
 
-        if (!validatePassword(password)) {
-            setError('Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, and one number.');
-            return;
-        }
+        // if (!validatePassword(password)) {
+        //     setError('Password must be at least 8 characters long, include one uppercase letter, one lowercase letter, and one number.');
+        //     return;
+        // }
 
         try {
             await axios.post('https://new-sever.vercel.app/api/users/', {
