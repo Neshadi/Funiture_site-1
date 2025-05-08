@@ -4,7 +4,6 @@
   height: 100vh; /* Full viewport height */
   margin-top: 15vh;
   background-color: #ffffff;
-
 }
 
 .profile-container {
@@ -14,19 +13,16 @@
 }
 
 .profile-header {
-  /* display: flex; */
   justify-content: left;
   align-items: center;
   margin-left: 200px;
   margin-top: -150px;
-
 }
 
 .profile-image {
   border-radius: 50%;
   width: 150px;
   height: 150px;
-  /* margin-right: 20px; */
 }
 
 .profile-welcome h2 {
@@ -35,8 +31,6 @@
   color: #000000;
   font-family: 'Candara';
   margin-left: 25px;
-  /* align-items: center;  */
-  /* margin-right: 20px; */
 }
 
 .profile-welcome h3 {
@@ -45,7 +39,6 @@
   color: #000000;
   font-family: 'Candara';
   margin-left: 35px;
-
 }
 
 .profile-form {
@@ -71,7 +64,6 @@ form {
   font-style: normal;
   font-weight: 400;
   font-size: 14px;
-
 }
 
 input {
@@ -83,7 +75,6 @@ input {
   font-weight: 400;
   color: rgba(0, 0, 0, 0.32);
   background-color: transparent; /* Make background transparent */
-
 }
 
 input:focus {
@@ -93,15 +84,11 @@ input:focus {
 input:not(:placeholder-shown) {
   color: black; /* Change color to black when user types */
 }
+
 .display-name-input {
   width: 208%;
-  color:#000000;
+  color: #000000;
 }
-
-
-/* input:disabled {
-  background-color: #f5f5f5;
-} */
 
 .form-buttons {
   grid-column: span 2;
@@ -110,10 +97,10 @@ input:not(:placeholder-shown) {
   gap: 15px;
 }
 
-.form-actions{
+.form-actions {
   display: flex;
-  gap:10px;
-  left:300px
+  gap: 10px;
+  left: 300px;
 }
 
 .reset-btn, .save-btn {
@@ -134,6 +121,7 @@ input:not(:placeholder-shown) {
   align-items: center;      /* Center vertically */
   text-align: center;       /* Center text */
 }
+
 .save-btn {
   background: #0C5E69;
   border-radius: 9px;
@@ -147,16 +135,15 @@ input:not(:placeholder-shown) {
 }
 
 .success-message {
-color: green;
-font-size: 12px;
-font-family: candara;
-text-align: center;
-margin-top: 20px;
-/* margin-left: 150px; */
+  color: green;
+  font-size: 12px;
+  font-family: candara;
+  text-align: center;
+  margin-top: 20px;
 }
 
-.error-message{
-margin-top: 20px;
+.error-message {
+  margin-top: 20px;
 }
 
 /* Footer Styling */
@@ -205,7 +192,6 @@ footer {
 .icon-container {
   display: flex;
   margin-left: 38px;
-  
 }
 
 .icon-container img {
@@ -222,11 +208,9 @@ footer {
   opacity: 0.8;
 }
 
-
 .edit-icon {
   filter: hue-rotate(45deg); /* Adjust color if needed */
 }
-
 
 .delete-icon {
   font-size: 20px;        /* Adjust icon size */
@@ -235,9 +219,9 @@ footer {
   color: #ffffff;         /* Icon color */
   background-color: #fa0101;
   border-radius: 100%;
-  border: 2px  ;    /* Add border with desired size and color */
-                  
+  border: 2px;    /* Add border with desired size and color */
 }
+
 .edit-icon {
   font-size: 20px;        /* Adjust icon size */
   margin: 2px;            /* Space between icons */
@@ -245,10 +229,7 @@ footer {
   color: #ffffff;         /* Icon color */
   background-color: #000000;
   border-radius: 100%;
-  border-radius: 100%;
-  border: 2px  ;    /* Add border with desired size and color */
-                 
-
+  border: 2px;    /* Add border with desired size and color */
 }
 
 .edit-icon:hover,
@@ -256,3 +237,372 @@ footer {
   color: #005B60;         /* Change color on hover */
 }
 
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .profile-page {
+    margin-top: 12vh;
+    padding: 20px;
+  }
+
+  .profile-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-header {
+    margin-left: 0;
+    margin-top: 0;
+    text-align: center;
+  }
+
+  .profile-image {
+    width: 120px;
+    height: 120px;
+  }
+
+  .profile-welcome h2 {
+    font-size: 22px;
+    margin-left: 0;
+  }
+
+  .profile-welcome h3 {
+    font-size: 20px;
+    margin-left: 0;
+  }
+
+  .profile-form {
+    justify-content: center;
+    margin-top: 30px;
+  }
+
+  form {
+    width: 70%;
+    gap: 12px;
+  }
+
+  .display-name-input {
+    width: 100%;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  input {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .reset-btn, .save-btn {
+    width: 110px;
+    height: 32px;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .form-actions {
+    left: 0;
+    justify-content: center;
+  }
+
+  .success-message {
+    font-size: 11px;
+  }
+
+  footer {
+    padding: 30px 0;
+  }
+
+  .footer-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 0 20px;
+  }
+
+  .footer-section h3 {
+    font-size: 16px;
+  }
+
+  .footer-section ul li {
+    font-size: 14px;
+  }
+
+  .footer-bottom {
+    padding-top: 15px;
+    font-size: 14px;
+  }
+
+  .social-media {
+    gap: 8px;
+  }
+
+  .icon-container {
+    margin-left: 30px;
+  }
+
+  .icon-container img {
+    width: 22px;
+    height: 22px;
+    margin-left: 6px;
+  }
+
+  .edit-icon, .delete-icon {
+    font-size: 18px;
+    margin: 2px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    margin-top: 10vh;
+    padding: 15px;
+    height: auto; /* Allow content to expand */
+  }
+
+  .profile-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-header {
+    margin-left: 0;
+    margin-top: 0;
+    text-align: center;
+  }
+
+  .profile-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-welcome h2 {
+    font-size: 20px;
+    margin-left: 0;
+  }
+
+  .profile-welcome h3 {
+    font-size: 18px;
+    margin-left: 0;
+  }
+
+  .profile-form {
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  form {
+    grid-template-columns: 1fr; /* Stack form fields vertically */
+    width: 90%;
+    gap: 10px;
+  }
+
+  .display-name-input {
+    width: 100%;
+  }
+
+  .form-group label {
+    font-size: 12px;
+  }
+
+  input {
+    padding: 7px;
+    font-size: 13px;
+  }
+
+  .form-buttons {
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .reset-btn, .save-btn {
+    width: 100px;
+    height: 30px;
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  .form-actions {
+    left: 0;
+    justify-content: center;
+  }
+
+  .success-message {
+    font-size: 10px;
+  }
+
+  footer {
+    padding: 20px 0;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 0 15px;
+  }
+
+  .footer-section {
+    text-align: center;
+  }
+
+  .footer-section h3 {
+    font-size: 14px;
+  }
+
+  .footer-section ul li {
+    font-size: 13px;
+  }
+
+  .footer-bottom {
+    padding-top: 10px;
+    font-size: 13px;
+  }
+
+  .social-media {
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .icon-container {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .icon-container img {
+    width: 20px;
+    height: 20px;
+    margin-left: 5px;
+  }
+
+  .edit-icon, .delete-icon {
+    font-size: 16px;
+    margin: 1px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-page {
+    margin-top: 8vh;
+    padding: 10px;
+    height: auto;
+  }
+
+  .profile-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-header {
+    margin-left: 0;
+    margin-top: 0;
+    text-align: center;
+  }
+
+  .profile-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-welcome h2 {
+    font-size: 18px;
+    margin-left: 0;
+  }
+
+  .profile-welcome h3 {
+    font-size: 16px;
+    margin-left: 0;
+  }
+
+  .profile-form {
+    justify-content: center;
+    margin-top: 15px;
+  }
+
+  form {
+    width: 95%;
+    gap: 8px;
+  }
+
+  .display-name-input {
+    width: 100%;
+  }
+
+  .form-group label {
+    font-size: 11px;
+  }
+
+  input {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .form-buttons {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .reset-btn, .save-btn {
+    width: 90px;
+    height: 28px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .form-actions {
+    left: 0;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .success-message {
+    font-size: 9px;
+    margin-top: 15px;
+  }
+
+  .error-message {
+    margin-top: 15px;
+    font-size: 9px;
+  }
+
+  footer {
+    padding: 15px 0;
+  }
+
+  .footer-content {
+    gap: 12px;
+    padding: 0 10px;
+  }
+
+  .footer-section h3 {
+    font-size: 13px;
+  }
+
+  .footer-section ul li {
+    font-size: 12px;
+  }
+
+  .footer-bottom {
+    padding-top: 8px;
+    font-size: 12px;
+  }
+
+  .social-media {
+    gap: 5px;
+  }
+
+  .icon-container {
+    margin-left: 0;
+  }
+
+  .icon-container img {
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+  }
+
+  .edit-icon, .delete-icon {
+    font-size: 14px;
+    margin: 1px;
+  }
+}

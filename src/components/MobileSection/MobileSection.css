@@ -5,6 +5,7 @@
     padding: 20px;
     margin: 50px;
     margin-top: 8vw;
+    text-align: left;
 }
 
 .mobile-home-content {
@@ -24,8 +25,9 @@
     width: 60%;
 }
 
-.mobile-home-text{
-padding-top: -100px;
+.mobile-home-text {
+    padding-top: -100px;
+    text-align: left;
 }
 
 .mobile-home-text h1 {
@@ -38,6 +40,7 @@ padding-top: -100px;
     color: #555;
     margin-top: 10px;
     line-height: 1.6;
+    text-align: left;
 }
 
 /* Button Styling */
@@ -68,4 +71,137 @@ padding-top: -100px;
     color: rgb(255, 255, 255);
     border: none;
     transition: 1s;
+}
+
+/* Responsive Design for Laptops, Tablets, and Mobile Phones */
+@media (max-width: 1024px) {
+    .mobile-home {
+        margin: 40px;
+        margin-top: 7vw;
+        padding: 15px;
+    }
+
+    .mobile-home-content {
+        padding-top: 50px;
+        padding-left: 50px;
+    }
+
+    .mobile-home-image {
+        width: 55%;
+    }
+
+    .mobile-home-text h1 {
+        font-size: 1.8rem;
+    }
+
+    .mobile-home-text p {
+        font-size: 1rem;
+        margin-top: 8px;
+    }
+
+    .continue-button {
+        height: 36px;
+        width: 180px;
+        padding: 8px 18px;
+        font-size: 0.95rem;
+        margin-top: 45px;
+    }
+
+    .arrow-image {
+        width: 26px;
+        margin-left: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-home {
+        margin: 30px;
+        margin-top: 6vw;
+        padding: 10px;
+    }
+
+    .mobile-home-content {
+        flex-direction: column; /* Stack image and text vertically */
+        align-items: center;
+        padding-top: 30px;
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-bottom: 20px;
+    }
+
+    .mobile-home-image {
+        width: 100%; /* Full width for image */
+        max-width: 300px; /* Limit image size */
+        margin-bottom: 20px;
+    }
+
+    .mobile-home-text {
+        padding-top: 0; /* Remove negative padding */
+        text-align: center; /* Center text */
+    }
+
+    .mobile-home-text h1 {
+        font-size: 1.5rem;
+    }
+
+    .mobile-home-text p {
+        font-size: 0.9rem;
+        margin-top: 6px;
+    }
+
+    .continue-button {
+        height: 32px;
+        width: 160px;
+        padding: 7px 16px;
+        font-size: 0.85rem;
+        margin-top: 35px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .arrow-image {
+        width: 22px;
+        margin-left: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-home {
+        margin: 20px;
+        margin-top: 5vw;
+        padding: 8px;
+    }
+
+    .mobile-home-content {
+        padding-top: 20px;
+        padding-left: 15px;
+        padding-right: 15px;
+        padding-bottom: 15px;
+    }
+
+    .mobile-home-image {
+        max-width: 250px;
+    }
+
+    .mobile-home-text h1 {
+        font-size: 1.3rem;
+    }
+
+    .mobile-home-text p {
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+
+    .continue-button {
+        height: 28px;
+        width: 140px;
+        padding: 6px 14px;
+        font-size: 0.75rem;
+        margin-top: 25px;
+    }
+
+    .arrow-image {
+        width: 18px;
+        margin-left: 8px;
+    }
 }

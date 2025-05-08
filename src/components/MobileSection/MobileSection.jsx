@@ -14,7 +14,7 @@ const MobileSection = () => {
                         See how our AR feature works. Virtually place items in your home, ensuring the perfect fit before purchase. Try it now for a seamless shopping experience.
                     </p>
                     <button className="continue-button">
-                        Continue to app
+                        Mobile App
                         <img src={assets.arrow} alt="Arrow" className="arrow-image" />
                     </button>
                 </div>

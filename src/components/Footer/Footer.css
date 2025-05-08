@@ -86,3 +86,147 @@
 .footer-bottom p {
   margin: 0;
 }
+
+/* Responsive Design for Laptops, Tablets, and Mobile Phones */
+@media (max-width: 1024px) {
+  .footer {
+    padding: 15px 0;
+  }
+
+  .footer-container {
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .logo {
+    height: 36px;
+    margin: 15px 0;
+  }
+
+  .footer-section {
+    margin: 15px;
+  }
+
+  .footer-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  .footer-section ul li {
+    margin: 8px 0;
+  }
+
+  .social-icons {
+    margin-top: 12px;
+  }
+
+  .social-icons a {
+    font-size: 22px;
+    padding: 8px;
+  }
+
+  .footer-bottom {
+    padding: 8px 0;
+  }
+
+  .footer-bottom p {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding: 10px 0;
+  }
+
+  .footer-container {
+    flex-direction: column; /* Stack sections vertically */
+    align-items: center;
+    padding: 0 15px;
+  }
+
+  .logo {
+    height: 32px;
+    margin: 10px 0;
+  }
+
+  .footer-section {
+    margin: 10px;
+    text-align: center; /* Center text for better appearance */
+  }
+
+  .footer-section h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .footer-section ul li {
+    margin: 6px 0;
+  }
+
+  .social-icons {
+    margin-top: 10px;
+  }
+
+  .social-icons a {
+    font-size: 20px;
+    padding: 6px;
+  }
+
+  .footer-bottom {
+    padding: 6px 0;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 8px 0;
+  }
+
+  .footer-container {
+    padding: 0 10px;
+  }
+
+  .logo {
+    height: 28px;
+    margin: 8px 0;
+  }
+
+  .footer-section {
+    margin: 8px;
+  }
+
+  .footer-section h3 {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .footer-section ul li {
+    margin: 5px 0;
+  }
+
+  .footer-section ul li a {
+    font-size: 12px;
+  }
+
+  .social-icons {
+    margin-top: 8px;
+  }
+
+  .social-icons a {
+    font-size: 18px;
+    padding: 5px;
+  }
+
+  .footer-bottom {
+    padding: 5px 0;
+  }
+
+  .footer-bottom p {
+    font-size: 10px;
+  }
+}

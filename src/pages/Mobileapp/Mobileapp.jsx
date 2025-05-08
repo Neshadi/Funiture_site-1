@@ -2,16 +2,65 @@ import React from 'react';
 import './Mobileapp.css';
 import { assets } from '../../assets/assets';
 
+// SVG Icons for features
+const FeatureIcons = {
+  ScanIcon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="feature-svg-icon">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+      <circle cx="12" cy="14" r="3" />
+      <path d="M5 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2" />
+      <line x1="4" y1="14" x2="8" y2="14" />
+      <line x1="16" y1="14" x2="20" y2="14" />
+      <line x1="12" y1="6" x2="12" y2="10" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+      <line x1="6" y1="10" x2="6" y2="18" opacity="0.5" />
+      <line x1="18" y1="10" x2="18" y2="18" opacity="0.5" />
+    </svg>
+  ),
+  
+  MoveIcon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="feature-svg-icon">
+      <rect x="4" y="10" width="16" height="10" rx="2" />
+      <path d="M8 10V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3" />
+      <line x1="12" y1="15" x2="12" y2="15" />
+      <path d="M7 7l-3 3 3 3" opacity="0.7" />
+      <path d="M17 7l3 3-3 3" opacity="0.7" />
+      <path d="M17 17l3-3-3-3" opacity="0.7" style={{ transform: 'translate(0px, 6px)' }} />
+      <path d="M7 17l-3-3 3-3" opacity="0.7" style={{ transform: 'translate(0px, 6px)' }} />
+    </svg>
+  ),
+  
+  CustomizeIcon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="feature-svg-icon">
+      <path d="M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"></path>
+      <circle cx="7.5" cy="10" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="7.5" r="1.5" fill="currentColor" />
+      <circle cx="16.5" cy="10" r="1.5" fill="currentColor" />
+      <path d="M18 14h-5l-1 2h-2l-1-2H6" />
+      <path d="M3 18l4-4" />
+      <path d="M21 18l-4-4" />
+    </svg>
+  ),
+  
+  DetailsIcon: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="feature-svg-icon">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <line x1="8" y1="11" x2="14" y2="11" />
+      <line x1="11" y1="8" x2="11" y2="14" />
+      <path d="M18 8l-4-4" opacity="0.7" />
+      <path d="M4 14l4 4" opacity="0.7" />
+    </svg>
+  )
+};
+
 const Mobileapp = () => {
-
-
   const downloadApp = () => {
     const fileId = "1VONLNG3PeyAesmqgpsMt5puPomGvxZ8m";
     const directDownloadURL = `https://drive.google.com/uc?export=download&id=${fileId}`;
     window.open(directDownloadURL, "_blank");
   };
   
-
   const features = [
     {
       title: "Scan Your Space",
@@ -54,6 +103,22 @@ const Mobileapp = () => {
     }
   ];
 
+  // Helper function to render the appropriate icon based on feature title
+  const renderFeatureIcon = (title) => {
+    switch (title) {
+      case "Scan Your Space":
+        return <FeatureIcons.ScanIcon />;
+      case "Place & Move":
+        return <FeatureIcons.MoveIcon />;
+      case "Customize":
+        return <FeatureIcons.CustomizeIcon />;
+      case "View Details":
+        return <FeatureIcons.DetailsIcon />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div>
       {/* Hero Section */}
@@ -93,7 +158,7 @@ const Mobileapp = () => {
           {features.map((feature, index) => (
             <div key={index} className="feature-card">
               <div className="feature-icon">
-                {/* Add your icon here */}
+                {renderFeatureIcon(feature.title)}
               </div>
               <h3 className="feature-title">{feature.title}</h3>
               <p className="feature-description">{feature.description}</p>
@@ -139,7 +204,6 @@ const Mobileapp = () => {
       </section>
 
       {/* Categories Section */}
-
       <section className="categories-section">
         <h2 className="section-title">Explore Categories</h2>
         <div className="categories-grid">
@@ -183,4 +247,3 @@ const Mobileapp = () => {
 };
 
 export default Mobileapp;
-// add this

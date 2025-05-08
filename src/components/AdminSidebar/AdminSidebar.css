@@ -5,27 +5,28 @@
     min-height: 100vh;
     border: 1.5px solid var(--ash);
     font-size: max(1vw, 10px);
-}
-
-.Adminsidebar-options {
+  }
+  
+  .Adminsidebar-options {
     padding-top: 50px;
     padding-left: 20%;
     display: flex;
     flex-direction: column;
     gap: 20px;
-}
-
-.Adminsidebar-option.active {
-    background-color: #f0f0f0;
+  }
+  
+  .Adminsidebar-option.active {
+    background-color: var(--lightbrown);
+    border-color: var(--darkbrown);
     color: #414244;
     font-weight: bold;
-}
-
-.Adminsidebar-icon {
+  }
+  
+  .Adminsidebar-icon {
     width: 20%;
-}
-
-.Adminsidebar-option {
+  }
+  
+  .Adminsidebar-option {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -34,15 +35,110 @@
     padding: 8px 10px;
     border-radius: 3px 0px 0px 3px;
     cursor: pointer;
-}
-
-.Adminsidebar-option.active {
-    background-color: var(--lightbrown);
-    border-color: var(--darkbrown);
-}
-
-@media (max-width: 900px) {
-    .Adminsidebar-option p {
-        display: none;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .Adminsidebar {
+      width: 20%;
+      top: 3vw;
+      font-size: max(0.9vw, 9px);
     }
-}
+  
+    .Adminsidebar-options {
+      padding-top: 40px;
+      padding-left: 15%;
+      gap: 15px;
+    }
+  
+    .Adminsidebar-option {
+      padding: 6px 8px;
+      gap: 10px;
+    }
+  
+    .Adminsidebar-icon {
+      width: 18%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .Adminsidebar {
+      width: 60px; /* Collapse to icon-only sidebar */
+      top: 2vw;
+      font-size: 8px;
+    }
+  
+    .Adminsidebar-options {
+      padding-top: 30px;
+      padding-left: 10px;
+      gap: 12px;
+      align-items: center;
+    }
+  
+    .Adminsidebar-option {
+      padding: 5px;
+      gap: 8px;
+      justify-content: center;
+      border-radius: 3px;
+    }
+  
+    .Adminsidebar-option p {
+      display: none; /* Hide text labels */
+    }
+  
+    .Adminsidebar-icon {
+      width: 30px;
+      height: 30px;
+    }
+  
+    .Adminsidebar-option.active {
+      background-color: var(--lightbrown);
+      border-color: var(--darkbrown);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .Adminsidebar {
+      position: static; /* Place below navbar */
+      width: 100%;
+      min-height: auto;
+      border: 1px solid var(--ash);
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-top: 60px; /* Adjust based on navbar height */
+    }
+  
+    .Adminsidebar-options {
+      padding: 10px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+  
+    .Adminsidebar-option {
+      padding: 6px;
+      gap: 6px;
+      border: 1px solid var(--ash);
+      border-radius: 3px;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  
+    .Adminsidebar-option p {
+      display: none; /* Continue hiding text labels */
+    }
+  
+    .Adminsidebar-icon {
+      width: 24px;
+      height: 24px;
+    }
+  
+    .Adminsidebar-option.active {
+      background-color: var(--lightbrown);
+      border-color: var(--darkbrown);
+    }
+  }

@@ -6,6 +6,7 @@ import './NavBar.css';
 const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   const [menu, setMenu] = useState("home");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for hamburger menu
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -19,15 +20,27 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
 
   const handleCartClick = () => {
     navigate('/cart');
+    setIsMenuOpen(false); // Close menu on navigation
   };
 
   const handleProfileClick = () => {
     setShowDropdown(!showDropdown);
+    setIsMenuOpen(false); // Close menu on profile click
   };
 
   const handleSignOut = () => {
     handleLogout();
     setShowDropdown(false);
+    setIsMenuOpen(false); // Close menu on sign out
+  };
+
+  const handleMenuItemClick = (menuName) => {
+    setMenu(menuName);
+    setIsMenuOpen(false); // Close menu when a menu item is clicked
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen); // Toggle hamburger menu
   };
 
   useEffect(() => {
@@ -45,24 +58,29 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
 
   return (
     <div className='navbar'>
-      <img src={assets.logo_black} alt="logo" className="logo" onClick={()=>{
+      <img src={assets.logo_black} alt="logo" className="logo" onClick={() => {
         navigate('/');
-      }}/>
-      <ul className='navbar-menu'>
-        <li onClick={() => setMenu("home")} className={menu === "home" ? "active" : ""}>
+        setIsMenuOpen(false); // Close menu on logo click
+      }} />
+      <ul className={`navbar-menu ${isMenuOpen ? 'active' : ''}`}>
+        <li onClick={() => handleMenuItemClick("home")} className={menu === "home" ? "active" : ""}>
           <Link to="/">Home</Link>
         </li>
-        <li onClick={() => setMenu("category")} className={menu === "category" ? "active" : ""}>
+        <li onClick={() => handleMenuItemClick("category")} className={menu === "category" ? "active" : ""}>
           <Link to="/category">Category</Link>
         </li>
-        <li onClick={() => setMenu("mobile-app")} className={menu === "mobile-app" ? "active" : ""}>
+        <li onClick={() => handleMenuItemClick("mobile-app")} className={menu === "mobile-app" ? "active" : ""}>
           <Link to="/mobile-app">Mobile App</Link>
         </li>
-        <li onClick={() => setMenu("about-us")} className={menu === "about-us" ? "active" : ""}>
+        <li onClick={() => handleMenuItemClick("about-us")} className={menu === "about-us" ? "active" : ""}>
           <Link to="/about-us">About Us</Link>
         </li>
       </ul>
-
+      <div className="navbar-toggle" onClick={toggleMenu}>
+        <span className="bar"></span>
+        <span className="bar"></span>
+        <span className="bar"></span>
+      </div>
       <div className='navbar-right'>
         {isLoggedIn && (
           <>
@@ -76,12 +94,10 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
             </div>
           </>
         )}
-
         <button onClick={handleButtonClick}>
           {isLoggedIn ? 'Sign Out' : 'Sign In'}
         </button>
       </div>
-
       {showDropdown && (
         <div className="profile-dropdown" ref={dropdownRef}>
           <ul>

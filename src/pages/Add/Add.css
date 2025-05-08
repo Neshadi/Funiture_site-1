@@ -1,67 +1,73 @@
 .add {
     width: 60%;
     margin-left: 20vw;
-    margin-top: 9vw;
+    margin-top: 96w;
     margin-bottom: 30px;
     color: black;
     font-size: 15px;
     font-family: candara;
-}
-
-.add form{
+  }
+  
+  .add form {
     gap: 10px;
-}
-
-.add-img-upload img{
+  }
+  
+  .add-img-upload img {
     width: 400px;
     border-radius: 20px;
-}
-
-.add-product-description{
+  }
+  
+  .add-product-description {
     width: 550px;
     margin-bottom: 20px;
-}
+  }
 
-.add-product-name{
+  .add p{
+    text-align: left;
+  }
+  
+  .add-product-name {
     width: 550px;
     margin-top: 20px;
     margin-bottom: 20px;
-}
-
-.add-product-name input{
+  }
+  
+  .add-product-name input {
     padding: 10px;
     width: 550px;
     border-radius: 10px;
     font-family: candara;
-}
-
-.add-product-description textarea{
+  }
+  
+  .add-product-description textarea {
     padding: 10px;
     width: 550px;
     border-radius: 10px;
     border-color: var(--ash);
     font-family: candara;
-}
-
-.add-category-price{
+  }
+  
+  .add-category-price {
     display: flex;
     gap: 300px;
-    margin-bottom: 30px;    
-}
-
-.currency-label{
+    margin-bottom: 30px;
+  }
+  
+  .currency-label {
     margin-top: -37px;
     margin-left: -37px;
     font-size: 13px;
     font-weight: bold;
-}
-.add-category-price select, .add-category-price input{
+  }
+  
+  .add-category-price select,
+  .add-category-price input {
     max-width: 130px;
     padding: 10px;
     font-family: candara;
-}
-
-.add-btn{
+  }
+  
+  .add-btn {
     max-width: 150px;
     padding: 5px;
     border: none;
@@ -71,4 +77,169 @@
     color: white;
     cursor: pointer;
     font-family: candara;
-}
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .add {
+      width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 6vw;
+      font-size: 14px;
+    }
+  
+    .add-img-upload img {
+      width: 350px;
+    }
+  
+    .add-product-name,
+    .add-product-description {
+      width: 100%;
+    }
+  
+    .add-product-name input,
+    .add-product-description textarea {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+  
+    .add-category-price {
+      gap: 150px;
+      margin-bottom: 25px;
+    }
+  
+    .add-category-price select,
+    .add-category-price input {
+      max-width: 120px;
+      padding: 8px;
+      font-size: 14px;
+    }
+  
+    .currency-label {
+      margin-top: -35px;
+      margin-left: -35px;
+      font-size: 12px;
+    }
+  
+    .add-btn {
+      max-width: 130px;
+      padding: 4px;
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .add {
+      width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 4vw;
+      font-size: 13px;
+    }
+  
+    .add form {
+      gap: 8px;
+    }
+  
+    .add-img-upload img {
+      width: 250px;
+    }
+  
+    .add-product-name,
+    .add-product-description {
+      width: 100%;
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+  
+    .add-product-name input,
+    .add-product-description textarea {
+      width: 100%;
+      padding: 7px;
+      font-size: 13px;
+    }
+  
+    .add-category-price {
+      flex-direction: column;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+  
+    .add-category-price select,
+    .add-category-price input {
+      max-width: 100%;
+      padding: 7px;
+      font-size: 13px;
+    }
+  
+    .currency-label {
+      margin-top: 0;
+      margin-left: 0;
+      font-size: 11px;
+      position: static;
+    }
+  
+    .add-btn {
+      max-width: 120px;
+      padding: 4px;
+      font-size: 13px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .add {
+      width: 95%;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 3vw;
+      font-size: 12px;
+    }
+  
+    .add form {
+      gap: 6px;
+    }
+  
+    .add-img-upload img {
+      width: 200px;
+    }
+  
+    .add-product-name,
+    .add-product-description {
+      width: 100%;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+  
+    .add-product-name input,
+    .add-product-description textarea {
+      width: 100%;
+      padding: 6px;
+      font-size: 12px;
+    }
+  
+    .add-category-price {
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+  
+    .add-category-price select,
+    .add-category-price input {
+      max-width: 100%;
+      padding: 6px;
+      font-size: 12px;
+    }
+  
+    .currency-label {
+      font-size: 10px;
+    }
+  
+    .add-btn {
+      max-width: 100px;
+      padding: 3px;
+      font-size: 12px;
+    }
+  }
