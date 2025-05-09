@@ -104,7 +104,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
     return (
         <div className='item'>
             <div className="item-img-container" onClick={itemDetailPageNavigation}>
-                <img className='item-img' src={image} alt={name} />
+                <img className='item-img10' src={image} alt={name} />
                 {/* <div className='item-counter'>
                     <img 
                         onClick={decrementQuantity}
