@@ -25,6 +25,7 @@ import Fogotpassword from './pages/FogotPassWord/ForgotPassword';
 import ResetPassword from './pages/resetPassword/ResetPassword';
 import VerifyEmail from './pages/verifyEmail/verifyEmail';
 import NotFound from './pages/404/NotFound';
+import ReportIssue from './pages/ReportIssue/ReportIssue';
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
@@ -54,7 +55,7 @@ const App = () => {
               />
 
               <Home />
-              <ItemDisplay category={"All"}/> 
+              <ItemDisplay category={"All"} />
               {/* <ItemDetailsPage/>  */}
             </>
           }
@@ -71,6 +72,17 @@ const App = () => {
           }
         />
 
+        {/* Report Issue Page */}
+        <Route
+          path="/report-issue"
+          element={
+            <>
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+              <ReportIssue />
+            </>
+          }
+        />
+
         {/* Mobile App Page */}
         <Route
           path="/mobile-app"
@@ -82,12 +94,12 @@ const App = () => {
           }
         />
         <Route path='/Item-Page/:id'
-        element={ <>
-        <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn}/>
-        <ItemDetailsPage/>
-        </>
+          element={<>
+            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
+            <ItemDetailsPage />
+          </>
 
-        }/>
+          } />
         <Route path='/Item-Page/:id'
           element={<>
             <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
@@ -134,7 +146,7 @@ const App = () => {
             <ResetPassword />
           </>
           } />
-          
+
         <Route
           path="/cart"
           element={
@@ -260,16 +272,16 @@ const App = () => {
           }
         />
 
-         {/* 404 Not Found Route (MUST BE LAST) */}
-  <Route
-    path="*"
-    element={
-      <>
-        <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
-        <NotFound />
-      </>
-    }
-  />
+        {/* 404 Not Found Route (MUST BE LAST) */}
+        <Route
+          path="*"
+          element={
+            <>
+              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+              <NotFound />
+            </>
+          }
+        />
       </Routes>
       {showLogin && (
         <UserLoginPopUp
