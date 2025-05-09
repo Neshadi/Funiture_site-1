@@ -38,6 +38,7 @@ import appstore from './appstore.png'
 import playstore from './playstore.png'
 import mobile from './3dmobile.png'
 import box from './box.png'
+import howtowork from './howtowork.mp4'
 
 export const assets = {
     logo_black,
@@ -80,7 +81,8 @@ export const assets = {
     appstore,
     playstore,
     mobile,
-    box
+    box,
+    howtowork
 }
 
 export const category_list=[

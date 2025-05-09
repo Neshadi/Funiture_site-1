@@ -170,14 +170,28 @@ const Mobileapp = () => {
       {/* How It Works Section */}
       <section className="steps-section">
         <h2 className="section-title">How It Works</h2>
-        <div className="steps-grid">
-          {steps.map((step, index) => (
-            <div key={index} className="step-item">
-              <div className="step-number">{step.number}</div>
-              <h3 className="step-title">{step.title}</h3>
-              <p className="step-description">{step.description}</p>
-            </div>
-          ))}
+        <div className="steps-container">
+          <div className="steps-video">
+            <video
+              className="how-it-works-video"
+              autoPlay
+              muted
+              loop
+              playsInline
+            >
+              <source src={assets.howtowork} type="video/mp4" /> 
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div className="steps-list">
+            {steps.map((step, index) => (
+              <div key={index} className="step-item">
+                <div className="step-number">{step.number}</div>
+                <h3 className="step-title">{step.title}</h3>
+                <p className="step-description">{step.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
