@@ -144,7 +144,6 @@ const List = ({ url }) => {
             <b>Category</b>
             <b>Description</b>
             <b>Price</b>
-            <b>Quantity</b>
             <b>Actions</b>
           </div>
           {list.length > 0 ? (
@@ -153,9 +152,9 @@ const List = ({ url }) => {
                 {editingItem === item._id ? (
                   <>
                     <div className="image-upload-container">
-                      <img 
-                        src={editFormData.image || assets.placeholder} 
-                        alt="item" 
+                      <img
+                        src={editFormData.image || assets.placeholder}
+                        alt="item"
                         className="item-image"
                       />
                       <input
@@ -217,9 +216,9 @@ const List = ({ url }) => {
                   </>
                 ) : (
                   <>
-                    <img 
-                      src={item.image || assets.placeholder} 
-                      alt="item" 
+                    <img
+                      src={item.image || assets.placeholder}
+                      alt="item"
                       className="item-image"
                     />
                     <p>{item.name}</p>
