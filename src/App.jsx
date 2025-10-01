@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import AdminNavbar from './components/AdminNavbar/AdminNavbar';
@@ -32,11 +32,47 @@ const App = () => {
   const [showLogin, setShowLogin] = useState(false); // Control login popup visibility
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login state
 
+  // Load persisted auth state on app mount
+  useEffect(() => {
+    try {
+      const savedIsLoggedIn = localStorage.getItem('auth.isLoggedIn');
+      const savedUserType = localStorage.getItem('auth.userType');
+      if (savedIsLoggedIn === 'true') {
+        setIsLoggedIn(true);
+      }
+      if (savedUserType) {
+        setUserType(savedUserType);
+      }
+    } catch (_) {
+      // Ignore storage errors
+    }
+  }, []);
+
+  // Persist auth state whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('auth.isLoggedIn', String(isLoggedIn));
+      if (userType) {
+        localStorage.setItem('auth.userType', userType);
+      } else {
+        localStorage.removeItem('auth.userType');
+      }
+    } catch (_) {
+      // Ignore storage errors
+    }
+  }, [isLoggedIn, userType]);
+
   // Function to handle logout
   const handleLogout = () => {
     setUserType(null); // Reset user type
     setIsLoggedIn(false); // Set logged-in state to false
     setShowLogin(false); // Hide the login popup
+    try {
+      localStorage.removeItem('auth.isLoggedIn');
+      localStorage.removeItem('auth.userType');
+    } catch (_) {
+      // Ignore storage errors
+    }
   };
 
   return (
