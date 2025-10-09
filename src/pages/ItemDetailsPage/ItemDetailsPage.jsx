@@ -136,8 +136,10 @@ const ItemDetails = ({ onCartUpdate }) => {
             </div>
 
             <div className="qr-section">
-              <QRCode value={product.name} size={128} />
-            </div>
+            <p className="qr-text">📱 Scan QR to view in AR</p>
+            <QRCode value={product.name} size={128} />
+          </div>
+
           </div>
         </div>
       ) : (
@@ -151,6 +153,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             <div className="review-card" key={idx}>
               <div className="review-header">
                 <strong>{review.name || "Anonymous"}</strong>
+                 <p>{review.comment}</p>
                 <span>{new Date(review.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="review-rating">
@@ -163,7 +166,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   />
                 ))}
               </div>
-              <p>{review.comment}</p>
+             
             </div>
           ))
         ) : (
