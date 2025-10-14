@@ -13,7 +13,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
- 
+
   // Function to hide notification after 3 seconds
   const hideNotification = () => {
     setTimeout(() => {
@@ -42,14 +42,14 @@ const ItemDetails = ({ onCartUpdate }) => {
           onCartUpdate(); // Update cart count in navbar
         }
         hideNotification();
-   
-      const updatedStock = product.countInStock - quantity;
-      //localStorage.setItem(`product-${id}`, updatedStock);
-      setProduct((prevProduct) => ({
-        ...prevProduct,
-        countInStock: updatedStock,
-      }));
-      
+
+        const updatedStock = product.countInStock - quantity;
+        //localStorage.setItem(`product-${id}`, updatedStock);
+        setProduct((prevProduct) => ({
+          ...prevProduct,
+          countInStock: updatedStock,
+        }));
+
         // Now update the stock on the backend as well
         const updateStockResponse = await axios.put(
           `https://new-sever.vercel.app/api/products/${id}`,
@@ -58,7 +58,7 @@ const ItemDetails = ({ onCartUpdate }) => {
           },
           { withCredentials: true }
         );
-  
+
         if (updateStockResponse.status === 200) {
           console.log("Stock updated on backend:", updateStockResponse.data);
           const productResponse = await axios.get(
@@ -92,13 +92,13 @@ const ItemDetails = ({ onCartUpdate }) => {
 
           setProduct(productResponse.data);
           // Check for any updates in local storage and update the stock accordingly
-        const savedStock = localStorage.getItem(`product-${id}`);
-        if (savedStock) {
-          setProduct((prevProduct) => ({
-            ...prevProduct,
-            countInStock: parseInt(savedStock, 10),
-          }));
-        }
+          const savedStock = localStorage.getItem(`product-${id}`);
+          if (savedStock) {
+            setProduct((prevProduct) => ({
+              ...prevProduct,
+              countInStock: parseInt(savedStock, 10),
+            }));
+          }
 
 
           // Fetch reviews for this product
@@ -127,11 +127,11 @@ const ItemDetails = ({ onCartUpdate }) => {
   }, [id]);
 
   // Call fetchItemDetails in useEffect
-//  useEffect(() => {
-//   fetchItemDetails();
-// }, [id]);
+  //  useEffect(() => {
+  //   fetchItemDetails();
+  // }, [id]);
 
-  
+
   // Log the product count in stock whenever the product state changes
   useEffect(() => {
     if (product) {
@@ -191,7 +191,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   +
                 </button>
               </div>
-{/* 
+              {/* 
               {console.log("Count in Stock:", product.countInStock)} */}
 
               {/* Rating Display */}
@@ -234,9 +234,12 @@ const ItemDetails = ({ onCartUpdate }) => {
                 <QRCode
                   size={256}
                   style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                  value={product.name}
+                  value={product.modelImageUrl ? `${window.location.origin}/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}` : product.name}
                   viewBox={`0 0 16 16`}
                 />
+                <p className="qr-instructions">
+                  {product.modelImageUrl ? "Scan with your phone to view in AR" : "No 3D model available"}
+                </p>
               </div>
             </div>
           </div>

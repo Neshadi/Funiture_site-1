@@ -26,6 +26,7 @@ import ResetPassword from './pages/resetPassword/ResetPassword';
 import VerifyEmail from './pages/verifyEmail/verifyEmail';
 import NotFound from './pages/404/NotFound';
 import ReportIssue from './pages/ReportIssue/ReportIssue';
+import ARViewer from './pages/ARViewer/ARViewer';
 
 const App = () => {
   const [userType, setUserType] = useState(null); // Track if the user is an admin or regular user
@@ -131,14 +132,7 @@ const App = () => {
         />
         <Route path='/Item-Page/:id'
           element={<>
-            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
-            <ItemDetailsPage />
-          </>
-
-          } />
-        <Route path='/Item-Page/:id'
-          element={<>
-            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
+            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
             <ItemDetailsPage />
           </>
           } />
@@ -161,27 +155,6 @@ const App = () => {
           </>
           } />
 
-        {/* <Route
-          path="/cart"
-          element={
-            <>
-              <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout}  setShowLogin={setShowLogin} />
-              <Cart />
-            </>
-          }
-        /> */}
-        <Route path='/forgot-password'
-          element={<>
-            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
-            <Fogotpassword />
-          </>
-          } />
-        <Route path='/reset-password'
-          element={<>
-            <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setIsLoggedIn} />
-            <ResetPassword />
-          </>
-          } />
 
         <Route
           path="/cart"
@@ -260,6 +233,12 @@ const App = () => {
               <AboutUs />
             </>
           }
+        />
+
+        {/* AR Viewer Page - No navbar for fullscreen AR experience */}
+        <Route
+          path="/ar-viewer"
+          element={<ARViewer />}
         />
 
         {/* Profile Page (Accessible to both User and Admin) */}

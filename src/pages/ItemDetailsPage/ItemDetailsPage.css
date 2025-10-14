@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -19,7 +20,8 @@ html, body {
 
 .product {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping for small screens */
+  flex-wrap: wrap;
+  /* Allow wrapping for small screens */
   gap: 20px;
   flex-direction: row;
   align-items: flex-start;
@@ -168,13 +170,27 @@ html, body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-10px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 
 /* Rating display styles */
@@ -307,8 +323,13 @@ html, body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .QrCode {
@@ -316,6 +337,14 @@ html, body {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.qr-instructions {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
 }
 
 /* Responsive Design */
