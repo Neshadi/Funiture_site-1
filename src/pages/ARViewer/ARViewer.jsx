@@ -16,13 +16,7 @@ function Model({ url, name }) {
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial color="orange" />
         </mesh>
-        <Text
-          position={[0, 1.5, 0]}
-          fontSize={0.3}
-          color="red"
-          anchorX="center"
-          anchorY="middle"
-        >
+        <Text position={[0, 1.5, 0]} fontSize={0.3} color="red">
           Model Loading...
         </Text>
       </group>
@@ -32,13 +26,7 @@ function Model({ url, name }) {
   return (
     <group>
       <primitive object={scene} scale={[1, 1, 1]} />
-      <Text
-        position={[0, 1, 0]}
-        fontSize={0.5}
-        color="black"
-        anchorX="center"
-        anchorY="middle"
-      >
+      <Text position={[0, 1, 0]} fontSize={0.5} color="black">
         {name}
       </Text>
     </group>
@@ -50,6 +38,7 @@ function PlaceableModel({ url, name }) {
   const [previewPosition, setPreviewPosition] = useState(null);
   const matrix = useRef(new Matrix4());
   const { gl } = useThree();
+  const [hitTestError, setHitTestError] = useState(null);
 
   useEffect(() => {
     const session = gl.xr.getSession();
@@ -62,12 +51,9 @@ function PlaceableModel({ url, name }) {
     };
 
     session.addEventListener('select', onSelect);
-    return () => {
-      session.removeEventListener('select', onSelect);
-    };
+    return () => session.removeEventListener('select', onSelect);
   }, [gl.xr, previewPosition]);
 
-  // Hit-test logic for surface detection
   useEffect(() => {
     const session = gl.xr.getSession();
     if (!session) return;
@@ -76,7 +62,11 @@ function PlaceableModel({ url, name }) {
     let hitTestSourceRequested = false;
 
     const onFrame = (time, frame) => {
-      if (!frame || !hitTestSource) {
+      if (!frame || hitTestError) {
+        setPreviewPosition(null);
+        return;
+      }
+      if (!hitTestSource) {
         setPreviewPosition(null);
         return;
       }
@@ -90,8 +80,6 @@ function PlaceableModel({ url, name }) {
         if (pose) {
           matrix.current.fromArray(pose.transform.matrix);
           setPreviewPosition(new Vector3().setFromMatrixPosition(matrix.current));
-        } else {
-          setPreviewPosition(null);
         }
       } else {
         setPreviewPosition(null);
@@ -104,9 +92,11 @@ function PlaceableModel({ url, name }) {
           space: await session.requestReferenceSpace('viewer'),
           entityTypes: ['plane'],
         });
+        console.log('Hit-test source initialized:', hitTestSource);
         hitTestSourceRequested = true;
       } catch (err) {
-        console.error('Error initializing hit-test:', err);
+        console.error('Hit-test initialization failed:', err);
+        setHitTestError('Failed to initialize hit-test: ' + err.message);
       }
     };
 
@@ -114,22 +104,12 @@ function PlaceableModel({ url, name }) {
       initializeHitTest();
     }
 
-    session.addEventListener('end', () => {
-      if (hitTestSource) {
-        hitTestSource.cancel();
-        hitTestSource = null;
-      }
-      hitTestSourceRequested = false;
-    });
-
     gl.xr.addEventListener('frame', onFrame);
     return () => {
       gl.xr.removeEventListener('frame', onFrame);
-      if (hitTestSource) {
-        hitTestSource.cancel();
-      }
+      if (hitTestSource) hitTestSource.cancel();
     };
-  }, [gl.xr]);
+  }, [gl.xr, hitTestError]);
 
   return (
     <group>
@@ -143,6 +123,11 @@ function PlaceableModel({ url, name }) {
           <circleGeometry args={[0.1, 32]} />
           <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
         </mesh>
+      )}
+      {hitTestError && (
+        <Text position={[0, 0, -2]} fontSize={0.3} color="red">
+          {hitTestError}
+        </Text>
       )}
     </group>
   );
@@ -158,21 +143,18 @@ function ARScene({ modelUrl, productName }) {
       navigator.xr
         .isSessionSupported('immersive-ar')
         .then((supported) => {
+          console.log('AR Supported:', supported);
           setIsARSupported(supported);
           if (!supported) {
-            setError(
-              'AR is not supported on this device. Please try on a mobile device with AR capabilities.'
-            );
+            setError('AR is not supported on this device.');
           }
         })
         .catch((err) => {
           console.error('Error checking AR support:', err);
-          setError('Error checking AR support');
+          setError('Error checking AR support: ' + err.message);
         });
     } else {
-      setError(
-        'WebXR is not supported on this browser. Please use a modern mobile browser.'
-      );
+      setError('WebXR is not supported on this browser.');
     }
   }, []);
 
@@ -201,7 +183,7 @@ function ARScene({ modelUrl, productName }) {
         <p>Product: {productName}</p>
         <p className="ar-instructions">
           {isARSupported
-            ? "Tap 'Enter AR', then tap on a surface to place the model in your environment."
+            ? "Tap 'Enter AR', then tap on a surface to place the model."
             : 'Checking AR support...'}
         </p>
       </div>
@@ -219,11 +201,18 @@ function ARScene({ modelUrl, productName }) {
 
       <div className="ar-controls">
         <button
-          onClick={() => store.enterAR({
-            requiredFeatures: ['hit-test'],
-            optionalFeatures: ['dom-overlay'],
-            domOverlay: { root: document.body },
-          })}
+          onClick={() => {
+            store
+              .enterAR({
+                requiredFeatures: ['hit-test'],
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.body },
+              })
+              .catch((err) => {
+                console.error('AR session failed:', err);
+                setError('Failed to enter AR: ' + err.message);
+              });
+          }}
           className="ar-button"
         >
           Enter AR
@@ -258,9 +247,7 @@ class ARViewerErrorBoundary extends React.Component {
             <li>Missing WebXR support</li>
             <li>Network connectivity issues</li>
           </ul>
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-          >
+          <button onClick={() => this.setState({ hasError: false, error: null })}>
             Try Again
           </button>
         </div>
@@ -275,6 +262,7 @@ const ARViewer = () => {
   const [searchParams] = useSearchParams();
   const modelUrl = searchParams.get('model');
   const productName = searchParams.get('name');
+  console.log('Model URL:', modelUrl, 'Product Name:', productName);
 
   if (!modelUrl) {
     return (
@@ -288,10 +276,7 @@ const ARViewer = () => {
   return (
     <ARViewerErrorBoundary>
       <div className="ar-viewer-container">
-        <ARScene
-          modelUrl={modelUrl}
-          productName={productName || 'Unknown Product'}
-        />
+        <ARScene modelUrl={modelUrl} productName={productName || 'Unknown Product'} />
       </div>
     </ARViewerErrorBoundary>
   );
