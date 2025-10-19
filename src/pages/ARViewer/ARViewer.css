@@ -129,6 +129,19 @@
     font-size: 1.5rem;
 }
 
+.ar-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.ar-button:hover {
+  background-color: #0056b3;
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
     .ar-viewer {

@@ -1,8 +1,9 @@
-import React, { Suspense, useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { ARButton, XR } from '@react-three/xr'; // ✅ Removed Controllers, Hands
-import { OrbitControls, Environment, useGLTF, Text } from '@react-three/drei';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { XR, useXR } from '@react-three/xr';
+import { Environment, useGLTF, Text } from '@react-three/drei';
 import { useSearchParams } from 'react-router-dom';
+import { Matrix4, Vector3 } from 'three';
 import './ARViewer.css';
 
 function Model({ url, name }) {
@@ -32,7 +33,7 @@ function Model({ url, name }) {
     <group>
       <primitive object={scene} scale={[1, 1, 1]} />
       <Text
-        position={[0, 2, 0]}
+        position={[0, 1, 0]}
         fontSize={0.5}
         color="black"
         anchorX="center"
@@ -44,9 +45,113 @@ function Model({ url, name }) {
   );
 }
 
+function PlaceableModel({ url, name }) {
+  const [placedPosition, setPlacedPosition] = useState(null);
+  const [previewPosition, setPreviewPosition] = useState(null);
+  const matrix = useRef(new Matrix4());
+  const { gl } = useThree();
+
+  useEffect(() => {
+    const session = gl.xr.getSession();
+    if (!session) return;
+
+    const onSelect = (event) => {
+      if (previewPosition) {
+        setPlacedPosition(previewPosition.clone());
+      }
+    };
+
+    session.addEventListener('select', onSelect);
+    return () => {
+      session.removeEventListener('select', onSelect);
+    };
+  }, [gl.xr, previewPosition]);
+
+  // Hit-test logic for surface detection
+  useEffect(() => {
+    const session = gl.xr.getSession();
+    if (!session) return;
+
+    let hitTestSource = null;
+    let hitTestSourceRequested = false;
+
+    const onFrame = (time, frame) => {
+      if (!frame || !hitTestSource) {
+        setPreviewPosition(null);
+        return;
+      }
+
+      const referenceSpace = gl.xr.getReferenceSpace();
+      const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+      if (hitTestResults.length > 0) {
+        const hit = hitTestResults[0];
+        const pose = hit.getPose(referenceSpace);
+        if (pose) {
+          matrix.current.fromArray(pose.transform.matrix);
+          setPreviewPosition(new Vector3().setFromMatrixPosition(matrix.current));
+        } else {
+          setPreviewPosition(null);
+        }
+      } else {
+        setPreviewPosition(null);
+      }
+    };
+
+    const initializeHitTest = async () => {
+      try {
+        hitTestSource = await session.requestHitTestSource({
+          space: await session.requestReferenceSpace('viewer'),
+          entityTypes: ['plane'],
+        });
+        hitTestSourceRequested = true;
+      } catch (err) {
+        console.error('Error initializing hit-test:', err);
+      }
+    };
+
+    if (session && !hitTestSourceRequested) {
+      initializeHitTest();
+    }
+
+    session.addEventListener('end', () => {
+      if (hitTestSource) {
+        hitTestSource.cancel();
+        hitTestSource = null;
+      }
+      hitTestSourceRequested = false;
+    });
+
+    gl.xr.addEventListener('frame', onFrame);
+    return () => {
+      gl.xr.removeEventListener('frame', onFrame);
+      if (hitTestSource) {
+        hitTestSource.cancel();
+      }
+    };
+  }, [gl.xr]);
+
+  return (
+    <group>
+      {placedPosition && (
+        <group position={placedPosition}>
+          <Model url={url} name={name} />
+        </group>
+      )}
+      {previewPosition && !placedPosition && (
+        <mesh position={previewPosition} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.1, 32]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
 function ARScene({ modelUrl, productName }) {
   const [isARSupported, setIsARSupported] = useState(false);
   const [error, setError] = useState(null);
+  const { store } = useXR();
 
   useEffect(() => {
     if (navigator.xr) {
@@ -81,7 +186,6 @@ function ARScene({ modelUrl, productName }) {
           <Canvas camera={{ position: [0, 0, 5] }}>
             <Suspense fallback={null}>
               <Model url={modelUrl} name={productName} />
-              <OrbitControls />
               <Environment preset="sunset" />
             </Suspense>
           </Canvas>
@@ -97,7 +201,7 @@ function ARScene({ modelUrl, productName }) {
         <p>Product: {productName}</p>
         <p className="ar-instructions">
           {isARSupported
-            ? "Tap 'Enter AR' to place the model in your environment"
+            ? "Tap 'Enter AR', then tap on a surface to place the model in your environment."
             : 'Checking AR support...'}
         </p>
       </div>
@@ -105,10 +209,8 @@ function ARScene({ modelUrl, productName }) {
       <div className="ar-canvas-container">
         <Canvas camera={{ position: [0, 0, 5] }}>
           <XR>
-            {/* ✅ Removed <Controllers /> and <Hands /> */}
             <Suspense fallback={null}>
-              <Model url={modelUrl} name={productName} />
-              <OrbitControls />
+              <PlaceableModel url={modelUrl} name={productName} />
               <Environment preset="sunset" />
             </Suspense>
           </XR>
@@ -116,21 +218,21 @@ function ARScene({ modelUrl, productName }) {
       </div>
 
       <div className="ar-controls">
-        <ARButton
-          sessionInit={{
+        <button
+          onClick={() => store.enterAR({
             requiredFeatures: ['hit-test'],
             optionalFeatures: ['dom-overlay'],
             domOverlay: { root: document.body },
-          }}
+          })}
+          className="ar-button"
         >
           Enter AR
-        </ARButton>
+        </button>
       </div>
     </div>
   );
 }
 
-// Error Boundary stays same
 class ARViewerErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

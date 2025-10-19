@@ -10,6 +10,8 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [numReviews, setNumReviews] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
@@ -44,17 +46,16 @@ const ItemDetails = ({ onCartUpdate }) => {
         hideNotification();
 
         const updatedStock = product.countInStock - quantity;
-        //localStorage.setItem(`product-${id}`, updatedStock);
         setProduct((prevProduct) => ({
           ...prevProduct,
           countInStock: updatedStock,
         }));
 
-        // Now update the stock on the backend as well
+        // Update the stock on the backend
         const updateStockResponse = await axios.put(
           `https://new-sever.vercel.app/api/products/${id}`,
           {
-            countInStock: updatedStock, // Update the backend stock with the updated value
+            countInStock: updatedStock,
           },
           { withCredentials: true }
         );
@@ -73,7 +74,6 @@ const ItemDetails = ({ onCartUpdate }) => {
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      //setNotification("Failed to add item to cart.");
       hideNotification();
     }
   };
@@ -88,49 +88,37 @@ const ItemDetails = ({ onCartUpdate }) => {
         );
 
         if (productResponse.status === 200) {
-          console.log("Fetched product:", productResponse.data); // Log the product data
-
+          console.log("Fetched product:", productResponse.data);
           setProduct(productResponse.data);
-          // Check for any updates in local storage and update the stock accordingly
-          const savedStock = localStorage.getItem(`product-${id}`);
-          if (savedStock) {
-            setProduct((prevProduct) => ({
-              ...prevProduct,
-              countInStock: parseInt(savedStock, 10),
-            }));
-          }
-
 
           // Fetch reviews for this product
-          try {
-            const reviewsResponse = await axios.get(
-              `https://new-sever.vercel.app/api/products/reviews/${id}`
-            );
+          const reviewsResponse = await axios.get(
+            `https://new-sever.vercel.app/api/products/reviews/${id}`
+          );
 
-            if (reviewsResponse.status === 200) {
-              setReviews(reviewsResponse.data || []);
-              console.log(reviews);
+          if (reviewsResponse.status === 200) {
+            const fetchedReviews = reviewsResponse.data || [];
+            setReviews(fetchedReviews);
+            if (fetchedReviews.length > 0) {
+              const totalRating = fetchedReviews.reduce((acc, r) => acc + r.rating, 0);
+              setAverageRating(totalRating / fetchedReviews.length);
+              setNumReviews(fetchedReviews.length);
+            } else {
+              setAverageRating(0);
+              setNumReviews(0);
             }
-          } catch (reviewErr) {
-            console.error("Error fetching reviews:", reviewErr);
+            console.log("Fetched reviews:", fetchedReviews);
           }
         }
       } catch (err) {
-        console.error("Error fetching product data:", err);
+        console.error("Error fetching product data or reviews:", err);
       } finally {
         setLoading(false);
-        // setHasFetched(true); 
       }
     };
 
     fetchItemDetails();
   }, [id]);
-
-  // Call fetchItemDetails in useEffect
-  //  useEffect(() => {
-  //   fetchItemDetails();
-  // }, [id]);
-
 
   // Log the product count in stock whenever the product state changes
   useEffect(() => {
@@ -138,7 +126,6 @@ const ItemDetails = ({ onCartUpdate }) => {
       console.log("Count in Stock:", product.countInStock);
     }
   }, [product]);
-
 
   return (
     <div>
@@ -191,8 +178,6 @@ const ItemDetails = ({ onCartUpdate }) => {
                   +
                 </button>
               </div>
-              {/* 
-              {console.log("Count in Stock:", product.countInStock)} */}
 
               {/* Rating Display */}
               <div className="rating-display">
@@ -200,15 +185,15 @@ const ItemDetails = ({ onCartUpdate }) => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`star ${reviews.rating >= star ? 'filled' : ''}`}
-                      fill={reviews.rating >= star ? "#FFD700" : "none"}
-                      stroke={reviews.rating >= star ? "#FFD700" : "currentColor"}
+                      className={`star ${averageRating >= star ? 'filled' : ''}`}
+                      fill={averageRating >= star ? "#FFD700" : "none"}
+                      stroke={averageRating >= star ? "#FFD700" : "currentColor"}
                       size={24}
                     />
                   ))}
                 </div>
-                <span className="rating-value">{reviews.rating.toFixed(1)}</span>
-                <span className="review-count">({reviews.numReviews} reviews)</span>
+                <span className="rating-value">{averageRating.toFixed(1)}</span>
+                <span className="review-count">({numReviews} reviews)</span>
               </div>
 
               {/* Action Buttons */}
@@ -229,19 +214,21 @@ const ItemDetails = ({ onCartUpdate }) => {
               </div>
             </div>
 
-            <div className="qr-code-container">
-              <div className="QrCode">
-                <QRCode
-                  size={256}
-                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                  value={product.modelImageUrl ? `${window.location.origin}/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}` : product.name}
-                  viewBox={`0 0 16 16`}
-                />
-                <p className="qr-instructions">
-                  {product.modelImageUrl ? "Scan with your phone to view in AR" : "No 3D model available"}
-                </p>
+            {product.modelImageUrl && (
+              <div className="qr-code-container">
+                <div className="QrCode">
+                  <QRCode
+                    size={256}
+                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                    value={`${window.location.origin}/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}`}
+                    viewBox={`0 0 256 256`}
+                  />
+                  <p className="qr-instructions">
+                    Scan with your phone to view in AR
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           <p>Product not found.</p>
@@ -252,9 +239,9 @@ const ItemDetails = ({ onCartUpdate }) => {
       <div className="reviews-section">
         <h3>Customer Reviews</h3>
 
-        {reviews.reviews && reviews.reviews.length > 0 ? (
+        {reviews.length > 0 ? (
           <div className="reviews-list">
-            {reviews.reviews.map((review, index) => (
+            {reviews.map((review, index) => (
               <div className="review-item" key={index}>
                 <div className="review-header">
                   <div className="review-rating">
