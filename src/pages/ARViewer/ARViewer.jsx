@@ -8,7 +8,7 @@ import './ARViewer.css';
 
 function Model({ url, name }) {
   const { scene } = useGLTF(url);
-
+  console.log('Loading model from:', url, 'Scene:', scene);
   if (!scene) {
     return (
       <group>
@@ -22,7 +22,6 @@ function Model({ url, name }) {
       </group>
     );
   }
-
   return (
     <group>
       <primitive object={scene} scale={[1, 1, 1]} />
@@ -35,17 +34,17 @@ function Model({ url, name }) {
 
 function ARController({ onEnterAR, isARSupported }) {
   const { gl } = useThree();
-
   useEffect(() => {
-    if (!isARSupported) return;
-
+    if (!isARSupported || !gl.xr) {
+      console.error('WebXR not supported or gl.xr undefined');
+      return;
+    }
     const session = gl.xr.getSession();
     if (session) {
       onEnterAR();
     }
   }, [gl.xr, isARSupported, onEnterAR]);
-
-  return null; // This component only manages the AR session
+  return null;
 }
 
 function PlaceableModel({ url, name }) {
@@ -56,8 +55,11 @@ function PlaceableModel({ url, name }) {
   const [hitTestError, setHitTestError] = useState(null);
 
   useEffect(() => {
-    const session = gl.xr.getSession();
-    if (!session) return;
+    const session = gl.xr?.getSession();
+    if (!session) {
+      console.error('No XR session available');
+      return;
+    }
 
     const onSelect = (event) => {
       if (previewPosition) {
@@ -70,14 +72,17 @@ function PlaceableModel({ url, name }) {
   }, [gl.xr, previewPosition]);
 
   useEffect(() => {
-    const session = gl.xr.getSession();
-    if (!session) return;
+    const session = gl.xr?.getSession();
+    if (!session) {
+      console.error('No XR session available');
+      return;
+    }
 
     let hitTestSource = null;
     let hitTestSourceRequested = false;
 
     const onFrame = (time, frame) => {
-      if (!frame || hitTestError) {
+      if (!frame || hitTestError || !gl.xr) {
         setPreviewPosition(null);
         return;
       }
@@ -208,11 +213,14 @@ function ARScene({ modelUrl, productName }) {
       </div>
 
       <div className="ar-canvas-container">
-        <Canvas camera={{ position: [0, 0, 5] }}>
+        <Canvas
+          gl={{ antialias: true, alpha: true }} // Ensure WebGL context is properly initialized
+          camera={{ position: [0, 0, 5] }}
+        >
           <XR>
             {enterAR && (
               <>
-                <ARController onEnterAR={() => {}} isARSupported={isARSupported} />
+                <ARController onEnterAR={handleEnterAR} isARSupported={isARSupported} />
                 <PlaceableModel url={modelUrl} name={productName} />
                 <Environment preset="sunset" />
               </>
@@ -223,9 +231,7 @@ function ARScene({ modelUrl, productName }) {
 
       <div className="ar-controls">
         <button
-          onClick={() => {
-            handleEnterAR();
-          }}
+          onClick={handleEnterAR}
           className="ar-button"
           disabled={!isARSupported}
         >
@@ -267,7 +273,6 @@ class ARViewerErrorBoundary extends React.Component {
         </div>
       );
     }
-
     return this.props.children;
   }
 }
