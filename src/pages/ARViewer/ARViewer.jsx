@@ -165,6 +165,8 @@ function ARScene({ modelUrl, productName }) {
   const [error, setError] = useState(null);
   const [enterAR, setEnterAR] = useState(false);
   const [isWebXRReady, setIsWebXRReady] = useState(false);
+  const [webXRManagerReady, setWebXRManagerReady] = useState(false);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     const checkARSupport = async () => {
@@ -177,6 +179,10 @@ function ARScene({ modelUrl, productName }) {
             setError('AR is not supported on this device.');
           } else {
             setIsWebXRReady(true);
+            // Add a small delay to ensure WebXR is fully ready
+            setTimeout(() => {
+              setWebXRManagerReady(true);
+            }, 100);
           }
         } else {
           setError('WebXR is not supported on this browser.');
@@ -243,22 +249,53 @@ function ARScene({ modelUrl, productName }) {
       </div>
 
       <div className="ar-canvas-container">
-        <Canvas camera={{ position: [0, 0, 5] }}>
-          <XR
-            foveation={0}
-            frameRate={60}
-            referenceSpace="local"
-            onSessionStart={() => console.log('XR session started')}
-            onSessionEnd={() => console.log('XR session ended')}
-          >
-            {enterAR && isWebXRReady && (
-              <>
-                <ARController onEnterAR={() => {}} isARSupported={isARSupported} />
-                <PlaceableModel url={modelUrl} name={productName} />
-                <Environment preset="sunset" />
-              </>
-            )}
-          </XR>
+        <Canvas 
+          ref={canvasRef}
+          camera={{ position: [0, 0, 5] }}
+          gl={{ 
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+          }}
+          onCreated={({ gl, scene, camera }) => {
+            // Ensure WebXR is properly initialized
+            if (navigator.xr) {
+              console.log('Setting up WebXR manager...');
+              gl.xr.enabled = true;
+              
+              // Initialize WebXR manager if it doesn't exist
+              if (!gl.xr.getSession) {
+                gl.xr.getSession = () => null;
+              }
+              if (!gl.xr.getReferenceSpace) {
+                gl.xr.getReferenceSpace = () => null;
+              }
+              if (!gl.xr.addEventListener) {
+                gl.xr.addEventListener = () => {};
+              }
+              if (!gl.xr.removeEventListener) {
+                gl.xr.removeEventListener = () => {};
+              }
+            }
+          }}
+        >
+          {isWebXRReady && webXRManagerReady && (
+            <XR
+              foveation={0}
+              frameRate={60}
+              referenceSpace="local"
+              onSessionStart={() => console.log('XR session started')}
+              onSessionEnd={() => console.log('XR session ended')}
+            >
+              {enterAR && (
+                <>
+                  <ARController onEnterAR={() => {}} isARSupported={isARSupported} />
+                  <PlaceableModel url={modelUrl} name={productName} />
+                  <Environment preset="sunset" />
+                </>
+              )}
+            </XR>
+          )}
         </Canvas>
       </div>
 
@@ -315,13 +352,53 @@ const ARViewer = () => {
   const [searchParams] = useSearchParams();
   const modelUrl = searchParams.get('model');
   const productName = searchParams.get('name');
+  const [webXRLoaded, setWebXRLoaded] = useState(false);
+  
   console.log('Model URL:', modelUrl, 'Product Name:', productName);
+
+  useEffect(() => {
+    // Load WebXR polyfill if needed
+    const loadWebXR = async () => {
+      try {
+        if (!navigator.xr) {
+          // Try to load WebXR polyfill
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js';
+          script.onload = () => {
+            console.log('WebXR polyfill loaded');
+            setWebXRLoaded(true);
+          };
+          script.onerror = () => {
+            console.log('WebXR polyfill failed to load, using native WebXR');
+            setWebXRLoaded(true);
+          };
+          document.head.appendChild(script);
+        } else {
+          setWebXRLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error loading WebXR:', error);
+        setWebXRLoaded(true);
+      }
+    };
+
+    loadWebXR();
+  }, []);
 
   if (!modelUrl) {
     return (
       <div className="ar-error">
         <h2>No Model URL Provided</h2>
         <p>Please scan a valid QR code to view a 3D model in AR.</p>
+      </div>
+    );
+  }
+
+  if (!webXRLoaded) {
+    return (
+      <div className="ar-error">
+        <h2>Loading AR Viewer...</h2>
+        <p>Initializing WebXR support...</p>
       </div>
     );
   }
