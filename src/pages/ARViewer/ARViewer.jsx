@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { XR, useXR } from '@react-three/xr';
+import { XR } from '@react-three/xr';
 import { Environment, useGLTF, Text } from '@react-three/drei';
 import { useSearchParams } from 'react-router-dom';
 import { Matrix4, Vector3 } from 'three';
@@ -31,6 +31,21 @@ function Model({ url, name }) {
       </Text>
     </group>
   );
+}
+
+function ARController({ onEnterAR, isARSupported }) {
+  const { gl } = useThree();
+
+  useEffect(() => {
+    if (!isARSupported) return;
+
+    const session = gl.xr.getSession();
+    if (session) {
+      onEnterAR();
+    }
+  }, [gl.xr, isARSupported, onEnterAR]);
+
+  return null; // This component only manages the AR session
 }
 
 function PlaceableModel({ url, name }) {
@@ -136,7 +151,7 @@ function PlaceableModel({ url, name }) {
 function ARScene({ modelUrl, productName }) {
   const [isARSupported, setIsARSupported] = useState(false);
   const [error, setError] = useState(null);
-  const { store } = useXR();
+  const [enterAR, setEnterAR] = useState(false);
 
   useEffect(() => {
     if (navigator.xr) {
@@ -157,6 +172,10 @@ function ARScene({ modelUrl, productName }) {
       setError('WebXR is not supported on this browser.');
     }
   }, []);
+
+  const handleEnterAR = () => {
+    setEnterAR(true);
+  };
 
   if (error) {
     return (
@@ -191,10 +210,13 @@ function ARScene({ modelUrl, productName }) {
       <div className="ar-canvas-container">
         <Canvas camera={{ position: [0, 0, 5] }}>
           <XR>
-            <Suspense fallback={null}>
-              <PlaceableModel url={modelUrl} name={productName} />
-              <Environment preset="sunset" />
-            </Suspense>
+            {enterAR && (
+              <>
+                <ARController onEnterAR={() => {}} isARSupported={isARSupported} />
+                <PlaceableModel url={modelUrl} name={productName} />
+                <Environment preset="sunset" />
+              </>
+            )}
           </XR>
         </Canvas>
       </div>
@@ -202,18 +224,10 @@ function ARScene({ modelUrl, productName }) {
       <div className="ar-controls">
         <button
           onClick={() => {
-            store
-              .enterAR({
-                requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: document.body },
-              })
-              .catch((err) => {
-                console.error('AR session failed:', err);
-                setError('Failed to enter AR: ' + err.message);
-              });
+            handleEnterAR();
           }}
           className="ar-button"
+          disabled={!isARSupported}
         >
           Enter AR
         </button>
