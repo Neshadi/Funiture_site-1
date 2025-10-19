@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { XR } from '@react-three/xr';
+import { XR, useXR } from '@react-three/xr'; // Import useXR
 import { Environment, useGLTF, Text } from '@react-three/drei';
 import { useSearchParams } from 'react-router-dom';
 import { Matrix4, Vector3 } from 'three';
@@ -32,18 +32,28 @@ function Model({ url, name }) {
   );
 }
 
-function ARController({ onEnterAR, isARSupported }) {
-  const { gl } = useThree();
+function ARController({ isARSupported }) {
+  const { gl, session } = useThree();
+  const { store } = useXR(); // Access the XR store
+
   useEffect(() => {
-    if (!isARSupported || !gl.xr) {
-      console.error('WebXR not supported or gl.xr undefined');
+    if (!isARSupported || !gl.xr || !store) {
+      console.error('WebXR not supported, gl.xr or store undefined');
       return;
     }
-    const session = gl.xr.getSession();
     if (session) {
-      onEnterAR();
+      console.log('XR session detected:', session);
+    } else {
+      store.enterAR({
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: document.body },
+      }).catch((err) => {
+        console.error('Failed to enter AR:', err);
+      });
     }
-  }, [gl.xr, isARSupported, onEnterAR]);
+  }, [gl.xr, isARSupported, session, store]);
+
   return null;
 }
 
@@ -51,11 +61,10 @@ function PlaceableModel({ url, name }) {
   const [placedPosition, setPlacedPosition] = useState(null);
   const [previewPosition, setPreviewPosition] = useState(null);
   const matrix = useRef(new Matrix4());
-  const { gl } = useThree();
+  const { gl, session } = useThree();
   const [hitTestError, setHitTestError] = useState(null);
 
   useEffect(() => {
-    const session = gl.xr?.getSession();
     if (!session) {
       console.error('No XR session available');
       return;
@@ -69,10 +78,9 @@ function PlaceableModel({ url, name }) {
 
     session.addEventListener('select', onSelect);
     return () => session.removeEventListener('select', onSelect);
-  }, [gl.xr, previewPosition]);
+  }, [session, previewPosition]);
 
   useEffect(() => {
-    const session = gl.xr?.getSession();
     if (!session) {
       console.error('No XR session available');
       return;
@@ -120,7 +128,7 @@ function PlaceableModel({ url, name }) {
       }
     };
 
-    if (session && !hitTestSourceRequested) {
+    if (!hitTestSourceRequested) {
       initializeHitTest();
     }
 
@@ -129,7 +137,7 @@ function PlaceableModel({ url, name }) {
       gl.xr.removeEventListener('frame', onFrame);
       if (hitTestSource) hitTestSource.cancel();
     };
-  }, [gl.xr, hitTestError]);
+  }, [gl.xr, session, hitTestError]);
 
   return (
     <group>
@@ -189,7 +197,10 @@ function ARScene({ modelUrl, productName }) {
         <p>{error}</p>
         <div className="fallback-viewer">
           <h3>3D Model Viewer</h3>
-          <Canvas camera={{ position: [0, 0, 5] }}>
+          <Canvas
+            gl={{ antialias: true, alpha: true }} // Ensure WebGL context supports WebXR
+            camera={{ position: [0, 0, 5] }}
+          >
             <Suspense fallback={null}>
               <Model url={modelUrl} name={productName} />
               <Environment preset="sunset" />
@@ -214,13 +225,13 @@ function ARScene({ modelUrl, productName }) {
 
       <div className="ar-canvas-container">
         <Canvas
-          gl={{ antialias: true, alpha: true }} // Ensure WebGL context is properly initialized
+          gl={{ antialias: true, alpha: true }} // Ensure WebGL context supports WebXR
           camera={{ position: [0, 0, 5] }}
         >
           <XR>
-            {enterAR && (
+            {enterAR && isARSupported && (
               <>
-                <ARController onEnterAR={handleEnterAR} isARSupported={isARSupported} />
+                <ARController isARSupported={isARSupported} />
                 <PlaceableModel url={modelUrl} name={productName} />
                 <Environment preset="sunset" />
               </>
