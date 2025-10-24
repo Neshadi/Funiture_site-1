@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Star } from "lucide-react";
 import "./ItemDetailsPage.css";
 import axios from "axios";
 import QRCode from "react-qr-code";
-import ArViewer from "../../components/ArViewer"; // Import the new AR Viewer component
+import { Camera } from "lucide-react";
 
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
@@ -102,7 +102,10 @@ const ItemDetails = ({ onCartUpdate }) => {
             const fetchedReviews = reviewsResponse.data || [];
             setReviews(fetchedReviews);
             if (fetchedReviews.length > 0) {
-              const totalRating = fetchedReviews.reduce((acc, r) => acc + r.rating, 0);
+              const totalRating = fetchedReviews.reduce(
+                (acc, r) => acc + r.rating,
+                0
+              );
               setAverageRating(totalRating / fetchedReviews.length);
               setNumReviews(fetchedReviews.length);
             } else {
@@ -133,6 +136,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const handleArView = () => {
     setShowArViewer(true);
   };
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -161,7 +165,9 @@ const ItemDetails = ({ onCartUpdate }) => {
               <p className="description">{product.description}</p>
               <p className="price">LKR.{product.price?.toFixed(2)}</p>
               <p
-                className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"}`}
+                className={`stock ${
+                  product.countInStock > 0 ? "in-stock" : "out-of-stock"
+                }`}
               >
                 {product.countInStock > 0
                   ? `In Stock (${product.countInStock} available)`
@@ -191,9 +197,13 @@ const ItemDetails = ({ onCartUpdate }) => {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`star ${averageRating >= star ? 'filled' : ''}`}
+                      className={`star ${
+                        averageRating >= star ? "filled" : ""
+                      }`}
                       fill={averageRating >= star ? "#FFD700" : "none"}
-                      stroke={averageRating >= star ? "#FFD700" : "currentColor"}
+                      stroke={
+                        averageRating >= star ? "#FFD700" : "currentColor"
+                      }
                       size={24}
                     />
                   ))}
@@ -218,11 +228,17 @@ const ItemDetails = ({ onCartUpdate }) => {
                   Buy Now
                 </button>
                 <button
-                  onClick={handleArView}
                   className="button ar-button"
-                  disabled={!product.modelImageUrl}
+                  onClick={() =>
+                    navigate(
+                      `/ar-viewer?model=chair2.glb&name=${encodeURIComponent(
+                        product.name
+                      )}`
+                    )
+                  }
                 >
-                  <i className="fas fa-camera"></i> View in AR
+                  <Camera size={18} style={{ marginRight: "5px" }} />
+                  AR Vieww
                 </button>
               </div>
             </div>
@@ -233,7 +249,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   <QRCode
                     size={256}
                     style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                    value={`${window.location.origin}/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}`}
+                    value={`${window.location.origin}/ar-viewer?model=chair2.glb&name=${encodeURIComponent(product.name)}`}
                     viewBox={`0 0 256 256`}
                   />
                   <p className="qr-instructions">
@@ -270,30 +286,36 @@ const ItemDetails = ({ onCartUpdate }) => {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`star-small ${review.rating >= star ? 'filled' : ''}`}
+                        className={`star-small ${
+                          review.rating >= star ? "filled" : ""
+                        }`}
                         fill={review.rating >= star ? "#FFD700" : "none"}
-                        stroke={review.rating >= star ? "#FFD700" : "currentColor"}
+                        stroke={
+                          review.rating >= star ? "#FFD700" : "currentColor"
+                        }
                         size={16}
                       />
                     ))}
                   </div>
                   <div className="review-user">
-                    <span className="user-name">{review.name || "Anonymous"}</span>
+                    <span className="user-name">
+                      {review.name || "Anonymous"}
+                    </span>
                     <span className="review-date">
                       {new Date(review.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-                <div className="review-content">
-                  {review.comment}
-                </div>
+                <div className="review-content">{review.comment}</div>
               </div>
             ))}
           </div>
         ) : (
           <div className="no-reviews">
             <p>No reviews available for this product yet.</p>
-            <p className="review-prompt">Purchase this item to leave a review!</p>
+            <p className="review-prompt">
+              Purchase this item to leave a review!
+            </p>
           </div>
         )}
       </div>
