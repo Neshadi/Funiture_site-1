@@ -9,7 +9,8 @@ const ARViewer = () => {
   const containerRef = useRef();
   const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false); // Unified loading state
+  const [loadingProgress, setLoadingProgress] = useState(0); // Progress for model loading
   const app = useRef({});
 
   // Use the model URL from query param, no default fallback
@@ -129,7 +130,7 @@ const ARViewer = () => {
     a.scene.add(a.controller);
   };
 
-  const showChair = () => {
+  const showChair = async () => {
     const a = app.current;
     if (!modelUrl) {
       console.error("No model URL provided");
@@ -137,43 +138,19 @@ const ARViewer = () => {
       return;
     }
 
-    initAR(a);
+    setIsLoading(true); // Start loading state for camera initialization
 
-    const loader = new GLTFLoader();
-    setLoadingProgress(0);
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        a.scene.add(gltf.scene);
-        a.chair = gltf.scene;
-        a.chair.visible = false;
-        a.chair.scale.set(1, 1, 1); // Adjust scale if needed
-        console.log("GLTF Loaded Successfully:", gltf, "Model URL:", modelUrl);
-        a.renderer.setAnimationLoop((timestamp, frame) =>
-          render(a, timestamp, frame)
-        );
-        setLoadingProgress(100);
-        console.log("✅ 3D Model loaded successfully:", modelUrl);
-      },
-      (xhr) => {
-        // ✅ added progress handler
-        if (xhr.total) {
-          const percent = (xhr.loaded / xhr.total) * 100;
-          setLoadingProgress(Math.round(percent));
-        }
-      },
-      undefined, // No progress handler
-      (error) => {
-        console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model. Check console for details.");
-        setLoadingProgress(0);
-      }
-    );
+    try {
+      await initAR(a); // Initialize AR session (camera)
+      loadModel(a); // Load model after AR session starts
+    } catch (error) {
+      setIsLoading(false);
+      console.error("Error in AR initialization:", error);
+    }
   };
 
-  const initAR = (a) => {
+  const initAR = async (a) => {
     let currentSession = a.currentSession;
-
     const sessionInit = { requiredFeatures: ["hit-test"] };
 
     const onSessionStarted = (session) => {
@@ -195,20 +172,55 @@ const ARViewer = () => {
         a.chair = null;
       }
       a.renderer.setAnimationLoop(null);
+      setIsLoading(false);
     };
 
     if (currentSession === null) {
-      navigator.xr
-        .requestSession("immersive-ar", sessionInit)
-        .then(onSessionStarted)
-        .catch((error) => {
-          console.error("XR Session Request Failed:", error);
-          alert("Failed to start AR session. Check device compatibility.");
-          setIsSupported(false);
-        });
+      try {
+        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
+        onSessionStarted(session);
+      } catch (error) {
+        console.error("XR Session Request Failed:", error);
+        alert("Failed to start AR session. Check device compatibility.");
+        setIsSupported(false);
+        throw error; // Propagate error to showChair
+      }
     } else {
       currentSession.end();
     }
+  };
+
+  const loadModel = (a) => {
+    const loader = new GLTFLoader();
+    setLoadingProgress(0);
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        a.scene.add(gltf.scene);
+        a.chair = gltf.scene;
+        a.chair.visible = false;
+        a.chair.scale.set(1, 1, 1); // Adjust scale if needed
+        console.log("GLTF Loaded Successfully:", gltf, "Model URL:", modelUrl);
+        a.renderer.setAnimationLoop((timestamp, frame) =>
+          render(a, timestamp, frame)
+        );
+        setLoadingProgress(100);
+        setIsLoading(false); // Stop loading state after model loads
+        console.log("✅ 3D Model loaded successfully:", modelUrl);
+      },
+      (xhr) => {
+        if (xhr.total) {
+          const percent = (xhr.loaded / xhr.total) * 100;
+          setLoadingProgress(Math.round(percent));
+        }
+      },
+      (error) => {
+        console.error("GLTF Load Error:", error);
+        alert("Failed to load 3D model. Check console for details.");
+        setLoadingProgress(0);
+        setIsLoading(false); // Stop loading state on error
+      }
+    );
   };
 
   const requestHitTestSource = (a) => {
@@ -258,7 +270,7 @@ const ARViewer = () => {
         zIndex: 1000,
       }}
     >
-      {loadingProgress > 0 && loadingProgress < 100 && (
+      {isLoading && (
         <LoadingBar progress={loadingProgress} />
       )}
 
@@ -275,6 +287,7 @@ const ARViewer = () => {
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
+            display: isLoading ? "none" : "block", // Hide button during loading
           }}
           onClick={showChair}
         >
