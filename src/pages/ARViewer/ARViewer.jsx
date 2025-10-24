@@ -9,7 +9,7 @@ const ARViewer = () => {
   const containerRef = useRef();
   const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Unified loading state
+  const [isLoading, setIsLoading] = useState(false); // Loading state for hit-test and model loading
   const [loadingProgress, setLoadingProgress] = useState(0); // Progress for model loading
   const app = useRef({});
 
@@ -120,6 +120,7 @@ const ARViewer = () => {
           "Visible:",
           a.chair.visible
         );
+        console.log("Object successfully placed in AR environment"); // Log after object placement
       } else {
         console.warn("Reticle not visible, cannot place model");
       }
@@ -138,13 +139,9 @@ const ARViewer = () => {
       return;
     }
 
-    setIsLoading(true); // Start loading state for camera initialization
-
     try {
       await initAR(a); // Initialize AR session (camera)
-      loadModel(a); // Load model after AR session starts
     } catch (error) {
-      setIsLoading(false);
       console.error("Error in AR initialization:", error);
     }
   };
@@ -160,6 +157,8 @@ const ARViewer = () => {
       currentSession = session;
       a.currentSession = currentSession;
       console.log("XR Session started");
+      setIsLoading(true); // Start loading bar after camera opens
+      loadModel(a); // Load model after AR session starts
     };
 
     const onSessionEnded = () => {
@@ -173,6 +172,7 @@ const ARViewer = () => {
       }
       a.renderer.setAnimationLoop(null);
       setIsLoading(false);
+      setLoadingProgress(0);
     };
 
     if (currentSession === null) {
@@ -205,7 +205,6 @@ const ARViewer = () => {
           render(a, timestamp, frame)
         );
         setLoadingProgress(100);
-        setIsLoading(false); // Stop loading state after model loads
         console.log("✅ 3D Model loaded successfully:", modelUrl);
       },
       (xhr) => {
@@ -218,7 +217,7 @@ const ARViewer = () => {
         console.error("GLTF Load Error:", error);
         alert("Failed to load 3D model. Check console for details.");
         setLoadingProgress(0);
-        setIsLoading(false); // Stop loading state on error
+        setIsLoading(false); // Stop loading bar on error
       }
     );
   };
@@ -245,6 +244,10 @@ const ARViewer = () => {
       const pose = hit.getPose(referenceSpace);
       a.reticle.visible = true;
       a.reticle.matrix.fromArray(pose.transform.matrix);
+      console.log("Reticle is now visible"); // Log when reticle becomes visible
+      if (a.chair && loadingProgress === 100) {
+        setIsLoading(false); // Stop loading bar when reticle is visible and model is loaded
+      }
     } else {
       a.reticle.visible = false;
     }
