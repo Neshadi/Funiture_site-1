@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { HDRLoader } from "three/examples/jsm/loaders/HDRLoader.js";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams } from "react-router-dom";
 
 const ARViewer = () => {
@@ -27,11 +27,7 @@ const ARViewer = () => {
     ambient.position.set(0.5, 1, 0.25);
     a.scene.add(ambient);
 
- a.renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  alpha: true,
-  context: document.createElement("canvas").getContext("webgl2", { xrCompatible: true }),
-});
+    a.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     a.renderer.setPixelRatio(window.devicePixelRatio);
     a.renderer.setSize(window.innerWidth, window.innerHeight);
     a.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -59,18 +55,13 @@ const ARViewer = () => {
     };
   }, []);
 
-const setEnvironment = (a) => {
-  const loader = new HDRLoader().setPath("/assets/"); // Use HDRLoader
-  loader.load(
-    "hdr/venice_sunset_1k.hdr",
-    (texture) => {
+  const setEnvironment = (a) => {
+    const loader = new RGBELoader().setPath("/assets/");
+    loader.load("hdr/venice_sunset_1k.hdr", (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping;
       a.scene.environment = texture;
-    },
-    undefined,
-    (error) => console.error("HDR Load Error:", error) // Add error logging
-  );
-};
+    });
+  };
 
   const resize = (a) => {
     a.camera.aspect = window.innerWidth / window.innerHeight;
@@ -104,68 +95,56 @@ const setEnvironment = (a) => {
     a.scene.add(a.controller);
   };
 
-const showChair = () => {
-  const a = app.current;
-  initAR(a);
+  const showChair = () => {
+    const a = app.current;
+    initAR(a);
 
-  const loader = new GLTFLoader().setPath(a.assetsPath);
-  loader.load(
-    modelName,
-    (gltf) => {
-      console.log("GLTF Loaded Successfully:", gltf);
-      a.scene.add(gltf.scene);
-      a.chair = gltf.scene;
-      a.chair.visible = false;
-      a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
-    },
-    undefined, // No progress handler
-    (error) => {
-      console.error("GLTF Load Error:", error);
-      alert("Failed to load 3D model. Check console for details.");
-    }
-  );
-};
+    const loader = new GLTFLoader().setPath(a.assetsPath);
+    loader.load(
+      modelName,
+      (gltf) => {
+        a.scene.add(gltf.scene);
+        a.chair = gltf.scene;
+        a.chair.visible = false;
+        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
+      },
+      undefined, // No progress handler
+      (error) => {
+        console.log("An error happened", error);
+      }
+    );
+  };
 
-const initAR = async (a) => {
-  let currentSession = a.currentSession;
-  const sessionInit = { requiredFeatures: ["hit-test"] };
+  const initAR = (a) => {
+    let currentSession = a.currentSession;
 
-  const onSessionStarted = (session) => {
-    session.addEventListener("end", onSessionEnded);
-    a.renderer.xr.setReferenceSpaceType("local");
-    try {
+    const sessionInit = { requiredFeatures: ["hit-test"] };
+
+    const onSessionStarted = (session) => {
+      session.addEventListener("end", onSessionEnded);
+      a.renderer.xr.setReferenceSpaceType("local");
       a.renderer.xr.setSession(session);
       currentSession = session;
       a.currentSession = currentSession;
-    } catch (error) {
-      console.error("XR Set Session Error:", error);
-      alert("Failed to initialize AR session.");
+    };
+
+    const onSessionEnded = () => {
+      currentSession.removeEventListener("end", onSessionEnded);
+      currentSession = null;
+      a.currentSession = null;
+      if (a.chair !== null) {
+        a.scene.remove(a.chair);
+        a.chair = null;
+      }
+      a.renderer.setAnimationLoop(null);
+    };
+
+    if (currentSession === null) {
+      navigator.xr.requestSession("immersive-ar", sessionInit).then(onSessionStarted);
+    } else {
+      currentSession.end();
     }
   };
-
-  const onSessionEnded = () => {
-    currentSession.removeEventListener("end", onSessionEnded);
-    currentSession = null;
-    a.currentSession = null;
-    if (a.chair !== null) {
-      a.scene.remove(a.chair);
-      a.chair = null;
-    }
-    a.renderer.setAnimationLoop(null);
-  };
-
-  if (currentSession === null) {
-    try {
-      const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
-      onSessionStarted(session);
-    } catch (error) {
-      console.error("XR Session Request Failed:", error);
-      alert("Failed to start AR session. Check device compatibility.");
-    }
-  } else {
-    currentSession.end();
-  }
-};
 
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();

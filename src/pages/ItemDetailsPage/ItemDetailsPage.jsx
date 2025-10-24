@@ -238,7 +238,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   }
                 >
                   <Camera size={18} style={{ marginRight: "5px" }} />
-                  AR Vieww
+                  AR Viewww
                 </button>
               </div>
             </div>

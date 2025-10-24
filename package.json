@@ -34,7 +34,7 @@
     "react-router-dom": "^6.26.0",
     "react-toastify": "^10.0.6",
     "stripe": "^17.6.0",
-    "three": "^0.180.0",
+    "three": "^0.159.0",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
