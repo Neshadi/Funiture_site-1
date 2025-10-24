@@ -227,19 +227,21 @@ const ItemDetails = ({ onCartUpdate }) => {
                 >
                   Buy Now
                 </button>
-                <button
-                  className="button ar-button"
-                  onClick={() =>
-                    navigate(
-                      `/ar-viewer?model=chair2.glb&name=${encodeURIComponent(
-                        product.name
-                      )}`
-                    )
-                  }
-                >
-                  <Camera size={18} style={{ marginRight: "5px" }} />
-                  AR Viewww
-                </button>
+                {product.modelImageUrl && (
+                  <button
+                    className="button ar-button"
+                    onClick={() =>
+                      navigate(
+                        `/ar-viewer?model=${encodeURIComponent(
+                          product.modelImageUrl
+                        )}&name=${encodeURIComponent(product.name)}`
+                      )
+                    }
+                  >
+                    <Camera size={18} style={{ marginRight: "5px" }} />
+                    AR View
+                  </button>
+                )}
               </div>
             </div>
 
@@ -249,7 +251,11 @@ const ItemDetails = ({ onCartUpdate }) => {
                   <QRCode
                     size={256}
                     style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                    value={`${window.location.origin}/ar-viewer?model=chair2.glb&name=${encodeURIComponent(product.name)}`}
+                    value={`${
+                      window.location.origin
+                    }/ar-viewer?model=${encodeURIComponent(
+                      product.modelImageUrl
+                    )}&name=${encodeURIComponent(product.name)}`}
                     viewBox={`0 0 256 256`}
                   />
                   <p className="qr-instructions">
