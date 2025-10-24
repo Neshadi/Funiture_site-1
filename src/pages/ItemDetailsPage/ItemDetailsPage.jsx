@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import "./ItemDetailsPage.css";
 import axios from "axios";
 import QRCode from "react-qr-code";
+import ArViewer from "../../components/ArViewer"; // Import the new AR Viewer component
 
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
@@ -15,6 +16,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showArViewer, setShowArViewer] = useState(false); // State to toggle AR Viewer
 
   // Function to hide notification after 3 seconds
   const hideNotification = () => {
@@ -127,6 +129,11 @@ const ItemDetails = ({ onCartUpdate }) => {
     }
   }, [product]);
 
+  // Function to handle AR button click
+  const handleArView = () => {
+    setShowArViewer(true);
+  };
+
   return (
     <div>
       {notification && (
@@ -154,8 +161,7 @@ const ItemDetails = ({ onCartUpdate }) => {
               <p className="description">{product.description}</p>
               <p className="price">LKR.{product.price?.toFixed(2)}</p>
               <p
-                className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"
-                  }`}
+                className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"}`}
               >
                 {product.countInStock > 0
                   ? `In Stock (${product.countInStock} available)`
@@ -211,6 +217,13 @@ const ItemDetails = ({ onCartUpdate }) => {
                 >
                   Buy Now
                 </button>
+                <button
+                  onClick={handleArView}
+                  className="button ar-button"
+                  disabled={!product.modelImageUrl}
+                >
+                  <i className="fas fa-camera"></i> View in AR
+                </button>
               </div>
             </div>
 
@@ -232,6 +245,15 @@ const ItemDetails = ({ onCartUpdate }) => {
           </div>
         ) : (
           <p>Product not found.</p>
+        )}
+
+        {/* AR Viewer */}
+        {showArViewer && product && (
+          <ArViewer
+            modelId={id}
+            modelPath={product.modelImageUrl}
+            onClose={() => setShowArViewer(false)}
+          />
         )}
       </div>
 

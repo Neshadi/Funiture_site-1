@@ -13,6 +13,7 @@
   "dependencies": {
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
+    "@fortawesome/fontawesome-free": "^7.1.0",
     "@mui/material": "^5.16.7",
     "@react-three/drei": "^9.92.3",
     "@react-three/fiber": "^8.15.16",
@@ -33,7 +34,7 @@
     "react-router-dom": "^6.26.0",
     "react-toastify": "^10.0.6",
     "stripe": "^17.6.0",
-    "three": "^0.160.1",
+    "three": "^0.180.0",
     "zustand": "^4.4.1"
   },
   "devDependencies": {

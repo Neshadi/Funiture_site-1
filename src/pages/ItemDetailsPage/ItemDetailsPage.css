@@ -347,6 +347,26 @@ body {
   font-weight: 500;
 }
 
+/*Ar button */
+
+.ar-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin-left: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.ar-button i {
+  margin-right: 5px;
+}
+.ar-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .container {
