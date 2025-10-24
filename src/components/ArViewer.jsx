@@ -1,10 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js"; // Reverted to RGBELoader
 import { ARButton } from "../libs/ARButton.js";
-import { LoadingBar } from "../libs/LoadingBar.js";
-//import "./ArViewer.css"; // Assume a CSS file for styling
 
 const ArViewer = ({ modelId, modelPath, onClose }) => {
   const containerRef = useRef(null);
@@ -16,7 +14,6 @@ const ArViewer = ({ modelId, modelPath, onClose }) => {
   const reticleRef = useRef(null);
   const controllerRef = useRef(null);
   const chairRef = useRef(null);
-  const loadingBarRef = useRef(null);
   const hitTestSourceRequestedRef = useRef(false);
   const hitTestSourceRef = useRef(null);
   const assetsPath = "../assets/ar-shop/";
@@ -32,11 +29,6 @@ const ArViewer = ({ modelId, modelPath, onClose }) => {
     container.style.zIndex = "1000";
     containerRef.current = container;
     document.body.appendChild(container);
-
-    // Initialize loading bar
-    loadingBarRef.current = new LoadingBar();
-    loadingBarRef.current.visible = false;
-    container.appendChild(loadingBarRef.current.element);
 
     // Initialize renderer
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -117,7 +109,8 @@ const ArViewer = ({ modelId, modelPath, onClose }) => {
 
   const showModel = () => {
     const loader = new GLTFLoader().setPath(assetsPath);
-    loadingBarRef.current.visible = true;
+    // Optional: Add a simple loading indicator in the console
+    console.log("Loading chair2.glb...");
 
     loader.load(
       // Hardcoded to chair2.glb for testing
@@ -126,15 +119,14 @@ const ArViewer = ({ modelId, modelPath, onClose }) => {
         sceneRef.current.add(gltf.scene);
         chairRef.current = gltf.scene;
         chairRef.current.visible = false;
-        loadingBarRef.current.visible = false;
+        console.log("Model loaded successfully");
         rendererRef.current.setAnimationLoop(render);
       },
       (xhr) => {
-        loadingBarRef.current.progress = xhr.loaded / xhr.total;
+        console.log(`Loading progress: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
       },
       (error) => {
         console.error("Error loading model:", error);
-        loadingBarRef.current.visible = false;
       }
     );
   };
