@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets.js';
+import QRScanner from '../QRScanner/QRScanner';
 import './NavBar.css';
 
 const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   const [menu, setMenu] = useState("home");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false); // State for hamburger menu
+  const [showQRScanner, setShowQRScanner] = useState(false); // State for QR scanner
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -43,6 +45,11 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
     setIsMenuOpen(!isMenuOpen); // Toggle hamburger menu
   };
 
+  const handleQRScannerClick = () => {
+    setShowQRScanner(true);
+    setIsMenuOpen(false); // Close menu when opening QR scanner
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -74,6 +81,9 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
         </li>
         <li onClick={() => handleMenuItemClick("about-us")} className={menu === "about-us" ? "active" : ""}>
           <Link to="/about-us">About Us</Link>
+        </li>
+        <li onClick={handleQRScannerClick} className="qr-scanner-menu-item">
+          <span>📱 Scan QR</span>
         </li>
       </ul>
       <div className="navbar-toggle" onClick={toggleMenu}>
@@ -107,6 +117,10 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
             <li onClick={handleSignOut}>Sign Out</li>
           </ul>
         </div>
+      )}
+
+      {showQRScanner && (
+        <QRScanner onClose={() => setShowQRScanner(false)} />
       )}
     </div>
   );
