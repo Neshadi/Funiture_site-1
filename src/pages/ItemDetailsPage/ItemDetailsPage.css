@@ -3,17 +3,17 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  margin-top: 7vw;
+  /* margin-top: 7vw; */
 }
 
 .container {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+  justify-content: left;
+  align-items: left;
+  /* width: 100%; */
   min-height: 60vh;
-  margin: auto;
-  padding: 20px;
+  margin-left: 158px;
+  padding: 0px;
   box-sizing: border-box;
   margin-top: 8vw;
 }
@@ -25,38 +25,45 @@ body {
   gap: 20px;
   flex-direction: row;
   align-items: flex-start;
-  justify-content: center;
-  width: 100%;
+  justify-content: left;
+ 
 }
 
 .product img {
   flex: 1;
-  width: 100%;
-  max-width: 400px;
+  /* width: 100%; */
+  /* max-width: 400px; */
   border-radius: 15px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   align-items: center;
+  width:691px;
+  height: 599px;
 }
 
 .details {
   flex: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
   justify-content: space-between;
   gap: 20px;
   width: 100%;
-  max-width: 600px;
-  text-align: center;
-  padding: 20px;
+  max-width: 832px;
+  text-align: left;
+  padding: 0 0 0 64px;
 }
 
 .details h2 {
-  font-size: 2.0rem;
-  margin-bottom: 10px;
+  font-size: 40px;
+  margin-bottom: 6px;
+  margin-top: 43px;
+  font-weight: 700;
+  font-family: Calisto MT;
 }
 
-.details p {
+.description {
+  font-size: 24px;
+  font-family: Candara;
   color: #555;
   line-height: 1.5;
   word-wrap: break-word;
@@ -66,14 +73,18 @@ body {
 }
 
 .price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #007bff;
+  font-size: 32px;
+  font-weight: 700;
+  color: #0C5E69;
+  text-align: left;
+  font-family: Candara;
+  margin-top: 41px;
+
 }
 
 .stock {
   font-size: 0.9rem;
-  margin-top: 5px;
+  margin-top: 15px;
 }
 
 .stock.in-stock {
@@ -114,21 +125,33 @@ body {
 .actions {
   margin-top: 20px;
   display: flex;
-  gap: 10px;
+  flex-direction: row;
+  gap: 37px;
 }
 
+.actions-buy-now {
+  margin-top: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 37px;
+}
 .button {
   padding: 10px 20px;
-  font-size: 1rem;
-  border: none;
+  font-size: 20px;
+  /* border: none; */
   cursor: pointer;
-  border-radius: 15px;
+  border-radius: 5px;
   color: white;
   text-align: center;
+  width: 235px;
 }
 
 .add-to-cart {
-  background-color: #007bff;
+  background-color: #ffffff;
+  color:#0C5E69;
+  border-color:#0C5E69;
+  margin-top: 26px;
+  
 }
 
 .add-to-cart:hover {
@@ -136,17 +159,20 @@ body {
 }
 
 .buy-now {
-  background-color: #28a745;
+  background-color:#0C5E69 ;
+  color:#ffffff ;
+  margin-bottom:32px;
+  margin-top: 0px;
 }
 
 .buy-now:hover {
   background-color: #218838;
 }
 
-.actions button:disabled {
+/* .actions button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
-}
+} */
 
 /* Notification styles */
 .notification {
@@ -197,7 +223,7 @@ body {
 .rating-display {
   display: flex;
   align-items: center;
-  margin: 10px 0;
+  /* margin:  0; */
   gap: 8px;
 }
 
@@ -221,7 +247,7 @@ body {
 
 .review-count {
   color: #666;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* Reviews section styles */
@@ -338,6 +364,12 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
+  align-items: center;
+  width:139px;
+  height: 139px;
+  display: flex;
+  flex-direction: row;
+  gap:10px;
 }
 
 .qr-instructions {
@@ -354,7 +386,7 @@ body {
   color: white;
   border: none;
   padding: 8px 16px;
-  margin-left: 10px;
+  margin-left: 0px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -598,6 +630,9 @@ body {
 
   .qr-code-container {
     width: 100%;
+    align-items: center;
+    text-align: center;
+    
   }
 }
 

@@ -157,41 +157,31 @@ const ItemDetails = ({ onCartUpdate }) => {
             {/* Product Image */}
             <div className="product-image">
               <img src={product.image} alt={product.name} />
+                {product.modelImageUrl && (
+              <div className="qr-code-container">
+                <div className="QrCode">
+                  <QRCode
+                    size={256}
+                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                    value={`${
+                      window.location.origin
+                    }/ar-viewer?model=${encodeURIComponent(
+                      product.modelImageUrl
+                    )}&name=${encodeURIComponent(product.name)}`}
+                    viewBox={`0 0 256 256`}
+                  />
+                  <p className="qr-instructions">
+                    Scan with your phone to view in AR
+                  </p>
+                </div>
+              </div>
+            )}
             </div>
-
+            
             {/* Product Details */}
             <div className="details">
               <h2>{product.name}</h2>
-              <p className="description">{product.description}</p>
-              <p className="price">LKR.{product.price?.toFixed(2)}</p>
-              <p
-                className={`stock ${
-                  product.countInStock > 0 ? "in-stock" : "out-of-stock"
-                }`}
-              >
-                {product.countInStock > 0
-                  ? `In Stock (${product.countInStock} available)`
-                  : "Out of Stock"}
-              </p>
-
-              {/* Quantity Selector */}
-              <div className="quantity">
-                <button
-                  onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
-                  disabled={quantity <= 1}
-                >
-                  -
-                </button>
-                <span>{quantity}</span>
-                <button
-                  onClick={() => setQuantity((prev) => prev + 1)}
-                  disabled={quantity >= product.countInStock}
-                >
-                  +
-                </button>
-              </div>
-
-              {/* Rating Display */}
+               {/* Rating Display */}
               <div className="rating-display">
                 <div className="rating-stars">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -211,7 +201,10 @@ const ItemDetails = ({ onCartUpdate }) => {
                 <span className="rating-value">{averageRating.toFixed(1)}</span>
                 <span className="review-count">({numReviews} reviews)</span>
               </div>
-
+              <p className="description">{product.description}</p>
+              
+              <p className="price">LKR.{product.price?.toFixed(2)}</p>
+             
               {/* Action Buttons */}
               <div className="actions">
                 <button
@@ -221,13 +214,43 @@ const ItemDetails = ({ onCartUpdate }) => {
                 >
                   Add to Cart
                 </button>
+                {/* Quantity Selector */}
+              <div className="quantity">
+                <button
+                  onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
+                  disabled={quantity <= 1}
+                >
+                  -
+                </button>
+                <span>{quantity}</span>
+                <button
+                  onClick={() => setQuantity((prev) => prev + 1)}
+                  disabled={quantity >= product.countInStock}
+                >
+                  +
+                </button>
+              </div>
+             
+              </div>
+              <div className="actions-buy-now">
                 <button
                   className="button buy-now"
                   disabled={product.countInStock <= 0}
                 >
                   Buy Now
                 </button>
-                {product.modelImageUrl && (
+                <p
+                className={`stock ${
+                  product.countInStock > 0 ? "in-stock" : "out-of-stock"
+                }`}
+              >
+                {product.countInStock > 0
+                  ? `In Stock (${product.countInStock} available)`
+                  : "Out of Stock"}
+              </p>
+           
+              </div>
+                   {product.modelImageUrl && (
                   <button
                     className="button ar-button"
                     onClick={() =>
@@ -242,28 +265,9 @@ const ItemDetails = ({ onCartUpdate }) => {
                     AR View
                   </button>
                 )}
-              </div>
             </div>
 
-            {product.modelImageUrl && (
-              <div className="qr-code-container">
-                <div className="QrCode">
-                  <QRCode
-                    size={256}
-                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                    value={`${
-                      window.location.origin
-                    }/ar-viewer?model=${encodeURIComponent(
-                      product.modelImageUrl
-                    )}&name=${encodeURIComponent(product.name)}`}
-                    viewBox={`0 0 256 256`}
-                  />
-                  <p className="qr-instructions">
-                    Scan with your phone to view in AR
-                  </p>
-                </div>
-              </div>
-            )}
+          
           </div>
         ) : (
           <p>Product not found.</p>
@@ -280,7 +284,7 @@ const ItemDetails = ({ onCartUpdate }) => {
       </div>
 
       {/* Reviews Section */}
-      <div className="reviews-section">
+      {/* <div className="reviews-section">
         <h3>Customer Reviews</h3>
 
         {reviews.length > 0 ? (
@@ -324,7 +328,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             </p>
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };
