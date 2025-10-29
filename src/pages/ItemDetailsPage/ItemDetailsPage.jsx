@@ -10,6 +10,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,11 +66,16 @@ const ItemDetails = ({ onCartUpdate }) => {
         );
         if (productResponse.status === 200) {
           setProduct(productResponse.data);
+
           const reviewsResponse = await axios.get(
             `https://new-sever.vercel.app/api/products/reviews/${id}`
           );
           if (reviewsResponse.status === 200) {
-            setReviews(reviewsResponse.data || []);
+            setReviews(reviewsResponse.data.reviews || []);
+
+            const ratings = reviewsResponse.data.reviews?.map(r => r.rating) || [];
+            const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+            setAvgRating(avg.toFixed(1));
           }
         }
       } catch (err) {
@@ -98,66 +104,72 @@ const ItemDetails = ({ onCartUpdate }) => {
         <div className="modern-product-card">
           <div className="image-section">
             <img src={product.image} alt={product.name} className="main-image" />
+            <div className="qr-section">
+              <QRCode value={product.name} size={128} />
+              <div>
+                <p className="qr-heading">AR View</p>
+                <p className="qr-text">Scan this QR to see it in AR on mobile.</p>
+              </div>
+            </div>
           </div>
 
           <div className="info-section">
             <h2>{product.name}</h2>
             <p className="description">{product.description}</p>
-            <p className="price">LKR {product.price?.toFixed(2)}</p>
-            <p className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"}`}>
-              {product.countInStock > 0
-                ? `In Stock (${product.countInStock} available)`
-                : "Out of Stock"}
-            </p>
 
-            <div className="quantity-controls">
-              <button onClick={() => setQuantity((q) => Math.max(q - 1, 1))} disabled={quantity <= 1}>−</button>
-              <span>{quantity}</span>
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                disabled={quantity >= product.countInStock}
-              >+</button>
+            {/* ⭐ AVERAGE RATING SECTION ADDED HERE */}
+            <div className="rating-display">
+              <span className="rating-value">{avgRating} / 5</span>
+              {[1,2,3,4,5].map((n) => (
+                <Star
+                  key={n}
+                  size={22}
+                  fill={n <= avgRating ? "#FFD700" : "none"}
+                  stroke={n <= avgRating ? "#FFD700" : "#6b7280"}
+                />
+              ))}
+              <span className="rating-count">({reviews.length} Reviews)</span>
+            </div>
+
+            <p className="price">LKR {product.price?.toFixed(2)}</p>
+
+            <div className="action-buttons">
+              <button onClick={addToCart} className="btn add-cart" disabled={product.countInStock <= 0}>
+                Add to Cart
+              </button>
+              <div className="quantity-btn">
+                <button onClick={() => setQuantity((q) => Math.max(q - 1, 1))} disabled={quantity <= 1}>−</button>
+                <span>{quantity}</span>
+                <button onClick={() => setQuantity((q) => q + 1)} disabled={quantity >= product.countInStock}>+</button>
+              </div>
             </div>
 
             <div className="action-buttons">
-              <button
-                onClick={addToCart}
-                className="btn add-cart"
-                disabled={product.countInStock <= 0}
-              >
-                Add to Cart
-              </button>
-              <button
-                className="btn buy-now"
-                disabled={product.countInStock <= 0}
-              >
-                Buy Now
-              </button>
+              <button className="btn buy-now" disabled={product.countInStock <= 0}>Buy Now</button>
+              <p className={`stock ${product.countInStock > 0 ? "in-stock" : "out-of-stock"}`}>
+                {product.countInStock > 0
+                  ? `In Stock (${product.countInStock} available)`
+                  : "Out of Stock"}
+              </p>
             </div>
-
-            <div className="qr-section">
-            <p className="qr-text">📱 Scan QR to view in AR</p>
-            <QRCode value={product.name} size={128} />
-          </div>
-
           </div>
         </div>
       ) : (
         <p>Product not found.</p>
       )}
 
+      {/* Reviews Section */}
       <div className="reviews-modern">
         <h3>Customer Reviews</h3>
-        {reviews.reviews && reviews.reviews.length > 0 ? (
-          reviews.reviews.map((review, idx) => (
+        {reviews.length > 0 ? (
+          reviews.map((review, idx) => (
             <div className="review-card" key={idx}>
               <div className="review-header">
                 <strong>{review.name || "Anonymous"}</strong>
-                 <p>{review.comment}</p>
                 <span>{new Date(review.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="review-rating">
-                {[1, 2, 3, 4, 5].map((s) => (
+                {[1,2,3,4,5].map((s) => (
                   <Star
                     key={s}
                     fill={review.rating >= s ? "#FFD700" : "none"}
@@ -166,7 +178,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   />
                 ))}
               </div>
-             
+              <p>{review.comment}</p>
             </div>
           ))
         ) : (
