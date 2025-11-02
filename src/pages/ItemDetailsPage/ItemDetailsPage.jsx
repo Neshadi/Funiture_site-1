@@ -157,7 +157,8 @@ const ItemDetails = ({ onCartUpdate }) => {
             {/* Product Image */}
             <div className="product-image">
               <img src={product.image} alt={product.name} />
-                {product.modelImageUrl && (
+            
+              {product.modelImageUrl && (
               <div className="qr-code-container">
                 <div className="QrCode">
                   <QRCode
@@ -177,6 +178,24 @@ const ItemDetails = ({ onCartUpdate }) => {
               </div>
             )}
             </div>
+
+            {product.modelImageUrl && (
+              <div className="ar-button-container">
+              <button
+                className="button ar-button"
+                onClick={() =>
+                  navigate(
+                    `/ar-viewer?model=${encodeURIComponent(
+                      product.modelImageUrl
+                    )}&name=${encodeURIComponent(product.name)}`
+                  )
+                }
+              >
+                <Camera size={18} style={{ marginRight: "5px" }} />
+                AR View
+              </button>
+              </div>    
+            )}
             
             {/* Product Details */}
             <div className="details">
@@ -229,6 +248,15 @@ const ItemDetails = ({ onCartUpdate }) => {
                 >
                   +
                 </button>
+                 <p
+                className={`stock1 ${
+                  product.countInStock > 0 ? "in-stock" : "out-of-stock"
+                }`}
+              >
+                {product.countInStock > 0
+                  ? `(Only${product.countInStock} available)`
+                  : " "}
+              </p>
               </div>
              
               </div>
@@ -240,7 +268,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                   Buy Now
                 </button>
                 <p
-                className={`stock ${
+                className={`stock2 ${
                   product.countInStock > 0 ? "in-stock" : "out-of-stock"
                 }`}
               >
@@ -250,21 +278,6 @@ const ItemDetails = ({ onCartUpdate }) => {
               </p>
            
               </div>
-                   {product.modelImageUrl && (
-                  <button
-                    className="button ar-button"
-                    onClick={() =>
-                      navigate(
-                        `/ar-viewer?model=${encodeURIComponent(
-                          product.modelImageUrl
-                        )}&name=${encodeURIComponent(product.name)}`
-                      )
-                    }
-                  >
-                    <Camera size={18} style={{ marginRight: "5px" }} />
-                    AR View
-                  </button>
-                )}
             </div>
 
           
