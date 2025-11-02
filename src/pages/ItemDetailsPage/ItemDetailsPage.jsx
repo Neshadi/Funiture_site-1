@@ -182,7 +182,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             {product.modelImageUrl && (
               <div className="ar-button-container">
               <button
-                className="button ar-button"
+                className="button-ar-button"
                 onClick={() =>
                   navigate(
                     `/ar-viewer?model=${encodeURIComponent(
