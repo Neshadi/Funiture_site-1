@@ -395,7 +395,7 @@ body {
 }
 
 .button-ar-button {
-  display: none !important;
+  display: none ;
 
 }
 
@@ -685,10 +685,10 @@ body {
   text-align: right;
   display: flex;  
   justify-content: right;
-  margin-top: 5px;
+  margin-top: 0px;
 }
 
-.button .ar-button {
+.button-ar-button {
   padding: 8px 16px;
   font-size: 12px;
   margin-right: 0px !important;
@@ -696,6 +696,7 @@ body {
   display: inline-flex;
   align-items: right;
   text-align: right;
+  color: black;
 }
 
 .details {
