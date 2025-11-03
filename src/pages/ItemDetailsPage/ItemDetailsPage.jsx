@@ -273,7 +273,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                 }`}
               >
                 {product.countInStock > 0
-                  ? `In Stock (${product.countInStock} available)`
+                  ? `In Stock `
                   : "Out of Stock"}
               </p>
            

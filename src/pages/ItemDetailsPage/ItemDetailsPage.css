@@ -82,18 +82,16 @@ body {
 
 }
 
-.stock {
-  font-size: 0.9rem;
-  margin-top: 15px;
+.stock1 {
+  margin-left:28px;
 }
 
-.stock.in-stock {
-  color: green;
+.stock1.in-stock {
+  color: rgba(0, 0, 0, 0.63);;
+  font-size: 16px;
 }
 
-.stock.out-of-stock {
-  color: red;
-}
+
 
 .description {
   text-align: justify;
@@ -167,6 +165,21 @@ body {
 
 .buy-now:hover {
   background-color: #218838;
+}
+
+.stock2 {
+  margin-top: 10px;
+}
+
+.stock2.in-stock {
+  color: green;
+  font-size: 20px;
+}
+
+.stock2.out-of-stock {
+  color: red;
+  font-size: 20px;
+
 }
 
 /* .actions button:disabled {
