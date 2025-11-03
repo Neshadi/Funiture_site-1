@@ -691,7 +691,7 @@ body {
 .button-ar-button {
   padding: 8px 16px;
   font-size: 12px;
-  margin-right: 0px !important;
+  margin-right: 0px;
   cursor: pointer;
   display: inline-flex;
   align-items: right;
