@@ -4,7 +4,7 @@ import { Star } from "lucide-react";
 import "./ItemDetailsPage.css";
 import axios from "axios";
 import QRCode from "react-qr-code";
-import { Camera } from "lucide-react";
+import CameraIcon from "../../assets/camera.png";
 
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
@@ -191,8 +191,9 @@ const ItemDetails = ({ onCartUpdate }) => {
                   )
                 }
               >
-                <Camera size={18} style={{ marginRight: "5px" }} />
-                AR View
+                <img src={CameraIcon} alt="AR" className="ar-icon" />
+                <b>AR View</b>
+
               </button>
               </div>    
             )}

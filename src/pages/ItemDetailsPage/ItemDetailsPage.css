@@ -685,7 +685,8 @@ body {
   text-align: right;
   display: flex;  
   justify-content: right;
-  margin-top: 0px;
+  margin-top: -30px;
+  margin-left: -20px;
 }
 
 .button-ar-button {
@@ -694,9 +695,16 @@ body {
   margin-right: 0px;
   cursor: pointer;
   display: inline-flex;
-  align-items: right;
-  text-align: right;
+  align-items: center;
+  text-align: center;
   color: black;
+  gap:5px;
+}
+
+.ar-icon {
+  width: 34px !important;
+  height: 34px !important;
+  margin-top: 0px !important;
 }
 
 .details {
