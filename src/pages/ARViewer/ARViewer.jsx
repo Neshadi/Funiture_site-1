@@ -48,7 +48,8 @@ const ARViewer = () => {
     };
   }, []);
 
-  const MODEL_URL = "https://modelviewer.dev/shared-assets/models/Astronaut.glb"; // or "/models/Cube.glb"
+  const MODEL_URL = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Box/glTF-Binary/Box.glb";
+
 
   // Load HDR environment
   const setEnvironment = (a) => {
