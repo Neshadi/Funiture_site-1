@@ -5,7 +5,6 @@ import { useSearchParams } from "react-router-dom";
 import LoadingBar from "../../components/ARView/LoadingBar.jsx";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-
 const ARViewer = () => {
   const containerRef = useRef();
   const [searchParams] = useSearchParams();
@@ -14,8 +13,12 @@ const ARViewer = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const app = useRef({});
 
-  // Get texture URL from query params (?texture=...)
+  // ✅ Texture for the wall surface
   const textureUrl = searchParams.get("texture") || "/assets/walls/wall_texture.jpg";
+
+  // ✅ Small GLB model (safe + fast)
+  const MODEL_URL =
+    "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Cube/glTF-Binary/Cube.glb";
 
   useEffect(() => {
     const container = containerRef.current;
@@ -34,7 +37,8 @@ const ARViewer = () => {
     a.renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(a.renderer.domElement);
 
-    setEnvironment(a);
+    // Setup environment, reticle, XR
+    loadModel(a);
     setupReticle(a);
     setupXR(a);
 
@@ -48,21 +52,70 @@ const ARViewer = () => {
     };
   }, []);
 
-  const MODEL_URL = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Box/glTF-Binary/Box.glb";
-
-
-  // Load HDR environment
-  const setEnvironment = (a) => {
+  // ✅ Load 3D model safely
+  const loadModel = (a) => {
     const loader = new GLTFLoader();
-      loader.load(MODEL_URL, (gltf) => {
-      const model = gltf.scene;
-      model.scale.set(0.5, 0.5, 0.5); // adjust scale
-      model.position.set(0, 0, -1); // place it in front
-      scene.add(model);
-    });
+    setIsLoading(true);
+    loader.load(
+      MODEL_URL,
+      (gltf) => {
+        a.model = gltf.scene;
+        a.model.scale.set(0.5, 0.5, 0.05); // flat like wall
+        a.model.position.set(0, 0, -1);
+        a.scene.add(a.model);
+        console.log("✅ Model loaded successfully");
+        setLoadingProgress(50);
+        loadTexture(a); // load texture next
+      },
+      (xhr) => {
+        if (xhr.total) {
+          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 50));
+        }
+      },
+      (error) => {
+        console.error("❌ Model load failed:", error);
+        alert("Failed to load model. Please refresh.");
+        setIsLoading(false);
+      }
+    );
   };
 
-  // Create reticle for plane detection
+  // ✅ Load wall texture and apply to model
+  const loadTexture = (a) => {
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      textureUrl,
+      (texture) => {
+        a.wallTexture = texture;
+
+        // Apply texture if model is ready
+        if (a.model) {
+          a.model.traverse((child) => {
+            if (child.isMesh) {
+              child.material = new THREE.MeshBasicMaterial({ map: texture });
+            }
+          });
+        }
+
+        setLoadingProgress(100);
+        setTimeout(() => setIsLoading(false), 500);
+        console.log("✅ Wall texture applied");
+      },
+      (xhr) => {
+        if (xhr.total) {
+          const percent = 50 + (xhr.loaded / xhr.total) * 50;
+          setLoadingProgress(Math.round(percent));
+        }
+      },
+      (error) => {
+        console.error("❌ Texture Load Error:", error);
+        alert("Failed to load wall texture.");
+        setIsLoading(false);
+      }
+    );
+  };
+
+  // ✅ Create reticle for surface detection
   const setupReticle = (a) => {
     a.reticle = new THREE.Mesh(
       new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
@@ -73,38 +126,34 @@ const ARViewer = () => {
     a.scene.add(a.reticle);
   };
 
-  // Adjust renderer on resize
+  // ✅ Adjust renderer on window resize
   const resize = (a) => {
     a.camera.aspect = window.innerWidth / window.innerHeight;
     a.camera.updateProjectionMatrix();
     a.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  // Setup XR session support
+  // ✅ Setup XR
   const setupXR = (a) => {
     a.renderer.xr.enabled = true;
     a.currentSession = null;
 
     if ("xr" in navigator) {
-      navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
-        setIsSupported(supported);
-      });
-    } else {
-      setIsSupported(false);
-    }
+      navigator.xr.isSessionSupported("immersive-ar").then(setIsSupported);
+    } else setIsSupported(false);
 
     a.hitTestSourceRequested = false;
     a.hitTestSource = null;
 
     const onSelect = () => {
-      if (!a.wallTexture) {
-        console.warn("No texture loaded yet");
+      if (!a.wallTexture || !a.model) {
+        console.warn("Model or texture not ready yet.");
         return;
       }
       if (a.reticle.visible) {
         placeWallTexture(a);
       } else {
-        console.warn("No surface detected");
+        console.warn("No surface detected.");
       }
     };
 
@@ -113,7 +162,7 @@ const ARViewer = () => {
     a.scene.add(a.controller);
   };
 
-  // Start AR session
+  // ✅ Start AR
   const startAR = async () => {
     const a = app.current;
     if (!isSupported) {
@@ -125,7 +174,7 @@ const ARViewer = () => {
       const sessionInit = {
         requiredFeatures: ["hit-test", "dom-overlay"],
         optionalFeatures: ["planes"],
-        domOverlay: { root: document.body }
+        domOverlay: { root: document.body },
       };
 
       const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
@@ -136,6 +185,7 @@ const ARViewer = () => {
     }
   };
 
+  // ✅ On AR session start
   const onSessionStarted = (a, session) => {
     session.addEventListener("end", () => onSessionEnded(a));
 
@@ -143,51 +193,18 @@ const ARViewer = () => {
     a.renderer.xr.setSession(session);
     a.currentSession = session;
 
-    setIsLoading(true);
-    loadTexture(a);
-
     a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
   };
 
+  // ✅ On AR session end
   const onSessionEnded = (a) => {
-    if (a.currentSession) {
-      a.currentSession.removeEventListener("end", onSessionEnded);
-      a.currentSession = null;
-    }
+    a.currentSession = null;
     a.hitTestSourceRequested = false;
     a.hitTestSource = null;
     a.renderer.setAnimationLoop(null);
-    setIsLoading(false);
-    setLoadingProgress(0);
   };
 
-  // Load wall texture
-  const loadTexture = (a) => {
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      textureUrl,
-      (texture) => {
-        a.wallTexture = texture;
-        setLoadingProgress(100);
-        setIsLoading(false);
-        console.log("✅ Wall texture loaded:", textureUrl);
-      },
-      (xhr) => {
-        if (xhr.total) {
-          const percent = (xhr.loaded / xhr.total) * 100;
-          setLoadingProgress(Math.round(percent));
-        }
-      },
-      (error) => {
-        console.error("Texture Load Error:", error);
-        alert("Failed to load wall texture.");
-        setLoadingProgress(0);
-        setIsLoading(false);
-      }
-    );
-  };
-
-  // Request hit test source
+  // ✅ Request hit test source
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
     session.requestReferenceSpace("viewer").then((referenceSpace) => {
@@ -195,16 +212,14 @@ const ARViewer = () => {
         a.hitTestSource = source;
       });
     });
-
     session.addEventListener("end", () => {
       a.hitTestSourceRequested = false;
       a.hitTestSource = null;
     });
-
     a.hitTestSourceRequested = true;
   };
 
-  // Handle AR frame rendering
+  // ✅ Detect vertical plane & show reticle
   const getHitTestResults = (a, frame) => {
     const hitTestResults = frame.getHitTestResults(a.hitTestSource);
     if (hitTestResults.length) {
@@ -212,7 +227,6 @@ const ARViewer = () => {
       const hit = hitTestResults[0];
       const pose = hit.getPose(referenceSpace);
 
-      // Detect vertical plane by orientation
       const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(
         new THREE.Quaternion().fromArray(pose.transform.orientation)
       );
@@ -228,21 +242,16 @@ const ARViewer = () => {
     }
   };
 
-  // Place wall texture mesh
+  // ✅ Place model (textured wall) at reticle
   const placeWallTexture = (a) => {
-    const wall = new THREE.Mesh(
-      new THREE.PlaneGeometry(1, 1.5),
-      new THREE.MeshBasicMaterial({ map: a.wallTexture })
-    );
-
-    wall.position.setFromMatrixPosition(a.reticle.matrix);
-    wall.lookAt(a.camera.position);
-    a.scene.add(wall);
-
-    console.log("🧱 Wall texture placed at:", wall.position);
+    const clone = a.model.clone();
+    clone.position.setFromMatrixPosition(a.reticle.matrix);
+    clone.lookAt(a.camera.position);
+    a.scene.add(clone);
+    console.log("🧱 Wall texture placed:", clone.position);
   };
 
-  // Main render loop
+  // ✅ Render loop
   const render = (a, timestamp, frame) => {
     if (frame) {
       if (!a.hitTestSourceRequested) requestHitTestSource(a);
