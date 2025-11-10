@@ -9,10 +9,11 @@ const ARViewer = () => {
   const containerRef = useRef();
   const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(false); // Loading state for hit-test and model loading
+  const [loadingProgress, setLoadingProgress] = useState(0); // Progress for model loading
   const app = useRef({});
 
+  // Use the model URL from query param, no default fallback
   const modelUrl = searchParams.get("model");
 
   useEffect(() => {
@@ -20,7 +21,7 @@ const ARViewer = () => {
     if (!container) return;
 
     const a = app.current;
-    a.assetsPath = "/assets/ar-shop/";
+    a.assetsPath = "/assets/ar-shop/"; // For local assets if needed later
     a.camera = new THREE.PerspectiveCamera(
       70,
       window.innerWidth / window.innerHeight,
@@ -31,6 +32,7 @@ const ARViewer = () => {
     a.scene = new THREE.Scene();
 
     const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    ambient.position.set(0.5, 1, 0.25);
     a.scene.add(ambient);
 
     a.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -41,14 +43,14 @@ const ARViewer = () => {
 
     setEnvironment(a);
 
-    // ✅ Create green circle for vertical plane detection
-    a.verticalIndicator = new THREE.Mesh(
-      new THREE.CircleGeometry(0.2, 32),
-      new THREE.MeshBasicMaterial({ color: 0x00ff00, opacity: 0.6, transparent: true })
+    a.reticle = new THREE.Mesh(
+      new THREE.RingGeometry(0.15, 0.2, 32).rotateY(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00 })
     );
-    a.verticalIndicator.rotation.x = -Math.PI / 2;
-    a.verticalIndicator.visible = false;
-    a.scene.add(a.verticalIndicator);
+
+    a.reticle.matrixAutoUpdate = false;
+    a.reticle.visible = false;
+    a.scene.add(a.reticle);
 
     setupXR(a);
 
@@ -89,22 +91,60 @@ const ARViewer = () => {
     if ("xr" in navigator) {
       navigator.xr
         .isSessionSupported("immersive-ar")
-        .then((supported) => setIsSupported(supported))
-        .catch(() => setIsSupported(false));
+        .then((supported) => {
+          setIsSupported(supported);
+          console.log("Immersive AR supported:", supported);
+        })
+        .catch((error) => {
+          console.error("Error checking AR support:", error);
+          setIsSupported(false);
+        });
+    } else {
+      console.error("WebXR API not available");
+      setIsSupported(false);
     }
 
     a.hitTestSourceRequested = false;
     a.hitTestSource = null;
+
+    const onSelect = () => {
+      if (a.chair === undefined) {
+        console.warn("No model loaded for placement");
+        return;
+      }
+      if (a.reticle.visible) {
+        a.chair.position.setFromMatrixPosition(a.reticle.matrix);
+        a.chair.quaternion.setFromRotationMatrix(a.reticle.matrix);
+        a.chair.rotateY(Math.PI);
+
+        a.chair.visible = true;
+        console.log(
+          "Model placed at:",
+          a.chair.position,
+          "Visible:",
+          a.chair.visible
+        );
+        console.log("Object successfully placed in AR environment"); // Log after object placement
+      } else {
+        console.warn("Reticle not visible, cannot place model");
+      }
+    };
+
+    a.controller = a.renderer.xr.getController(0);
+    a.controller.addEventListener("select", onSelect);
+    a.scene.add(a.controller);
   };
 
   const showChair = async () => {
     const a = app.current;
     if (!modelUrl) {
+      console.error("No model URL provided");
       alert("No 3D model available for this product.");
       return;
     }
+
     try {
-      await initAR(a);
+      await initAR(a); // Initialize AR session (camera)
     } catch (error) {
       console.error("Error in AR initialization:", error);
     }
@@ -112,9 +152,7 @@ const ARViewer = () => {
 
   const initAR = async (a) => {
     let currentSession = a.currentSession;
-    const sessionInit = {
-      requiredFeatures: ["hit-test", "plane-detection"], // ✅ enable plane detection
-    };
+    const sessionInit = { requiredFeatures: ["hit-test"] };
 
     const onSessionStarted = (session) => {
       session.addEventListener("end", onSessionEnded);
@@ -122,10 +160,9 @@ const ARViewer = () => {
       a.renderer.xr.setSession(session);
       currentSession = session;
       a.currentSession = currentSession;
-
-      console.log("XR Session started with plane detection");
-      setIsLoading(true);
-      loadModel(a);
+      console.log("XR Session started");
+      setIsLoading(true); // Start loading bar after camera opens
+      loadModel(a); // Load model after AR session starts
     };
 
     const onSessionEnded = () => {
@@ -133,14 +170,25 @@ const ARViewer = () => {
       currentSession.removeEventListener("end", onSessionEnded);
       currentSession = null;
       a.currentSession = null;
+      if (a.chair !== null) {
+        a.scene.remove(a.chair);
+        a.chair = null;
+      }
       a.renderer.setAnimationLoop(null);
       setIsLoading(false);
       setLoadingProgress(0);
     };
 
     if (currentSession === null) {
-      const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
-      onSessionStarted(session);
+      try {
+        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
+        onSessionStarted(session);
+      } catch (error) {
+        console.error("XR Session Request Failed:", error);
+        alert("Failed to start AR session. Check device compatibility.");
+        setIsSupported(false);
+        throw error; // Propagate error to showChair
+      }
     } else {
       currentSession.end();
     }
@@ -152,11 +200,16 @@ const ARViewer = () => {
     loader.load(
       modelUrl,
       (gltf) => {
+        a.scene.add(gltf.scene);
         a.chair = gltf.scene;
         a.chair.visible = false;
-        a.scene.add(a.chair);
-        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
+        a.chair.scale.set(1, 1, 1); // Adjust scale if needed
+        console.log("GLTF Loaded Successfully:", gltf, "Model URL:", modelUrl);
+        a.renderer.setAnimationLoop((timestamp, frame) =>
+          render(a, timestamp, frame)
+        );
         setLoadingProgress(100);
+        console.log("✅ 3D Model loaded successfully:", modelUrl);
       },
       (xhr) => {
         if (xhr.total) {
@@ -166,9 +219,9 @@ const ARViewer = () => {
       },
       (error) => {
         console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model.");
+        alert("Failed to load 3D model. Check console for details.");
         setLoadingProgress(0);
-        setIsLoading(false);
+        setIsLoading(false); // Stop loading bar on error
       }
     );
   };
@@ -188,38 +241,36 @@ const ARViewer = () => {
   };
 
   const getHitTestResults = (a, frame) => {
-    const hitTestResults = frame.getHitTestResults(a.hitTestSource);
-    if (hitTestResults.length) {
-      const referenceSpace = a.renderer.xr.getReferenceSpace();
-      const hit = hitTestResults[0];
-      const pose = hit.getPose(referenceSpace);
+  const hitTestResults = frame.getHitTestResults(a.hitTestSource);
+  if (hitTestResults.length) {
+    const referenceSpace = a.renderer.xr.getReferenceSpace();
+    const hit = hitTestResults[0];
+    const pose = hit.getPose(referenceSpace);
 
-      // ✅ Check if vertical plane
-      const plane = hit.createAnchor ? hit : null;
-      if (plane && hit.plane) {
-        const orientation = hit.plane.orientation;
-        if (orientation === "vertical") {
-          a.verticalIndicator.visible = true;
-          a.verticalIndicator.position.set(
-            pose.transform.position.x,
-            pose.transform.position.y,
-            pose.transform.position.z
-          );
-          a.verticalIndicator.lookAt(0, pose.transform.position.y, 0);
-        } else {
-          a.verticalIndicator.visible = false;
-        }
-      } else {
-        a.verticalIndicator.visible = false;
+    // Extract normal matrix (plane orientation)
+    const matrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
+    const normal = new THREE.Vector3(0, 1, 0).applyMatrix4(matrix).normalize();
+
+    // If surface normal is mostly horizontal (Y≈0), it's vertical
+    if (Math.abs(normal.y) < 0.4) {
+      a.reticle.visible = true;
+      a.reticle.matrix.fromArray(pose.transform.matrix);
+
+      if (a.chair && loadingProgress === 100) {
+        setIsLoading(false);
       }
     } else {
-      a.verticalIndicator.visible = false;
+      a.reticle.visible = false;
     }
-  };
+  } else {
+    a.reticle.visible = false;
+  }
+};
+
 
   const render = (a, timestamp, frame) => {
     if (frame) {
-      if (!a.hitTestSourceRequested) requestHitTestSource(a);
+      if (a.hitTestSourceRequested === false) requestHitTestSource(a);
       if (a.hitTestSource) getHitTestResults(a, frame);
     }
     a.renderer.render(a.scene, a.camera);
@@ -237,7 +288,9 @@ const ARViewer = () => {
         zIndex: 1000,
       }}
     >
-      {isLoading && <LoadingBar progress={loadingProgress} />}
+      {isLoading && (
+        <LoadingBar progress={loadingProgress} />
+      )}
 
       {isSupported ? (
         <button
@@ -252,7 +305,7 @@ const ARViewer = () => {
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
-            display: isLoading ? "none" : "block",
+            display: isLoading ? "none" : "block", // Hide button during loading
           }}
           onClick={showChair}
         >
