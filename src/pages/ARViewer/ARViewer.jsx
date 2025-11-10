@@ -1,124 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { useSearchParams } from "react-router-dom";
-import LoadingBar from "../../components/ARView/LoadingBar.jsx";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const ARViewer = () => {
   const containerRef = useRef();
-  const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const app = useRef({});
-
-  // ✅ Texture for the wall surface
-  const textureUrl = searchParams.get("texture") || "/assets/walls/wall_texture.jpg";
-
-  // ✅ Small GLB model (safe + fast)
-  const MODEL_URL =
-    "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Cube/glTF-Binary/Cube.glb";
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const a = app.current;
-    a.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+    a.camera = new THREE.PerspectiveCamera(
+      70,
+      window.innerWidth / window.innerHeight,
+      0.01,
+      20
+    );
     a.scene = new THREE.Scene();
 
-    const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-    a.scene.add(ambient);
+    const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    a.scene.add(light);
 
     a.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    a.renderer.setPixelRatio(window.devicePixelRatio);
     a.renderer.setSize(window.innerWidth, window.innerHeight);
-    a.renderer.outputEncoding = THREE.sRGBEncoding;
+    a.renderer.xr.enabled = true;
     container.appendChild(a.renderer.domElement);
 
-    // Setup environment, reticle, XR
-    loadModel(a);
     setupReticle(a);
     setupXR(a);
 
-    const resizeListener = () => resize(a);
-    window.addEventListener("resize", resizeListener);
-
+    window.addEventListener("resize", () => resize(a));
     return () => {
-      window.removeEventListener("resize", resizeListener);
+      window.removeEventListener("resize", () => resize(a));
       a.renderer.dispose();
       container.removeChild(a.renderer.domElement);
     };
   }, []);
 
-  // ✅ Load 3D model safely
-  const loadModel = (a) => {
-    const loader = new GLTFLoader();
-    setIsLoading(true);
-    loader.load(
-      MODEL_URL,
-      (gltf) => {
-        a.model = gltf.scene;
-        a.model.scale.set(0.5, 0.5, 0.05); // flat like wall
-        a.model.position.set(0, 0, -1);
-        a.scene.add(a.model);
-        console.log("✅ Model loaded successfully");
-        setLoadingProgress(50);
-        loadTexture(a); // load texture next
-      },
-      (xhr) => {
-        if (xhr.total) {
-          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 50));
-        }
-      },
-      (error) => {
-        console.error("❌ Model load failed:", error);
-        alert("Failed to load model. Please refresh.");
-        setIsLoading(false);
-      }
-    );
-  };
-
-  // ✅ Load wall texture and apply to model
-  const loadTexture = (a) => {
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      textureUrl,
-      (texture) => {
-        a.wallTexture = texture;
-
-        // Apply texture if model is ready
-        if (a.model) {
-          a.model.traverse((child) => {
-            if (child.isMesh) {
-              child.material = new THREE.MeshBasicMaterial({ map: texture });
-            }
-          });
-        }
-
-        setLoadingProgress(100);
-        setTimeout(() => setIsLoading(false), 500);
-        console.log("✅ Wall texture applied");
-      },
-      (xhr) => {
-        if (xhr.total) {
-          const percent = 50 + (xhr.loaded / xhr.total) * 50;
-          setLoadingProgress(Math.round(percent));
-        }
-      },
-      (error) => {
-        console.error("❌ Texture Load Error:", error);
-        alert("Failed to load wall texture.");
-        setIsLoading(false);
-      }
-    );
-  };
-
-  // ✅ Create reticle for surface detection
+  // ✅ Create the reticle (green circle)
   const setupReticle = (a) => {
     a.reticle = new THREE.Mesh(
-      new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+      new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ color: 0x00ff00 })
     );
     a.reticle.matrixAutoUpdate = false;
@@ -126,49 +49,58 @@ const ARViewer = () => {
     a.scene.add(a.reticle);
   };
 
-  // ✅ Adjust renderer on window resize
-  const resize = (a) => {
-    a.camera.aspect = window.innerWidth / window.innerHeight;
-    a.camera.updateProjectionMatrix();
-    a.renderer.setSize(window.innerWidth, window.innerHeight);
-  };
-
-  // ✅ Setup XR
   const setupXR = (a) => {
-    a.renderer.xr.enabled = true;
-    a.currentSession = null;
-
     if ("xr" in navigator) {
       navigator.xr.isSessionSupported("immersive-ar").then(setIsSupported);
-    } else setIsSupported(false);
-
-    a.hitTestSourceRequested = false;
-    a.hitTestSource = null;
-
-    const onSelect = () => {
-      if (!a.wallTexture || !a.model) {
-        console.warn("Model or texture not ready yet.");
-        return;
-      }
-      if (a.reticle.visible) {
-        placeWallTexture(a);
-      } else {
-        console.warn("No surface detected.");
-      }
-    };
+    }
 
     a.controller = a.renderer.xr.getController(0);
-    a.controller.addEventListener("select", onSelect);
+    a.controller.addEventListener("select", () => onSelect(a));
     a.scene.add(a.controller);
   };
 
-  // ✅ Start AR
+  // ✅ When user taps on detected plane
+  const onSelect = (a) => {
+    if (a.reticle.visible) {
+      const text = createHelloText();
+      text.position.setFromMatrixPosition(a.reticle.matrix);
+      text.lookAt(a.camera.position);
+      a.scene.add(text);
+      console.log("👋 'Hello' placed at:", text.position);
+    }
+  };
+
+  // ✅ Create 3D Text
+  const createHelloText = () => {
+    const loader = new THREE.FontLoader();
+    const textGroup = new THREE.Group();
+
+    // Using built-in font (via CDN)
+    loader.load(
+      "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
+      (font) => {
+        const textGeo = new THREE.TextGeometry("Hello", {
+          font,
+          size: 0.1,
+          height: 0.02,
+        });
+        const textMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const textMesh = new THREE.Mesh(textGeo, textMat);
+        textMesh.position.set(-0.2, 0, 0);
+        textGroup.add(textMesh);
+      }
+    );
+    return textGroup;
+  };
+
+  // ✅ Start AR Session
   const startAR = async () => {
-    const a = app.current;
     if (!isSupported) {
       alert("AR not supported on this device.");
       return;
     }
+
+    const a = app.current;
 
     try {
       const sessionInit = {
@@ -179,24 +111,24 @@ const ARViewer = () => {
 
       const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
       onSessionStarted(a, session);
-    } catch (error) {
-      console.error("XR Session Request Failed:", error);
-      alert("Failed to start AR session.");
+    } catch (err) {
+      console.error("Failed to start AR session:", err);
     }
   };
 
-  // ✅ On AR session start
+  // ✅ Handle AR session start
   const onSessionStarted = (a, session) => {
     session.addEventListener("end", () => onSessionEnded(a));
 
     a.renderer.xr.setReferenceSpaceType("local");
     a.renderer.xr.setSession(session);
-    a.currentSession = session;
+
+    a.hitTestSourceRequested = false;
+    a.hitTestSource = null;
 
     a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
   };
 
-  // ✅ On AR session end
   const onSessionEnded = (a) => {
     a.currentSession = null;
     a.hitTestSourceRequested = false;
@@ -204,29 +136,25 @@ const ARViewer = () => {
     a.renderer.setAnimationLoop(null);
   };
 
-  // ✅ Request hit test source
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
-    session.requestReferenceSpace("viewer").then((referenceSpace) => {
-      session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+    session.requestReferenceSpace("viewer").then((refSpace) => {
+      session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
       });
-    });
-    session.addEventListener("end", () => {
-      a.hitTestSourceRequested = false;
-      a.hitTestSource = null;
     });
     a.hitTestSourceRequested = true;
   };
 
-  // ✅ Detect vertical plane & show reticle
+  // ✅ Detect vertical plane and show circle
   const getHitTestResults = (a, frame) => {
     const hitTestResults = frame.getHitTestResults(a.hitTestSource);
-    if (hitTestResults.length) {
-      const referenceSpace = a.renderer.xr.getReferenceSpace();
+    if (hitTestResults.length > 0) {
+      const refSpace = a.renderer.xr.getReferenceSpace();
       const hit = hitTestResults[0];
-      const pose = hit.getPose(referenceSpace);
+      const pose = hit.getPose(refSpace);
 
+      // Detect vertical plane (normal.y near 0)
       const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(
         new THREE.Quaternion().fromArray(pose.transform.orientation)
       );
@@ -242,15 +170,6 @@ const ARViewer = () => {
     }
   };
 
-  // ✅ Place model (textured wall) at reticle
-  const placeWallTexture = (a) => {
-    const clone = a.model.clone();
-    clone.position.setFromMatrixPosition(a.reticle.matrix);
-    clone.lookAt(a.camera.position);
-    a.scene.add(clone);
-    console.log("🧱 Wall texture placed:", clone.position);
-  };
-
   // ✅ Render loop
   const render = (a, timestamp, frame) => {
     if (frame) {
@@ -258,6 +177,12 @@ const ARViewer = () => {
       if (a.hitTestSource) getHitTestResults(a, frame);
     }
     a.renderer.render(a.scene, a.camera);
+  };
+
+  const resize = (a) => {
+    a.camera.aspect = window.innerWidth / window.innerHeight;
+    a.camera.updateProjectionMatrix();
+    a.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
   return (
@@ -272,8 +197,6 @@ const ARViewer = () => {
         zIndex: 1000,
       }}
     >
-      {isLoading && <LoadingBar progress={loadingProgress} />}
-
       {isSupported ? (
         <button
           style={{
@@ -286,8 +209,6 @@ const ARViewer = () => {
             color: "white",
             border: "none",
             borderRadius: "5px",
-            cursor: "pointer",
-            display: isLoading ? "none" : "block",
           }}
           onClick={startAR}
         >
@@ -295,7 +216,7 @@ const ARViewer = () => {
         </button>
       ) : (
         <p style={{ color: "white", textAlign: "center", marginTop: "50%" }}>
-          AR is not supported on this device.
+          AR not supported on this device.
         </p>
       )}
     </div>
