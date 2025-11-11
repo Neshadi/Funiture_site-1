@@ -9,19 +9,19 @@ const ARViewer = () => {
   const containerRef = useRef();
   const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Loading state for hit-test and model loading
-  const [loadingProgress, setLoadingProgress] = useState(0); // Progress for model loading
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const app = useRef({});
 
-  // Use the model URL from query param, no default fallback
   const modelUrl = searchParams.get("model");
 
+  // ---------------------- MAIN SETUP ----------------------
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const a = app.current;
-    a.assetsPath = "/assets/ar-shop/"; // For local assets if needed later
+    a.assetsPath = "/assets/ar-shop/";
     a.camera = new THREE.PerspectiveCamera(
       70,
       window.innerWidth / window.innerHeight,
@@ -43,9 +43,10 @@ const ARViewer = () => {
 
     setEnvironment(a);
 
+    // Reticle
     a.reticle = new THREE.Mesh(
       new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial()
+      new THREE.MeshBasicMaterial({ color: 0x00ffff })
     );
     a.reticle.matrixAutoUpdate = false;
     a.reticle.visible = false;
@@ -63,6 +64,7 @@ const ARViewer = () => {
     };
   }, []);
 
+  // ---------------------- ENVIRONMENT ----------------------
   const setEnvironment = (a) => {
     const loader = new RGBELoader().setPath("/assets/");
     loader.load(
@@ -77,12 +79,14 @@ const ARViewer = () => {
     );
   };
 
+  // ---------------------- RESIZE HANDLER ----------------------
   const resize = (a) => {
     a.camera.aspect = window.innerWidth / window.innerHeight;
     a.camera.updateProjectionMatrix();
     a.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
+  // ---------------------- XR SETUP ----------------------
   const setupXR = (a) => {
     a.renderer.xr.enabled = true;
     a.currentSession = null;
@@ -114,15 +118,7 @@ const ARViewer = () => {
       if (a.reticle.visible) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
         a.chair.visible = true;
-        console.log(
-          "Model placed at:",
-          a.chair.position,
-          "Visible:",
-          a.chair.visible
-        );
-        console.log("Object successfully placed in AR environment"); // Log after object placement
-      } else {
-        console.warn("Reticle not visible, cannot place model");
+        console.log("Model placed at:", a.chair.position);
       }
     };
 
@@ -131,6 +127,7 @@ const ARViewer = () => {
     a.scene.add(a.controller);
   };
 
+  // ---------------------- START AR ----------------------
   const showChair = async () => {
     const a = app.current;
     if (!modelUrl) {
@@ -140,15 +137,20 @@ const ARViewer = () => {
     }
 
     try {
-      await initAR(a); // Initialize AR session (camera)
+      await initAR(a);
     } catch (error) {
       console.error("Error in AR initialization:", error);
     }
   };
 
+  // ---------------------- INIT AR SESSION ----------------------
   const initAR = async (a) => {
     let currentSession = a.currentSession;
-    const sessionInit = { requiredFeatures: ["hit-test"] };
+
+    const sessionInit = {
+      requiredFeatures: ["hit-test", "plane-detection"], // ✅ Add plane detection
+      optionalFeatures: ["dom-overlay"],
+    };
 
     const onSessionStarted = (session) => {
       session.addEventListener("end", onSessionEnded);
@@ -157,8 +159,8 @@ const ARViewer = () => {
       currentSession = session;
       a.currentSession = currentSession;
       console.log("XR Session started");
-      setIsLoading(true); // Start loading bar after camera opens
-      loadModel(a); // Load model after AR session starts
+      setIsLoading(true);
+      loadModel(a);
     };
 
     const onSessionEnded = () => {
@@ -183,13 +185,14 @@ const ARViewer = () => {
         console.error("XR Session Request Failed:", error);
         alert("Failed to start AR session. Check device compatibility.");
         setIsSupported(false);
-        throw error; // Propagate error to showChair
+        throw error;
       }
     } else {
       currentSession.end();
     }
   };
 
+  // ---------------------- LOAD MODEL ----------------------
   const loadModel = (a) => {
     const loader = new GLTFLoader();
     setLoadingProgress(0);
@@ -199,13 +202,12 @@ const ARViewer = () => {
         a.scene.add(gltf.scene);
         a.chair = gltf.scene;
         a.chair.visible = false;
-        a.chair.scale.set(1, 1, 1); // Adjust scale if needed
-        console.log("GLTF Loaded Successfully:", gltf, "Model URL:", modelUrl);
+        a.chair.scale.set(1, 1, 1);
+        console.log("✅ 3D Model loaded:", modelUrl);
         a.renderer.setAnimationLoop((timestamp, frame) =>
           render(a, timestamp, frame)
         );
         setLoadingProgress(100);
-        console.log("✅ 3D Model loaded successfully:", modelUrl);
       },
       (xhr) => {
         if (xhr.total) {
@@ -215,13 +217,14 @@ const ARViewer = () => {
       },
       (error) => {
         console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model. Check console for details.");
+        alert("Failed to load 3D model.");
         setLoadingProgress(0);
-        setIsLoading(false); // Stop loading bar on error
+        setIsLoading(false);
       }
     );
   };
 
+  // ---------------------- HIT TEST SETUP ----------------------
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
     session.requestReferenceSpace("viewer").then((referenceSpace) => {
@@ -236,31 +239,45 @@ const ARViewer = () => {
     a.hitTestSourceRequested = true;
   };
 
+  // ---------------------- GET HIT TEST RESULTS ----------------------
   const getHitTestResults = (a, frame) => {
     const hitTestResults = frame.getHitTestResults(a.hitTestSource);
     if (hitTestResults.length) {
       const referenceSpace = a.renderer.xr.getReferenceSpace();
       const hit = hitTestResults[0];
       const pose = hit.getPose(referenceSpace);
+
+      // Detect surface normal
+      const normalMatrix = new THREE.Matrix3().getNormalMatrix(
+        new THREE.Matrix4().fromArray(pose.transform.matrix)
+      );
+      const normal = new THREE.Vector3(0, 1, 0).applyMatrix3(normalMatrix).normalize();
+
+      // Adjust reticle orientation based on surface
+      const isVertical = Math.abs(normal.y) < 0.5;
+      a.reticle.rotation.set(isVertical ? 0 : -Math.PI / 2, 0, 0);
+
       a.reticle.visible = true;
       a.reticle.matrix.fromArray(pose.transform.matrix);
-      console.log("Reticle is now visible"); // Log when reticle becomes visible
+
       if (a.chair && loadingProgress === 100) {
-        setIsLoading(false); // Stop loading bar when reticle is visible and model is loaded
+        setIsLoading(false);
       }
     } else {
       a.reticle.visible = false;
     }
   };
 
+  // ---------------------- RENDER LOOP ----------------------
   const render = (a, timestamp, frame) => {
     if (frame) {
-      if (a.hitTestSourceRequested === false) requestHitTestSource(a);
+      if (!a.hitTestSourceRequested) requestHitTestSource(a);
       if (a.hitTestSource) getHitTestResults(a, frame);
     }
     a.renderer.render(a.scene, a.camera);
   };
 
+  // ---------------------- UI ----------------------
   return (
     <div
       ref={containerRef}
@@ -273,9 +290,7 @@ const ARViewer = () => {
         zIndex: 1000,
       }}
     >
-      {isLoading && (
-        <LoadingBar progress={loadingProgress} />
-      )}
+      {isLoading && <LoadingBar progress={loadingProgress} />}
 
       {isSupported ? (
         <button
@@ -290,7 +305,7 @@ const ARViewer = () => {
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
-            display: isLoading ? "none" : "block", // Hide button during loading
+            display: isLoading ? "none" : "block",
           }}
           onClick={showChair}
         >
