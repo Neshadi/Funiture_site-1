@@ -44,10 +44,9 @@ const ARViewer = () => {
     setEnvironment(a);
 
     a.reticle = new THREE.Mesh(
-      new THREE.RingGeometry(0.15, 0.2, 32).rotateY(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+      new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial()
     );
-
     a.reticle.matrixAutoUpdate = false;
     a.reticle.visible = false;
     a.scene.add(a.reticle);
@@ -114,9 +113,6 @@ const ARViewer = () => {
       }
       if (a.reticle.visible) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
-        a.chair.quaternion.setFromRotationMatrix(a.reticle.matrix);
-        a.chair.rotateY(Math.PI);
-
         a.chair.visible = true;
         console.log(
           "Model placed at:",
@@ -241,32 +237,21 @@ const ARViewer = () => {
   };
 
   const getHitTestResults = (a, frame) => {
-  const hitTestResults = frame.getHitTestResults(a.hitTestSource);
-  if (hitTestResults.length) {
-    const referenceSpace = a.renderer.xr.getReferenceSpace();
-    const hit = hitTestResults[0];
-    const pose = hit.getPose(referenceSpace);
-
-    // Extract normal matrix (plane orientation)
-    const matrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
-    const normal = new THREE.Vector3(0, 1, 0).applyMatrix4(matrix).normalize();
-
-    // If surface normal is mostly horizontal (Y≈0), it's vertical
-    if (Math.abs(normal.y) < 0.4) {
+    const hitTestResults = frame.getHitTestResults(a.hitTestSource);
+    if (hitTestResults.length) {
+      const referenceSpace = a.renderer.xr.getReferenceSpace();
+      const hit = hitTestResults[0];
+      const pose = hit.getPose(referenceSpace);
       a.reticle.visible = true;
       a.reticle.matrix.fromArray(pose.transform.matrix);
-
+      console.log("Reticle is now visible"); // Log when reticle becomes visible
       if (a.chair && loadingProgress === 100) {
-        setIsLoading(false);
+        setIsLoading(false); // Stop loading bar when reticle is visible and model is loaded
       }
     } else {
       a.reticle.visible = false;
     }
-  } else {
-    a.reticle.visible = false;
-  }
-};
-
+  };
 
   const render = (a, timestamp, frame) => {
     if (frame) {
