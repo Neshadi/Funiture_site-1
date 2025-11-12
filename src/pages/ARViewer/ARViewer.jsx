@@ -8,7 +8,7 @@ import LoadingBar from "../../components/ARView/LoadingBar.jsx";
 // Detect low-end device
 const isLowEndDevice = () => {
   const ua = navigator.userAgent;
-  const ram = (navigator.deviceMemory || 4) <= 4; // M21 has 4GB
+  const ram = (navigator.deviceMemory || 4) <= 4;
   const isAndroidLow = /Android/i.test(ua) && (/SM-|M[0-9][0-9]/.test(ua) || ram);
   return ram || isAndroidLow;
 };
@@ -25,7 +25,7 @@ const ARViewer = () => {
 
   const modelUrl = searchParams.get("model");
 
-  // Drag state
+  // Drag state for repositioning
   const dragState = useRef({
     isDragging: false,
     prevX: 0,
@@ -33,13 +33,13 @@ const ARViewer = () => {
     lastTime: 0,
   });
 
-  // === TOUCH HANDLERS (stable, no re-creation) ===
+  // === TOUCH HANDLERS: Drag to Move + Rotate Y (Left/Right) ===
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     let lastTouchTime = 0;
-    const THROTTLE_MS = 16; // ~60fps
+    const THROTTLE_MS = 16;
 
     const handleTouchStart = (e) => {
       if (!app.current.chair || !isPlaced) return;
@@ -65,13 +65,26 @@ const ARViewer = () => {
       const deltaY = touch.clientY - dragState.current.prevY;
 
       const chair = app.current.chair;
+      const camera = app.current.camera;
+
+      // === ROTATE Y (Left/Right) ===
       chair.rotation.y += deltaX * 0.01;
 
+      // === MOVE ON GROUND PLANE (X/Z) ===
+      // Get camera forward and right vectors (ignore Y)
       const forward = new THREE.Vector3();
-      app.current.camera.getWorldDirection(forward);
+      camera.getWorldDirection(forward);
       forward.y = 0;
       forward.normalize();
-      chair.position.addScaledVector(forward, deltaY * 0.001);
+
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+      // Move forward/back with vertical drag
+      chair.position.addScaledVector(forward, -deltaY * 0.002);
+
+      // Move left/right with horizontal drag
+      chair.position.addScaledVector(right, deltaX * 0.002);
 
       dragState.current.prevX = touch.clientX;
       dragState.current.prevY = touch.clientY;
@@ -90,7 +103,7 @@ const ARViewer = () => {
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [isPlaced]); // Re-attach only when placement state changes
+  }, [isPlaced]);
 
   // === THREE.JS SETUP ===
   useEffect(() => {
@@ -162,7 +175,6 @@ const ARViewer = () => {
           texture.mapping = THREE.EquirectangularReflectionMapping;
           a.scene.environment = texture;
           a.hdrLoaded = true;
-          console.log("HDR Environment loaded");
         },
         undefined,
         (error) => console.error("HDR Load Error:", error)
@@ -185,14 +197,9 @@ const ARViewer = () => {
         .isSessionSupported("immersive-ar")
         .then((supported) => {
           setIsSupported(supported);
-          console.log("Immersive AR supported:", supported);
         })
-        .catch((error) => {
-          console.error("Error checking AR support:", error);
-          setIsSupported(false);
-        });
+        .catch(() => setIsSupported(false));
     } else {
-      console.error("WebXR API not available");
       setIsSupported(false);
     }
 
@@ -200,19 +207,12 @@ const ARViewer = () => {
     a.hitTestSource = null;
 
     const onSelect = () => {
-      if (a.chair === undefined) {
-        console.warn("No model loaded for placement");
-        return;
-      }
+      if (a.chair === undefined || isPlaced) return;
       if (a.reticle.visible) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
         a.chair.visible = true;
-        console.log("Model placed at:", a.chair.position);
-        console.log("Object successfully placed in AR environment");
         setIsPlaced(true);
         a.reticle.visible = false;
-      } else {
-        console.warn("Reticle not visible, cannot place model");
       }
     };
 
@@ -224,15 +224,13 @@ const ARViewer = () => {
   const showChair = async () => {
     const a = app.current;
     if (!modelUrl) {
-      console.error("No model URL provided");
       alert("No 3D model available for this product.");
       return;
     }
-
     try {
       await initAR(a);
     } catch (error) {
-      console.error("Error in AR initialization:", error);
+      console.error("AR init failed:", error);
     }
   };
 
@@ -244,9 +242,7 @@ const ARViewer = () => {
       session.addEventListener("end", onSessionEnded);
       a.renderer.xr.setReferenceSpaceType("local");
       a.renderer.xr.setSession(session);
-      currentSession = session;
-      a.currentSession = currentSession;
-      console.log("XR Session started");
+      a.currentSession = session;
       setIsLoading(true);
       setIsPlaced(false);
 
@@ -255,9 +251,6 @@ const ARViewer = () => {
     };
 
     const onSessionEnded = () => {
-      console.log("XR Session ended");
-      currentSession?.removeEventListener("end", onSessionEnded);
-      currentSession = null;
       a.currentSession = null;
       if (a.chair) {
         a.scene.remove(a.chair);
@@ -269,22 +262,19 @@ const ARViewer = () => {
       setIsPlaced(false);
     };
 
-    if (currentSession === null) {
+    if (!currentSession) {
       try {
         const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
         onSessionStarted(session);
       } catch (error) {
-        console.error("XR Session Request Failed:", error);
-        alert("Failed to start AR session. Check device compatibility.");
+        alert("Failed to start AR. Check device compatibility.");
         setIsSupported(false);
-        throw error;
       }
     } else {
       currentSession.end();
     }
   };
 
-  // === MODEL LOADING (NO DRACO, NO HEAVY TRAVERSAL) ===
   const loadModel = (a) => {
     const loader = new GLTFLoader();
     setLoadingProgress(0);
@@ -297,7 +287,6 @@ const ARViewer = () => {
         a.chair = model;
         a.chair.visible = false;
 
-        // === LIGHT OPTIMIZATION ONLY ON HIGH-END ===
         if (!isLowEnd.current) {
           model.traverse((child) => {
             if (child.isMesh && child.material) {
@@ -306,30 +295,24 @@ const ARViewer = () => {
             }
           });
 
-          // Scale based on bounding box
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
           const scale = maxDim > 2 ? 1 / maxDim : 1;
           model.scale.setScalar(scale);
         } else {
-          // Low-end: fixed scale
           model.scale.set(0.5, 0.5, 0.5);
         }
 
-        console.log("GLTF Loaded Successfully:", modelUrl);
         a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
         setLoadingProgress(100);
-        console.log("3D Model loaded successfully:", modelUrl);
       },
       (xhr) => {
-        if (xhr.total) {
-          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
-        }
+        if (xhr.total) setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
       },
       (error) => {
         console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model. Check console for details.");
+        alert("Failed to load 3D model.");
         setLoadingProgress(0);
         setIsLoading(false);
       }
@@ -338,15 +321,11 @@ const ARViewer = () => {
 
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
-    if (!session) return;
+    if (!session || a.hitTestSourceRequested) return;
     session.requestReferenceSpace("viewer").then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
       });
-    });
-    session.addEventListener("end", () => {
-      a.hitTestSourceRequested = false;
-      a.hitTestSource = null;
     });
     a.hitTestSourceRequested = true;
   };
@@ -359,7 +338,6 @@ const ARViewer = () => {
       const pose = hit.getPose(a.renderer.xr.getReferenceSpace());
       a.reticle.visible = true;
       a.reticle.matrix.fromArray(pose.transform.matrix);
-      console.log("Reticle is now visible");
       if (loadingProgress === 100) setIsLoading(false);
     } else {
       a.reticle.visible = false;
@@ -374,13 +352,27 @@ const ARViewer = () => {
     a.renderer.render(a.scene, a.camera);
   };
 
-  // === CONTROLS ===
-  const rotateLeft = () => app.current.chair && isPlaced && (app.current.chair.rotation.y += 0.3);
-  const rotateRight = () => app.current.chair && isPlaced && (app.current.chair.rotation.y -= 0.3);
+  // === CONTROL FUNCTIONS ===
+  const rotateLeft = () => {
+    if (app.current.chair && isPlaced) {
+      app.current.chair.rotation.y += 0.3;
+    }
+  };
+
+  const rotateRight = () => {
+    if (app.current.chair && isPlaced) {
+      app.current.chair.rotation.y -= 0.3;
+    }
+  };
+
   const placeAgain = () => {
     setIsPlaced(false);
-    if (app.current.chair) app.current.chair.visible = false;
+    if (app.current.chair) {
+      app.current.chair.visible = false;
+    }
     setIsLoading(true);
+    // Re-enable hit test on next frame
+    app.current.hitTestSourceRequested = false;
   };
 
   return (
@@ -415,6 +407,7 @@ const ARViewer = () => {
 
       {isPlaced && (
         <>
+          {/* Control Buttons */}
           <div
             style={{
               position: "absolute",
@@ -427,10 +420,13 @@ const ARViewer = () => {
             }}
           >
             <button onClick={rotateLeft} style={btnStyle}>Rotate Left</button>
-            <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>Place Again</button>
+            <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>
+              Place Again
+            </button>
             <button onClick={rotateRight} style={btnStyle}>Rotate Right</button>
           </div>
 
+          {/* Instruction Tooltip */}
           <div
             style={{
               position: "absolute",
@@ -445,7 +441,7 @@ const ARViewer = () => {
               zIndex: 1001,
             }}
           >
-            Drag to rotate • Move up/down to reposition
+            Drag to rotate & move • Tap buttons to control
           </div>
         </>
       )}
