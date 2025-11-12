@@ -15,33 +15,25 @@ const ARWallTextureViewer = () => {
   const [planeDetected, setPlaneDetected] = useState(false);
   const app = useRef({});
 
-  // -----------------------------------------------------------------
-  // 1. Model URL from query string (same as previous ARViewer)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 1. Model URL (same as original ARViewer)
+  // --------------------------------------------------------------
   const modelUrl = searchParams.get("model");
 
-  const addDebugLog = (message) => {
-    console.log(message);
-    setDebugInfo((prev) => [
-      ...prev.slice(-10),
-      `${new Date().toLocaleTimeString()}: ${message}`,
-    ]);
+  const addDebugLog = (msg) => {
+    console.log(msg);
+    setDebugInfo((p) => [...p.slice(-10), `${new Date().toLocaleTimeString()}: ${msg}`]);
   };
 
-  // -----------------------------------------------------------------
-  // 2. Three.js + WebXR boiler-plate (unchanged)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 2. Three.js + WebXR init (unchanged)
+  // --------------------------------------------------------------
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const a = app.current;
-    a.camera = new THREE.PerspectiveCamera(
-      70,
-      window.innerWidth / window.innerHeight,
-      0.01,
-      20
-    );
+    a.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
     a.camera.position.set(0, 1.6, 0);
     a.scene = new THREE.Scene();
 
@@ -57,7 +49,7 @@ const ARWallTextureViewer = () => {
 
     setEnvironment(a);
 
-    // Reticle (green ring – same as before)
+    // reticle (green ring)
     a.reticle = new THREE.Mesh(
       new THREE.RingGeometry(0.1, 0.15, 32),
       new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide })
@@ -66,14 +58,13 @@ const ARWallTextureViewer = () => {
     a.reticle.visible = false;
     a.scene.add(a.reticle);
 
-    a.markers = []; // keeps placed objects
+    a.markers = []; // placed objects
     setupXR(a);
 
-    const resizeListener = () => resize(a);
-    window.addEventListener("resize", resizeListener);
-
+    const onResize = () => resize(a);
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("resize", resizeListener);
+      window.removeEventListener("resize", onResize);
       a.renderer.dispose();
       container.removeChild(a.renderer.domElement);
     };
@@ -83,13 +74,13 @@ const ARWallTextureViewer = () => {
     const loader = new RGBELoader().setPath("/assets/");
     loader.load(
       "hdr/venice_sunset_1k.hdr",
-      (texture) => {
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        a.scene.environment = texture;
+      (tex) => {
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        a.scene.environment = tex;
         console.log("HDR Environment loaded");
       },
       undefined,
-      (error) => console.error("HDR Load Error:", error)
+      (err) => console.error("HDR Load Error:", err)
     );
   };
 
@@ -99,9 +90,9 @@ const ARWallTextureViewer = () => {
     a.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  // -----------------------------------------------------------------
-  // 3. WebXR setup (unchanged except for onSelect → placeModel)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 3. WebXR setup – tap → placeModel
+  // --------------------------------------------------------------
   const setupXR = (a) => {
     a.renderer.xr.enabled = true;
     a.currentSession = null;
@@ -109,12 +100,12 @@ const ARWallTextureViewer = () => {
     if ("xr" in navigator) {
       navigator.xr
         .isSessionSupported("immersive-ar")
-        .then((supported) => {
-          setIsSupported(supported);
-          addDebugLog(`AR Support: ${supported}`);
+        .then((sup) => {
+          setIsSupported(sup);
+          addDebugLog(`AR Support: ${sup}`);
         })
-        .catch((error) => {
-          addDebugLog(`AR Check Error: ${error.message}`);
+        .catch((e) => {
+          addDebugLog(`AR Check Error: ${e.message}`);
           setIsSupported(false);
         });
     } else {
@@ -129,7 +120,7 @@ const ARWallTextureViewer = () => {
       if (a.reticle.visible && a.lastHitResult) {
         placeModel(a, a.lastHitResult);
       } else {
-        addDebugLog("No plane detected - reticle not visible");
+        addDebugLog("No plane – reticle not visible");
       }
     };
 
@@ -138,254 +129,221 @@ const ARWallTextureViewer = () => {
     a.scene.add(a.controller);
   };
 
-  // -----------------------------------------------------------------
-  // 4. Model loading (same as original ARViewer)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 4. Model loading (same as original)
+  // --------------------------------------------------------------
   const loadModel = (a) => {
     if (!modelUrl) {
-      addDebugLog("No model URL – will use fallback marker");
+      addDebugLog("No model URL → will use fallback marker");
       return;
     }
 
     const loader = new GLTFLoader();
     setLoadingProgress(0);
+    addDebugLog(`Starting GLTF load: ${modelUrl}`);
 
     loader.load(
       modelUrl,
       (gltf) => {
-        a.model = gltf.scene;
-        a.model.visible = false;
-        a.scene.add(a.model);
-        console.log("GLTF Loaded Successfully:", gltf, "Model URL:", modelUrl);
+        // Store the **original** model for cloning later
+        a.loadedModel = gltf.scene;
+        a.loadedModel.visible = false; // hidden until first placement
+        a.scene.add(a.loadedModel);
         setLoadingProgress(100);
-        addDebugLog("3D Model loaded successfully");
+        addDebugLog("GLTF loaded & stored for cloning");
       },
       (xhr) => {
         if (xhr.total) {
-          const percent = (xhr.loaded / xhr.total) * 100;
-          setLoadingProgress(Math.round(percent));
+          const pct = (xhr.loaded / xhr.total) * 100;
+          setLoadingProgress(Math.round(pct));
         }
       },
-      (error) => {
-        console.error("GLTF Load Error:", error);
-        addDebugLog(`Failed to load model: ${error.message}`);
+      (err) => {
+        console.error("GLTF Load Error:", err);
+        addDebugLog(`GLTF load failed: ${err.message}`);
         setLoadingProgress(0);
         setIsLoading(false);
       }
     );
   };
 
-  // -----------------------------------------------------------------
-  // 5. Placement logic – decides orientation based on plane normal
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 5. Placement – clone model or fallback box
+  // --------------------------------------------------------------
   const placeModel = (a, hitResult) => {
-    const referenceSpace = a.renderer.xr.getReferenceSpace();
-    const pose = hitResult.getPose(referenceSpace);
+    const refSpace = a.renderer.xr.getReferenceSpace();
+    const pose = hitResult.getPose(refSpace);
     if (!pose) {
       addDebugLog("No pose from hit result");
       return;
     }
 
     const matrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
     const scale = new THREE.Vector3();
-    matrix.decompose(position, quaternion, scale);
+    matrix.decompose(pos, quat, scale);
 
-    // -------------------------------------------------------------
-    // Determine plane orientation (vertical / horizontal)
-    // -------------------------------------------------------------
+    // ---------- plane orientation ----------
     const normal = hitResult.hitMatrix
       ? new THREE.Vector3(...hitResult.hitMatrix.slice(8, 11)).normalize()
-      : new THREE.Vector3(0, 1, 0); // fallback to up
-
+      : new THREE.Vector3(0, 1, 0);
     const up = new THREE.Vector3(0, 1, 0);
     const dot = Math.abs(normal.dot(up));
+    const isVertical = dot < 0.5; // < 45° → wall
+    addDebugLog(isVertical ? "Vertical plane" : "Horizontal plane");
 
-    const isVertical = dot < 0.5; // < 45° from vertical → wall
-    addDebugLog(isVertical ? "Vertical plane detected" : "Horizontal plane detected");
-
-    // -------------------------------------------------------------
-    // Create the object (model if loaded, otherwise fallback marker)
-    // -------------------------------------------------------------
+    // ---------- create object ----------
     let mesh;
-    if (a.model && loadingProgress === 100) {
-      mesh = a.model.clone();
-      mesh.visible = true;
 
-      // ---- Scale / orientation adjustments ----
-      // You can tweak per-model rules here if you have a naming convention
+    if (a.loadedModel && loadingProgress === 100) {
+      // **Clone** the original model
+      mesh = a.loadedModel.clone();
+      mesh.visible = true;
+      addDebugLog("Cloned GLTF model for placement");
+
+      // ---- orientation / scale per plane type ----
       if (isVertical) {
-        // Wall-mounted objects (e.g. paintings, shelves)
+        // Wall objects (paintings, shelves, etc.)
         mesh.scale.set(0.5, 0.5, 0.5);
-        // Align to wall – keep model upright but rotate to face camera
-        const lookAt = new THREE.Vector3().copy(position).add(normal.clone().multiplyScalar(-1));
+        const lookAt = pos.clone().add(normal.clone().multiplyScalar(-1));
         mesh.lookAt(lookAt);
-        // optional: rotate 90° around X so model "sticks" to wall
-        mesh.rotateX(-Math.PI / 2);
+        mesh.rotateX(-Math.PI / 2); // stick flat to wall
       } else {
-        // Floor objects (chairs, tables)
+        // Floor objects
         mesh.scale.set(1, 1, 1);
-        // Keep upright
-        mesh.quaternion.copy(quaternion);
+        mesh.quaternion.copy(quat);
       }
     } else {
-      // Fallback coloured box (same as original marker)
-      const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.05);
-      const material = new THREE.MeshStandardMaterial({
+      // Fallback coloured box (only when no model)
+      const geo = new THREE.BoxGeometry(0.2, 0.2, 0.05);
+      const mat = new THREE.MeshStandardMaterial({
         color: Math.random() * 0xffffff,
         metalness: 0.3,
         roughness: 0.7,
       });
-      mesh = new THREE.Mesh(geometry, material);
+      mesh = new THREE.Mesh(geo, mat);
+      addDebugLog("Placed fallback marker (no model)");
     }
 
-    mesh.position.copy(position);
-    if (!a.model) mesh.quaternion.copy(quaternion);
+    mesh.position.copy(pos);
+    if (!a.loadedModel) mesh.quaternion.copy(quat);
 
     a.scene.add(mesh);
     a.markers.push(mesh);
 
     addDebugLog(
-      `Object placed at: x=${position.x.toFixed(
-        2
-      )}, y=${position.y.toFixed(2)}, z=${position.z.toFixed(2)} (${
+      `Placed at x=${pos.x.toFixed(2)}, y=${pos.y.toFixed(2)}, z=${pos.z.toFixed(2)} (${
         isVertical ? "wall" : "floor"
       })`
     );
     setPlaneDetected(true);
   };
 
-  // -----------------------------------------------------------------
-  // 6. AR session start (now also loads the model)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 6. AR session start – load model after session
+  // --------------------------------------------------------------
   const startARView = async () => {
     const a = app.current;
-    addDebugLog("Starting AR session...");
-
+    addDebugLog("Starting AR session…");
     try {
       await initAR(a);
-    } catch (error) {
-      addDebugLog(`AR Init Error: ${error.message}`);
+    } catch (e) {
+      addDebugLog(`AR Init Error: ${e.message}`);
     }
   };
 
   const initAR = async (a) => {
-    let currentSession = a.currentSession;
+    let sess = a.currentSession;
 
-    const sessionConfigs = [
+    const configs = [
       {
-        name: "Plane + Hit-Test",
-        config: {
-          requiredFeatures: ["hit-test"],
-          optionalFeatures: ["plane-detection"],
-        },
+        name: "Plane+Hit",
+        cfg: { requiredFeatures: ["hit-test"], optionalFeatures: ["plane-detection"] },
       },
-      { name: "Hit-Test Only", config: { requiredFeatures: ["hit-test"] } },
-      { name: "Basic AR", config: {} },
+      { name: "Hit-Only", cfg: { requiredFeatures: ["hit-test"] } },
+      { name: "Basic", cfg: {} },
     ];
 
-    const onSessionStarted = (session, configName) => {
-      session.addEventListener("end", onSessionEnded);
+    const onStart = (session, name) => {
+      session.addEventListener("end", onEnd);
       a.renderer.xr.setReferenceSpaceType("local");
       a.renderer.xr.setSession(session);
-      currentSession = session;
-      a.currentSession = currentSession;
-      addDebugLog(`XR Session started with: ${configName}`);
+      a.currentSession = session;
+      addDebugLog(`XR Session: ${name}`);
       setIsLoading(true);
 
-      // ---- Load model *after* session starts ----
+      // Load model **after** session is ready
       loadModel(a);
 
-      a.renderer.setAnimationLoop((timestamp, frame) =>
-        render(a, timestamp, frame)
-      );
+      a.renderer.setAnimationLoop((t, f) => render(a, t, f));
     };
 
-    const onSessionEnded = () => {
+    const onEnd = () => {
       addDebugLog("XR Session ended");
-      currentSession?.removeEventListener("end", onSessionEnded);
+      a.currentSession?.removeEventListener("end", onEnd);
       a.currentSession = null;
-
       a.markers.forEach((m) => a.scene.remove(m));
       a.markers = [];
-
       a.renderer.setAnimationLoop(null);
       setIsLoading(false);
       setPlaneDetected(false);
       setLoadingProgress(0);
     };
 
-    if (!currentSession) {
-      for (const { name, config } of sessionConfigs) {
+    if (!sess) {
+      for (const { name, cfg } of configs) {
         try {
-          addDebugLog(`Trying: ${name}`);
-          const session = await navigator.xr.requestSession(
-            "immersive-ar",
-            config
-          );
-          onSessionStarted(session, name);
+          addDebugLog(`Trying ${name}`);
+          const s = await navigator.xr.requestSession("immersive-ar", cfg);
+          onStart(s, name);
           return;
         } catch (e) {
           addDebugLog(`Failed ${name}: ${e.message}`);
-          if (name === sessionConfigs[sessionConfigs.length - 1].name) {
-            alert("Failed to start AR session. Your device may not support AR.");
+          if (name === configs[configs.length - 1].name) {
+            alert("AR not supported on this device.");
             setIsSupported(false);
             throw e;
           }
         }
       }
     } else {
-      currentSession.end();
+      sess.end();
     }
   };
 
-  // -----------------------------------------------------------------
-  // 7. Hit-test (prioritise vertical → any → basic)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 7. Hit-test (vertical → any → basic)
+  // --------------------------------------------------------------
   const requestHitTestSource = (a) => {
-    const session = a.renderer.xr.getSession();
-
-    session
-      .requestReferenceSpace("viewer")
-      .then((refSpace) => {
-        // 1. Vertical
-        session
-          .requestHitTestSource({
-            space: refSpace,
-            entityTypes: ["plane"],
-            planeTypes: ["vertical"],
-          })
-          .then((src) => {
-            a.hitTestSource = src;
-            addDebugLog("Vertical plane hit-test source created");
-          })
-          .catch(() => {
-            addDebugLog("Vertical plane not supported → trying any plane");
-            // 2. Any plane
-            session
-              .requestHitTestSource({
-                space: refSpace,
-                entityTypes: ["plane"],
-              })
-              .then((src) => {
+    const sess = a.renderer.xr.getSession();
+    sess.requestReferenceSpace("viewer").then((ref) => {
+      // 1. vertical
+      sess
+        .requestHitTestSource({ space: ref, entityTypes: ["plane"], planeTypes: ["vertical"] })
+        .then((src) => {
+          a.hitTestSource = src;
+          addDebugLog("Vertical hit-test source");
+        })
+        .catch(() => {
+          addDebugLog("Vertical unsupported → any plane");
+          sess
+            .requestHitTestSource({ space: ref, entityTypes: ["plane"] })
+            .then((src) => {
+              a.hitTestSource = src;
+              addDebugLog("Any-plane hit-test source");
+            })
+            .catch(() => {
+              addDebugLog("Plane detection off → basic hit-test");
+              sess.requestHitTestSource({ space: ref }).then((src) => {
                 a.hitTestSource = src;
-                addDebugLog("Any-plane hit-test source created");
-              })
-              .catch(() => {
-                addDebugLog("Plane detection not supported → basic hit-test");
-                // 3. Basic
-                session
-                  .requestHitTestSource({ space: refSpace })
-                  .then((src) => {
-                    a.hitTestSource = src;
-                    addDebugLog("Basic hit-test source created");
-                  });
+                addDebugLog("Basic hit-test source");
               });
-          });
-      });
+            });
+        });
+    });
 
-    session.addEventListener("end", () => {
+    sess.addEventListener("end", () => {
       a.hitTestSourceRequested = false;
       a.hitTestSource = null;
     });
@@ -395,20 +353,19 @@ const ARWallTextureViewer = () => {
   const getHitTestResults = (a, frame) => {
     const results = frame.getHitTestResults(a.hitTestSource);
     if (results.length) {
-      const refSpace = a.renderer.xr.getReferenceSpace();
+      const ref = a.renderer.xr.getReferenceSpace();
       const hit = results[0];
       a.lastHitResult = hit;
-
-      const pose = hit.getPose(refSpace);
+      const pose = hit.getPose(ref);
       if (pose) {
         if (!a.reticle.visible) {
-          addDebugLog("Reticle now visible - plane detected!");
+          addDebugLog("Reticle visible – plane detected");
           setPlaneDetected(true);
         }
         a.reticle.visible = true;
         a.reticle.matrix.fromArray(pose.transform.matrix);
 
-        // Hide loading bar once reticle + model are ready
+        // hide loading bar when model ready (or no model)
         if (isLoading && (!modelUrl || loadingProgress === 100)) {
           setIsLoading(false);
         }
@@ -419,7 +376,7 @@ const ARWallTextureViewer = () => {
     }
   };
 
-  const render = (a, timestamp, frame) => {
+  const render = (a, _t, frame) => {
     if (frame) {
       if (!a.hitTestSourceRequested) requestHitTestSource(a);
       if (a.hitTestSource) getHitTestResults(a, frame);
@@ -429,9 +386,9 @@ const ARWallTextureViewer = () => {
 
   const clearDebugLog = () => setDebugInfo([]);
 
-  // -----------------------------------------------------------------
-  // 8. UI (unchanged except for LoadingBar)
-  // -----------------------------------------------------------------
+  // --------------------------------------------------------------
+  // 8. UI
+  // --------------------------------------------------------------
   return (
     <div
       ref={containerRef}
@@ -445,109 +402,84 @@ const ARWallTextureViewer = () => {
         backgroundColor: "black",
       }}
     >
-      {/* Debug Console */}
+      {/* Debug console */}
       <div
         style={{
           position: "absolute",
-          top: "10px",
-          left: "10px",
-          right: "10px",
-          maxHeight: "200px",
+          top: 10,
+          left: 10,
+          right: 10,
+          maxHeight: 200,
           background: "rgba(0,0,0,0.85)",
           color: "#0f0",
           fontFamily: "monospace",
-          fontSize: "11px",
-          padding: "10px",
-          borderRadius: "5px",
+          fontSize: 11,
+          padding: 10,
+          borderRadius: 5,
           overflowY: "auto",
           zIndex: 1001,
           border: "1px solid #0f0",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "5px",
-            borderBottom: "1px solid #0f0",
-            paddingBottom: "5px",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, borderBottom: "1px solid #0f0", paddingBottom: 5 }}>
           <strong>DEBUG LOG</strong>
-          <button
-            onClick={clearDebugLog}
-            style={{
-              background: "transparent",
-              color: "#0f0",
-              border: "1px solid #0f0",
-              padding: "2px 8px",
-              borderRadius: "3px",
-              cursor: "pointer",
-              fontSize: "10px",
-            }}
-          >
+          <button onClick={clearDebugLog} style={{ background: "transparent", color: "#0f0", border: "1px solid #0f0", padding: "2px 8px", borderRadius: 3, cursor: "pointer", fontSize: 10 }}>
             Clear
           </button>
         </div>
         {debugInfo.length === 0 ? (
-          <div style={{ opacity: 0.5 }}>Waiting for events...</div>
+          <div style={{ opacity: 0.5 }}>Waiting…</div>
         ) : (
-          debugInfo.map((log, i) => (
-            <div key={i} style={{ marginBottom: "2px" }}>
-              {log}
+          debugInfo.map((l, i) => (
+            <div key={i} style={{ marginBottom: 2 }}>
+              {l}
             </div>
           ))
         )}
       </div>
 
-      {/* Loading Bar (model) */}
-      {isLoading && modelUrl && (
-        <LoadingBar progress={loadingProgress} />
-      )}
+      {/* Model loading bar */}
+      {isLoading && modelUrl && <LoadingBar progress={loadingProgress} />}
 
-      {/* Scanning overlay */}
+      {/* Scanning overlay (no model) */}
       {isLoading && !modelUrl && (
         <div
           style={{
             position: "absolute",
             top: "50%",
             left: "50%",
-            transform: "translate(-50%, -50%)",
+            transform: "translate(-50%,-50%)",
             textAlign: "center",
             color: "white",
             background: "rgba(0,0,0,0.8)",
-            padding: "30px",
-            borderRadius: "10px",
+            padding: 30,
+            borderRadius: 10,
             border: "2px solid #00ff00",
           }}
         >
-          <div style={{ fontSize: "18px", marginBottom: "15px" }}>
-            Scanning for planes...
-          </div>
-          <div style={{ fontSize: "14px", opacity: 0.8 }}>
-            Point your camera at a surface
-          </div>
+          <div style={{ fontSize: 18, marginBottom: 15 }}>Scanning for planes…</div>
+          <div style={{ fontSize: 14, opacity: 0.8 }}>Point camera at a surface</div>
         </div>
       )}
 
-      {/* Plane-detected banner */}
+      {/* Plane detected banner */}
       {planeDetected && !isLoading && (
         <div
           style={{
             position: "absolute",
-            top: "220px",
-            left: "10px",
-            right: "10px",
+            top: 220,
+            left: 10,
+            right: 10,
             background: "rgba(0,255,0,0.9)",
             color: "white",
-            padding: "15px",
-            borderRadius: "5px",
-            fontSize: "14px",
+            padding: 15,
+            borderRadius: 5,
+            fontSize: 14,
             textAlign: "center",
             fontWeight: "bold",
           }}
         >
-          PLANE DETECTED! Tap screen to place object
+          PLANE DETECTED! Tap to place model
         </div>
       )}
 
@@ -556,16 +488,16 @@ const ARWallTextureViewer = () => {
         <button
           style={{
             position: "absolute",
-            bottom: "20px",
+            bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
             padding: "15px 30px",
             background: "#00ff00",
             color: "black",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: 8,
             cursor: "pointer",
-            fontSize: "16px",
+            fontSize: 16,
             fontWeight: "bold",
             display: isLoading ? "none" : "block",
             boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
@@ -575,15 +507,8 @@ const ARWallTextureViewer = () => {
           Start AR View
         </button>
       ) : (
-        <p
-          style={{
-            color: "white",
-            textAlign: "center",
-            marginTop: "50%",
-            padding: "20px",
-          }}
-        >
-          AR is not supported on this device.
+        <p style={{ color: "white", textAlign: "center", marginTop: "50%", padding: 20 }}>
+          AR not supported on this device.
         </p>
       )}
 
@@ -591,19 +516,19 @@ const ARWallTextureViewer = () => {
       <div
         style={{
           position: "absolute",
-          bottom: "80px",
-          left: "10px",
-          right: "10px",
+          bottom: 80,
+          left: 10,
+          right: 10,
           background: "rgba(0,0,0,0.7)",
           color: "white",
-          padding: "12px",
-          borderRadius: "5px",
-          fontSize: "12px",
+          padding: 12,
+          borderRadius: 5,
+          fontSize: 12,
           display: isLoading || planeDetected ? "none" : "block",
         }}
       >
         <strong>Instructions:</strong>
-        <ol style={{ margin: "5px 0", paddingLeft: "20px" }}>
+        <ol style={{ margin: "5px 0", paddingLeft: 20 }}>
           <li>Click “Start AR View”</li>
           <li>Point camera at a wall or floor</li>
           <li>Wait for green reticle</li>
