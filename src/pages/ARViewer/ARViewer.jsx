@@ -42,6 +42,7 @@ const isLowEndDevice = () => {
 
 const ARViewer = () => {
   const containerRef = useRef();
+  const overlayRef = useRef(); // DOM Overlay container
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -62,13 +63,17 @@ const ARViewer = () => {
 
   // === TOUCH HANDLERS FOR ROTATION AND POSITIONING ===
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const overlay = overlayRef.current;
+    if (!overlay) return;
 
     const THROTTLE_MS = 16; // ~60fps
 
     const handleTouchStart = (e) => {
       if (!app.current.chair || !isPlaced) return;
+      
+      // Check if touch is on a button
+      if (e.target.tagName === 'BUTTON') return;
+      
       const touch = e.touches[0];
       dragState.current = {
         isDragging: true,
@@ -113,14 +118,14 @@ const ARViewer = () => {
       dragState.current.isDragging = false;
     };
 
-    container.addEventListener("touchstart", handleTouchStart, { passive: false });
-    container.addEventListener("touchmove", handleTouchMove, { passive: false });
-    container.addEventListener("touchend", handleTouchEnd);
+    overlay.addEventListener("touchstart", handleTouchStart, { passive: false });
+    overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
+    overlay.addEventListener("touchend", handleTouchEnd);
 
     return () => {
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
-      container.removeEventListener("touchend", handleTouchEnd);
+      overlay.removeEventListener("touchstart", handleTouchStart);
+      overlay.removeEventListener("touchmove", handleTouchMove);
+      overlay.removeEventListener("touchend", handleTouchEnd);
     };
   }, [isPlaced]);
 
@@ -229,8 +234,6 @@ const ARViewer = () => {
 
     a.hitTestSourceRequested = false;
     a.hitTestSource = null;
-
-    // FIXED: Store setIsPlaced in app.current so it can be called from onSelect
     a.setIsPlacedCallback = setIsPlaced;
 
     const onSelect = () => {
@@ -241,20 +244,16 @@ const ARViewer = () => {
         return;
       }
 
-      // CRITICAL FIX: Only place if reticle is visible (prevents re-placement on touch)
       if (a.reticle.visible && !a.isModelPlaced) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
         a.chair.visible = true;
         a.reticle.visible = false;
-        a.isModelPlaced = true; // Internal flag to prevent re-placement
+        a.isModelPlaced = true;
         
         console.log("Model placed at:", a.chair.position);
-        console.log("Setting isPlaced to true");
-        
-        // Update React state to show controls
         a.setIsPlacedCallback(true);
       } else {
-        console.log("Model already placed or reticle not visible, ignoring tap");
+        console.log("Model already placed or reticle not visible");
       }
     };
 
@@ -280,7 +279,13 @@ const ARViewer = () => {
 
   const initAR = async (a) => {
     let currentSession = a.currentSession;
-    const sessionInit = { requiredFeatures: ["hit-test"] };
+    
+    // CRITICAL: Add DOM overlay to session init
+    const sessionInit = { 
+      requiredFeatures: ["hit-test"],
+      optionalFeatures: ["dom-overlay"],
+      domOverlay: { root: overlayRef.current }
+    };
 
     const onSessionStarted = (session) => {
       session.addEventListener("end", onSessionEnded);
@@ -288,10 +293,10 @@ const ARViewer = () => {
       a.renderer.xr.setSession(session);
       currentSession = session;
       a.currentSession = currentSession;
-      console.log("XR Session started");
+      console.log("XR Session started with DOM overlay");
       setIsLoading(true);
       setIsPlaced(false);
-      a.isModelPlaced = false; // Reset placement flag
+      a.isModelPlaced = false;
 
       a.loadHDR?.();
       loadModel(a);
@@ -391,7 +396,6 @@ const ARViewer = () => {
   };
 
   const getHitTestResults = (a, frame) => {
-    // FIXED: Check internal flag instead of React state
     if (!a.hitTestSource || a.isModelPlaced) return;
     const results = frame.getHitTestResults(a.hitTestSource);
     if (results.length > 0) {
@@ -432,13 +436,10 @@ const ARViewer = () => {
     if (!app.current.chair) return;
     
     console.log("Place Again clicked");
-    
-    // Hide the model and show reticle again
     app.current.chair.visible = false;
-    app.current.isModelPlaced = false; // Reset internal flag
-    setIsPlaced(false); // Hide controls
+    app.current.isModelPlaced = false;
+    setIsPlaced(false);
     
-    // Re-enable reticle
     if (app.current.hitTestSource) {
       app.current.reticle.visible = false;
     }
@@ -460,107 +461,130 @@ const ARViewer = () => {
         background: "#000"
       }}
     >
-      {isLoading && <LoadingBar progress={loadingProgress} />}
+      {/* DOM Overlay - This will be visible in AR */}
+      <div
+        ref={overlayRef}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "auto",
+          zIndex: 1001,
+        }}
+      >
+        {isLoading && <LoadingBar progress={loadingProgress} />}
 
-      {isSupported && !app.current.currentSession && (
-        <button
-          style={{
-            position: "absolute",
-            bottom: "20px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            padding: "12px 24px",
-            background: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontSize: "16px",
-            zIndex: 1001,
-            display: isLoading ? "none" : "block",
-          }}
-          onClick={showChair}
-        >
-          Start AR Vieww
-        </button>
-      )}
-
-      {isPlaced && (
-        <>
-          <div
+        {isSupported && !app.current.currentSession && (
+          <button
             style={{
               position: "absolute",
               bottom: "20px",
               left: "50%",
               transform: "translateX(-50%)",
-              display: "flex",
-              gap: "12px",
-              zIndex: 1001,
-              flexWrap: "wrap",
-              justifyContent: "center",
-              maxWidth: "90%",
+              padding: "15px 30px",
+              background: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "18px",
+              fontWeight: "bold",
+              zIndex: 1002,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
             }}
+            onClick={showChair}
           >
-            <button onClick={rotateLeft} style={btnStyle}>
-              ← Rotate Left
-            </button>
-            <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>
-              📍 Place Again
-            </button>
-            <button onClick={rotateRight} style={btnStyle}>
-              Rotate Right →
-            </button>
-          </div>
+            Start AR View
+          </button>
+        )}
 
-          <div
-            style={{
-              position: "absolute",
-              top: "20px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: "rgba(0,0,0,0.7)",
-              color: "#fff",
-              padding: "10px 18px",
-              borderRadius: "30px",
-              fontSize: "14px",
-              zIndex: 1001,
-              textAlign: "center",
-              maxWidth: "90%",
-            }}
-          >
-            💡 Drag to rotate • Swipe up/down to move
-          </div>
-        </>
-      )}
+        {isPlaced && (
+          <>
+            {/* Bottom Controls */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                display: "flex",
+                gap: "10px",
+                zIndex: 1002,
+                flexWrap: "wrap",
+                justifyContent: "center",
+                maxWidth: "95%",
+                pointerEvents: "auto",
+              }}
+            >
+              <button onClick={rotateLeft} style={btnStyle}>
+                ◄ Left
+              </button>
+              <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>
+                📍 Place Again
+              </button>
+              <button onClick={rotateRight} style={btnStyle}>
+                Right ►
+              </button>
+            </div>
 
-      {!isSupported && (
-        <div style={{ 
-          color: "white", 
-          textAlign: "center", 
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          padding: "20px"
-        }}>
-          <h2>AR Not Supported</h2>
-          <p>WebXR is not available on this device/browser.</p>
-        </div>
-      )}
+            {/* Top Instructions */}
+            <div
+              style={{
+                position: "absolute",
+                top: "20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "rgba(0,0,0,0.8)",
+                color: "#fff",
+                padding: "12px 20px",
+                borderRadius: "25px",
+                fontSize: "13px",
+                zIndex: 1002,
+                textAlign: "center",
+                maxWidth: "90%",
+                pointerEvents: "none",
+              }}
+            >
+              💡 Drag to rotate • Swipe to move
+            </div>
+          </>
+        )}
+
+        {!isSupported && (
+          <div style={{ 
+            color: "white", 
+            textAlign: "center", 
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            padding: "20px",
+            background: "rgba(0,0,0,0.8)",
+            borderRadius: "12px",
+          }}>
+            <h2>AR Not Supported</h2>
+            <p>WebXR is not available on this device/browser.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 const btnStyle = {
-  padding: "10px 16px",
+  padding: "12px 20px",
   background: "#007bff",
   color: "white",
-  border: "none",
+  border: "2px solid white",
   borderRadius: "8px",
   cursor: "pointer",
-  fontSize: "14px",
-  fontWeight: "600",
+  fontSize: "15px",
+  fontWeight: "bold",
   whiteSpace: "nowrap",
+  boxShadow: "0 3px 10px rgba(0,0,0,0.5)",
+  pointerEvents: "auto",
 };
 
 export default ARViewer;
