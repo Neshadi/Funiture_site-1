@@ -1,87 +1,154 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams } from "react-router-dom";
 import LoadingBar from "../../components/ARView/LoadingBar.jsx";
 
-const ARWallTextureViewer = () => {
+// Detect low-end device
+const isLowEndDevice = () => {
+  const ua = navigator.userAgent;
+  const ram = (navigator.deviceMemory || 4) <= 2;
+  const isAndroid = /Android/i.test(ua);
+  const isOldiOS = /iPhone OS 1[0-4]_/i.test(ua);
+  return ram || (isAndroid && /SM-G|GT-|A[0-5]/i.test(ua)) || isOldiOS;
+};
+
+const ARViewer = () => {
   const containerRef = useRef();
   const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [debugInfo, setDebugInfo] = useState([]);
-  const [planeDetected, setPlaneDetected] = useState(false);
+  const [isPlaced, setIsPlaced] = useState(false);
   const app = useRef({});
+  const isLowEnd = useRef(isLowEndDevice());
 
-  // --------------------------------------------------------------
-  // 1. Model URL (same as original ARViewer)
-  // --------------------------------------------------------------
   const modelUrl = searchParams.get("model");
 
-  const addDebugLog = (msg) => {
-    console.log(msg);
-    setDebugInfo((p) => [...p.slice(-10), `${new Date().toLocaleTimeString()}: ${msg}`]);
-  };
+  // Drag state
+  const dragState = useRef({
+    isDragging: false,
+    prevX: 0,
+    prevY: 0,
+  });
 
-  // --------------------------------------------------------------
-  // 2. Three.js + WebXR init (unchanged)
-  // --------------------------------------------------------------
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const a = app.current;
-    a.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+    a.assetsPath = "/assets/ar-shop/";
+    a.camera = new THREE.PerspectiveCamera(
+      70,
+      window.innerWidth / window.innerHeight,
+      0.01,
+      20
+    );
     a.camera.position.set(0, 1.6, 0);
     a.scene = new THREE.Scene();
 
-    const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+    // Reduce light quality on low-end
+    const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, isLowEnd.current ? 0.8 : 1);
     ambient.position.set(0.5, 1, 0.25);
     a.scene.add(ambient);
 
-    a.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    a.renderer.setPixelRatio(window.devicePixelRatio);
+    a.renderer = new THREE.WebGLRenderer({
+      antialias: !isLowEnd.current,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
+    a.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isLowEnd.current ? 1.5 : 2));
     a.renderer.setSize(window.innerWidth, window.innerHeight);
     a.renderer.outputEncoding = THREE.sRGBEncoding;
+    a.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    a.renderer.toneMappingExposure = 1.0;
     container.appendChild(a.renderer.domElement);
 
-    setEnvironment(a);
-
-    // reticle (green ring)
+    // Reticle (reuse object)
     a.reticle = new THREE.Mesh(
-      new THREE.RingGeometry(0.1, 0.15, 32),
-      new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide })
+      new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.7, transparent: true })
     );
     a.reticle.matrixAutoUpdate = false;
     a.reticle.visible = false;
     a.scene.add(a.reticle);
 
-    a.markers = []; // placed objects
     setupXR(a);
 
-    const onResize = () => resize(a);
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      a.renderer.dispose();
-      container.removeChild(a.renderer.domElement);
+    // Touch drag for rotate + move
+    const handleTouchStart = (e) => {
+      if (!a.chair || !isPlaced) return;
+      const touch = e.touches[0];
+      dragState.current = { isDragging: true, prevX: touch.clientX, prevY: touch.clientY };
     };
-  }, []);
+
+    const handleTouchMove = (e) => {
+      if (!dragState.current.isDragging || !a.chair || !isPlaced) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - dragState.current.prevX;
+      const deltaY = touch.clientY - dragState.current.prevY;
+
+      a.chair.rotation.y += deltaX * 0.01;
+
+      const forward = new THREE.Vector3();
+      a.camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+      a.chair.position.addScaledVector(forward, deltaY * 0.001);
+
+      dragState.current.prevX = touch.clientX;
+      dragState.current.prevY = touch.clientY;
+    };
+
+    const handleTouchEnd = () => {
+      dragState.current.isDragging = false;
+    };
+
+    container.addEventListener("touchstart", handleTouchStart, { passive: false });
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    container.addEventListener("touchend", handleTouchEnd);
+
+    const resizeListener = () => resize(a);
+    window.addEventListener("resize", resizeListener);
+
+    return () => {
+      window.removeEventListener("resize", resizeListener);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+
+      if (a.renderer) {
+        a.renderer.dispose();
+        a.renderer.forceContextLoss();
+      }
+      if (container.contains(a.renderer?.domElement)) {
+        container.removeChild(a.renderer.domElement);
+      }
+    };
+  }, [isPlaced]);
 
   const setEnvironment = (a) => {
-    const loader = new RGBELoader().setPath("/assets/");
-    loader.load(
-      "hdr/venice_sunset_1k.hdr",
-      (tex) => {
-        tex.mapping = THREE.EquirectangularReflectionMapping;
-        a.scene.environment = tex;
-        console.log("HDR Environment loaded");
-      },
-      undefined,
-      (err) => console.error("HDR Load Error:", err)
-    );
+    // Lazy load HDR only after session starts
+    a.loadHDR = () => {
+      if (a.hdrLoaded) return;
+      const loader = new RGBELoader().setPath("/assets/");
+      loader.setDataType(THREE.UnsignedByteType); // Smaller memory
+      loader.load(
+        "hdr/venice_sunset_1k.hdr",
+        (texture) => {
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          a.scene.environment = texture;
+          a.scene.background = isLowEnd.current ? null : texture;
+          a.hdrLoaded = true;
+          console.log("HDR Environment loaded");
+        },
+        undefined,
+        (error) => console.error("HDR Load Error:", error)
+      );
+    };
   };
 
   const resize = (a) => {
@@ -90,9 +157,6 @@ const ARWallTextureViewer = () => {
     a.renderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  // --------------------------------------------------------------
-  // 3. WebXR setup – tap → placeModel
-  // --------------------------------------------------------------
   const setupXR = (a) => {
     a.renderer.xr.enabled = true;
     a.currentSession = null;
@@ -100,16 +164,16 @@ const ARWallTextureViewer = () => {
     if ("xr" in navigator) {
       navigator.xr
         .isSessionSupported("immersive-ar")
-        .then((sup) => {
-          setIsSupported(sup);
-          addDebugLog(`AR Support: ${sup}`);
+        .then((supported) => {
+          setIsSupported(supported);
+          console.log("Immersive AR supported:", supported);
         })
-        .catch((e) => {
-          addDebugLog(`AR Check Error: ${e.message}`);
+        .catch((error) => {
+          console.error("Error checking AR support:", error);
           setIsSupported(false);
         });
     } else {
-      addDebugLog("WebXR API not available");
+      console.error("WebXR API not available");
       setIsSupported(false);
     }
 
@@ -117,10 +181,19 @@ const ARWallTextureViewer = () => {
     a.hitTestSource = null;
 
     const onSelect = () => {
-      if (a.reticle.visible && a.lastHitResult) {
-        placeModel(a, a.lastHitResult);
+      if (a.chair === undefined) {
+        console.warn("No model loaded for placement");
+        return;
+      }
+      if (a.reticle.visible) {
+        a.chair.position.setFromMatrixPosition(a.reticle.matrix);
+        a.chair.visible = true;
+        console.log("Model placed at:", a.chair.position, "Visible:", a.chair.visible);
+        console.log("Object successfully placed in AR environment");
+        setIsPlaced(true);
+        a.reticle.visible = false;
       } else {
-        addDebugLog("No plane – reticle not visible");
+        console.warn("Reticle not visible, cannot place model");
       }
     };
 
@@ -129,221 +202,140 @@ const ARWallTextureViewer = () => {
     a.scene.add(a.controller);
   };
 
-  // --------------------------------------------------------------
-  // 4. Model loading (same as original)
-  // --------------------------------------------------------------
-  const loadModel = (a) => {
+  const showChair = async () => {
+    const a = app.current;
     if (!modelUrl) {
-      addDebugLog("No model URL → will use fallback marker");
+      console.error("No model URL provided");
+      alert("No 3D model available for this product.");
       return;
     }
 
+    try {
+      await initAR(a);
+    } catch (error) {
+      console.error("Error in AR initialization:", error);
+    }
+  };
+
+  const initAR = async (a) => {
+    let currentSession = a.currentSession;
+    const sessionInit = { requiredFeatures: ["hit-test"] };
+
+    const onSessionStarted = (session) => {
+      session.addEventListener("end", onSessionEnded);
+      a.renderer.xr.setReferenceSpaceType("local");
+      a.renderer.xr.setSession(session);
+      currentSession = session;
+      a.currentSession = currentSession;
+      console.log("XR Session started");
+      setIsLoading(true);
+      setIsPlaced(false);
+
+      // Load HDR only now
+      a.loadHDR?.();
+
+      loadModel(a);
+    };
+
+    const onSessionEnded = () => {
+      console.log("XR Session ended");
+      currentSession?.removeEventListener("end", onSessionEnded);
+      currentSession = null;
+      a.currentSession = null;
+      if (a.chair) {
+        a.scene.remove(a.chair);
+        a.chair = null;
+      }
+      a.renderer.setAnimationLoop(null);
+      setIsLoading(false);
+      setLoadingProgress(0);
+      setIsPlaced(false);
+    };
+
+    if (currentSession === null) {
+      try {
+        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
+        onSessionStarted(session);
+      } catch (error) {
+        console.error("XR Session Request Failed:", error);
+        alert("Failed to start AR session. Check device compatibility.");
+        setIsSupported(false);
+        throw error;
+      }
+    } else {
+      currentSession.end();
+    }
+  };
+
+  const loadModel = (a) => {
     const loader = new GLTFLoader();
+
+    // DRACO for compression
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("https://www.gstatic.com/draco/versioned/decoders/1.5.6/");
+    dracoLoader.setWorkerLimit(1); // Reduce CPU on low-end
+    loader.setDRACOLoader(dracoLoader);
+
     setLoadingProgress(0);
-    addDebugLog(`Starting GLTF load: ${modelUrl}`);
 
     loader.load(
       modelUrl,
       (gltf) => {
-        // Store the **original** model for cloning later
-        a.loadedModel = gltf.scene;
-        a.loadedModel.visible = false; // hidden until first placement
-        a.scene.add(a.loadedModel);
+        const model = gltf.scene;
+        a.scene.add(model);
+        a.chair = model;
+        a.chair.visible = false;
+
+        // Optimize materials
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = false;
+            child.receiveShadow = false;
+            if (child.material) {
+              child.material.envMapIntensity = isLowEnd.current ? 0.7 : 1.0;
+              if (child.material.map) child.material.map.anisotropy = 1;
+            }
+          }
+        });
+
+        // Scale once
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = maxDim > 2 ? 1 / maxDim : 1;
+        model.scale.setScalar(scale);
+
+        console.log("GLTF Loaded Successfully:", gltf, "Model URL:", modelUrl);
+        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
         setLoadingProgress(100);
-        addDebugLog("GLTF loaded & stored for cloning");
+        console.log("3D Model loaded successfully:", modelUrl);
+
+        // Cleanup DRACO worker
+        dracoLoader.dispose();
       },
       (xhr) => {
         if (xhr.total) {
-          const pct = (xhr.loaded / xhr.total) * 100;
-          setLoadingProgress(Math.round(pct));
+          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
         }
       },
-      (err) => {
-        console.error("GLTF Load Error:", err);
-        addDebugLog(`GLTF load failed: ${err.message}`);
+      (error) => {
+        console.error("GLTF Load Error:", error);
+        alert("Failed to load 3D model. Check console for details.");
         setLoadingProgress(0);
         setIsLoading(false);
       }
     );
   };
 
-  // --------------------------------------------------------------
-  // 5. Placement – clone model or fallback box
-  // --------------------------------------------------------------
-  const placeModel = (a, hitResult) => {
-    const refSpace = a.renderer.xr.getReferenceSpace();
-    const pose = hitResult.getPose(refSpace);
-    if (!pose) {
-      addDebugLog("No pose from hit result");
-      return;
-    }
-
-    const matrix = new THREE.Matrix4().fromArray(pose.transform.matrix);
-    const pos = new THREE.Vector3();
-    const quat = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
-    matrix.decompose(pos, quat, scale);
-
-    // ---------- plane orientation ----------
-    const normal = hitResult.hitMatrix
-      ? new THREE.Vector3(...hitResult.hitMatrix.slice(8, 11)).normalize()
-      : new THREE.Vector3(0, 1, 0);
-    const up = new THREE.Vector3(0, 1, 0);
-    const dot = Math.abs(normal.dot(up));
-    const isVertical = dot < 0.5; // < 45° → wall
-    addDebugLog(isVertical ? "Vertical plane" : "Horizontal plane");
-
-    // ---------- create object ----------
-    let mesh;
-
-    if (a.loadedModel && loadingProgress === 100) {
-      // **Clone** the original model
-      mesh = a.loadedModel.clone();
-      mesh.visible = true;
-      addDebugLog("Cloned GLTF model for placement");
-
-      // ---- orientation / scale per plane type ----
-      if (isVertical) {
-        // Wall objects (paintings, shelves, etc.)
-        mesh.scale.set(0.5, 0.5, 0.5);
-        const lookAt = pos.clone().add(normal.clone().multiplyScalar(-1));
-        mesh.lookAt(lookAt);
-        mesh.rotateX(-Math.PI / 2); // stick flat to wall
-      } else {
-        // Floor objects
-        mesh.scale.set(1, 1, 1);
-        mesh.quaternion.copy(quat);
-      }
-    } else {
-      // Fallback coloured box (only when no model)
-      const geo = new THREE.BoxGeometry(0.2, 0.2, 0.05);
-      const mat = new THREE.MeshStandardMaterial({
-        color: Math.random() * 0xffffff,
-        metalness: 0.3,
-        roughness: 0.7,
-      });
-      mesh = new THREE.Mesh(geo, mat);
-      addDebugLog("Placed fallback marker (no model)");
-    }
-
-    mesh.position.copy(pos);
-    if (!a.loadedModel) mesh.quaternion.copy(quat);
-
-    a.scene.add(mesh);
-    a.markers.push(mesh);
-
-    addDebugLog(
-      `Placed at x=${pos.x.toFixed(2)}, y=${pos.y.toFixed(2)}, z=${pos.z.toFixed(2)} (${
-        isVertical ? "wall" : "floor"
-      })`
-    );
-    setPlaneDetected(true);
-  };
-
-  // --------------------------------------------------------------
-  // 6. AR session start – load model after session
-  // --------------------------------------------------------------
-  const startARView = async () => {
-    const a = app.current;
-    addDebugLog("Starting AR session…");
-    try {
-      await initAR(a);
-    } catch (e) {
-      addDebugLog(`AR Init Error: ${e.message}`);
-    }
-  };
-
-  const initAR = async (a) => {
-    let sess = a.currentSession;
-
-    const configs = [
-      {
-        name: "Plane+Hit",
-        cfg: { requiredFeatures: ["hit-test"], optionalFeatures: ["plane-detection"] },
-      },
-      { name: "Hit-Only", cfg: { requiredFeatures: ["hit-test"] } },
-      { name: "Basic", cfg: {} },
-    ];
-
-    const onStart = (session, name) => {
-      session.addEventListener("end", onEnd);
-      a.renderer.xr.setReferenceSpaceType("local");
-      a.renderer.xr.setSession(session);
-      a.currentSession = session;
-      addDebugLog(`XR Session: ${name}`);
-      setIsLoading(true);
-
-      // Load model **after** session is ready
-      loadModel(a);
-
-      a.renderer.setAnimationLoop((t, f) => render(a, t, f));
-    };
-
-    const onEnd = () => {
-      addDebugLog("XR Session ended");
-      a.currentSession?.removeEventListener("end", onEnd);
-      a.currentSession = null;
-      a.markers.forEach((m) => a.scene.remove(m));
-      a.markers = [];
-      a.renderer.setAnimationLoop(null);
-      setIsLoading(false);
-      setPlaneDetected(false);
-      setLoadingProgress(0);
-    };
-
-    if (!sess) {
-      for (const { name, cfg } of configs) {
-        try {
-          addDebugLog(`Trying ${name}`);
-          const s = await navigator.xr.requestSession("immersive-ar", cfg);
-          onStart(s, name);
-          return;
-        } catch (e) {
-          addDebugLog(`Failed ${name}: ${e.message}`);
-          if (name === configs[configs.length - 1].name) {
-            alert("AR not supported on this device.");
-            setIsSupported(false);
-            throw e;
-          }
-        }
-      }
-    } else {
-      sess.end();
-    }
-  };
-
-  // --------------------------------------------------------------
-  // 7. Hit-test (vertical → any → basic)
-  // --------------------------------------------------------------
   const requestHitTestSource = (a) => {
-    const sess = a.renderer.xr.getSession();
-    sess.requestReferenceSpace("viewer").then((ref) => {
-      // 1. vertical
-      sess
-        .requestHitTestSource({ space: ref, entityTypes: ["plane"], planeTypes: ["vertical"] })
-        .then((src) => {
-          a.hitTestSource = src;
-          addDebugLog("Vertical hit-test source");
-        })
-        .catch(() => {
-          addDebugLog("Vertical unsupported → any plane");
-          sess
-            .requestHitTestSource({ space: ref, entityTypes: ["plane"] })
-            .then((src) => {
-              a.hitTestSource = src;
-              addDebugLog("Any-plane hit-test source");
-            })
-            .catch(() => {
-              addDebugLog("Plane detection off → basic hit-test");
-              sess.requestHitTestSource({ space: ref }).then((src) => {
-                a.hitTestSource = src;
-                addDebugLog("Basic hit-test source");
-              });
-            });
-        });
+    const session = a.renderer.xr.getSession();
+    if (!session) return;
+    session.requestReferenceSpace("viewer").then((refSpace) => {
+      session.requestHitTestSource({ space: refSpace }).then((source) => {
+        a.hitTestSource = source;
+      });
     });
-
-    sess.addEventListener("end", () => {
+    session.addEventListener("end", () => {
       a.hitTestSourceRequested = false;
       a.hitTestSource = null;
     });
@@ -351,192 +343,122 @@ const ARWallTextureViewer = () => {
   };
 
   const getHitTestResults = (a, frame) => {
+    if (!a.hitTestSource || isPlaced) return;
     const results = frame.getHitTestResults(a.hitTestSource);
-    if (results.length) {
-      const ref = a.renderer.xr.getReferenceSpace();
+    if (results.length > 0) {
       const hit = results[0];
-      a.lastHitResult = hit;
-      const pose = hit.getPose(ref);
-      if (pose) {
-        if (!a.reticle.visible) {
-          addDebugLog("Reticle visible – plane detected");
-          setPlaneDetected(true);
-        }
-        a.reticle.visible = true;
-        a.reticle.matrix.fromArray(pose.transform.matrix);
-
-        // hide loading bar when model ready (or no model)
-        if (isLoading && (!modelUrl || loadingProgress === 100)) {
-          setIsLoading(false);
-        }
-      }
+      const pose = hit.getPose(a.renderer.xr.getReferenceSpace());
+      a.reticle.visible = true;
+      a.reticle.matrix.fromArray(pose.transform.matrix);
+      console.log("Reticle is now visible");
+      if (loadingProgress === 100) setIsLoading(false);
     } else {
       a.reticle.visible = false;
-      a.lastHitResult = null;
     }
   };
 
-  const render = (a, _t, frame) => {
+  const render = (a, timestamp, frame) => {
     if (frame) {
-      if (!a.hitTestSourceRequested) requestHitTestSource(a);
+      if (!a.hitTestSourceRequested && !isPlaced) requestHitTestSource(a);
       if (a.hitTestSource) getHitTestResults(a, frame);
     }
     a.renderer.render(a.scene, a.camera);
   };
 
-  const clearDebugLog = () => setDebugInfo([]);
+  // Controls
+  const rotateLeft = () => app.current.chair && isPlaced && (app.current.chair.rotation.y += 0.3);
+  const rotateRight = () => app.current.chair && isPlaced && (app.current.chair.rotation.y -= 0.3);
+  const placeAgain = () => {
+    setIsPlaced(false);
+    if (app.current.chair) app.current.chair.visible = false;
+    setIsLoading(true);
+  };
 
-  // --------------------------------------------------------------
-  // 8. UI
-  // --------------------------------------------------------------
   return (
     <div
       ref={containerRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: 1000,
-        backgroundColor: "black",
-      }}
+      style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1000, touchAction: "none" }}
     >
-      {/* Debug console */}
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          right: 10,
-          maxHeight: 200,
-          background: "rgba(0,0,0,0.85)",
-          color: "#0f0",
-          fontFamily: "monospace",
-          fontSize: 11,
-          padding: 10,
-          borderRadius: 5,
-          overflowY: "auto",
-          zIndex: 1001,
-          border: "1px solid #0f0",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5, borderBottom: "1px solid #0f0", paddingBottom: 5 }}>
-          <strong>DEBUG LOG</strong>
-          <button onClick={clearDebugLog} style={{ background: "transparent", color: "#0f0", border: "1px solid #0f0", padding: "2px 8px", borderRadius: 3, cursor: "pointer", fontSize: 10 }}>
-            Clear
-          </button>
-        </div>
-        {debugInfo.length === 0 ? (
-          <div style={{ opacity: 0.5 }}>Waiting…</div>
-        ) : (
-          debugInfo.map((l, i) => (
-            <div key={i} style={{ marginBottom: 2 }}>
-              {l}
-            </div>
-          ))
-        )}
-      </div>
+      {isLoading && <LoadingBar progress={loadingProgress} />}
 
-      {/* Model loading bar */}
-      {isLoading && modelUrl && <LoadingBar progress={loadingProgress} />}
-
-      {/* Scanning overlay (no model) */}
-      {isLoading && !modelUrl && (
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%,-50%)",
-            textAlign: "center",
-            color: "white",
-            background: "rgba(0,0,0,0.8)",
-            padding: 30,
-            borderRadius: 10,
-            border: "2px solid #00ff00",
-          }}
-        >
-          <div style={{ fontSize: 18, marginBottom: 15 }}>Scanning for planes…</div>
-          <div style={{ fontSize: 14, opacity: 0.8 }}>Point camera at a surface</div>
-        </div>
-      )}
-
-      {/* Plane detected banner */}
-      {planeDetected && !isLoading && (
-        <div
-          style={{
-            position: "absolute",
-            top: 220,
-            left: 10,
-            right: 10,
-            background: "rgba(0,255,0,0.9)",
-            color: "white",
-            padding: 15,
-            borderRadius: 5,
-            fontSize: 14,
-            textAlign: "center",
-            fontWeight: "bold",
-          }}
-        >
-          PLANE DETECTED! Tap to place model
-        </div>
-      )}
-
-      {/* Start button */}
-      {isSupported ? (
+      {isSupported && !app.current.currentSession && (
         <button
           style={{
             position: "absolute",
-            bottom: 20,
+            bottom: "20px",
             left: "50%",
             transform: "translateX(-50%)",
-            padding: "15px 30px",
-            background: "#00ff00",
-            color: "black",
+            padding: "12px 24px",
+            background: "#007bff",
+            color: "white",
             border: "none",
-            borderRadius: 8,
+            borderRadius: "8px",
             cursor: "pointer",
-            fontSize: 16,
-            fontWeight: "bold",
+            fontSize: "16px",
+            zIndex: 1001,
             display: isLoading ? "none" : "block",
-            boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
           }}
-          onClick={startARView}
+          onClick={showChair}
         >
           Start AR View
         </button>
-      ) : (
-        <p style={{ color: "white", textAlign: "center", marginTop: "50%", padding: 20 }}>
-          AR not supported on this device.
-        </p>
       )}
 
-      {/* Instructions */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 80,
-          left: 10,
-          right: 10,
-          background: "rgba(0,0,0,0.7)",
-          color: "white",
-          padding: 12,
-          borderRadius: 5,
-          fontSize: 12,
-          display: isLoading || planeDetected ? "none" : "block",
-        }}
-      >
-        <strong>Instructions:</strong>
-        <ol style={{ margin: "5px 0", paddingLeft: 20 }}>
-          <li>Click “Start AR View”</li>
-          <li>Point camera at a wall or floor</li>
-          <li>Wait for green reticle</li>
-          <li>Tap to place the 3D model</li>
-        </ol>
-      </div>
+      {isPlaced && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              bottom: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: "12px",
+              zIndex: 1001,
+            }}
+          >
+            <button onClick={rotateLeft} style={btnStyle}>Rotate Left</button>
+            <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>Place Again</button>
+            <button onClick={rotateRight} style={btnStyle}>Rotate Right</button>
+          </div>
+
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(0,0,0,0.7)",
+              color: "#fff",
+              padding: "10px 18px",
+              borderRadius: "30px",
+              fontSize: "14px",
+              zIndex: 1001,
+            }}
+          >
+            Drag to rotate • Move up/down to reposition
+          </div>
+        </>
+      )}
+
+      {!isSupported && (
+        <p style={{ color: "white", textAlign: "center", marginTop: "50%" }}>
+          AR is not supported on this device.
+        </p>
+      )}
     </div>
   );
 };
 
-export default ARWallTextureViewer;
+const btnStyle = {
+  padding: "10px 16px",
+  background: "#007bff",
+  color: "white",
+  border: "none",
+  borderRadius: "8px",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "600",
+};
+
+export default ARViewer;
