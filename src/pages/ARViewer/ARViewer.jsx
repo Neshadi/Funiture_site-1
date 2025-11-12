@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { useSearchParams } from "react-router-dom";
 
 // Mock LoadingBar component
 const LoadingBar = ({ progress }) => (
@@ -59,12 +60,12 @@ const ARViewer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isPlaced, setIsPlaced] = useState(false);
+    const [searchParams] = useSearchParams();
   const app = useRef({});
   const isLowEnd = useRef(isLowEndDevice());
 
-  // Demo model URL - replace with actual model
-  const modelUrl =
-    "https://cdn.glitch.global/36cb8393-65c6-408d-a538-055ada20431b/Astronaut.glb";
+  // Model URL from query parameter
+  const modelUrl = searchParams.get("model");
 
   // Drag state
   const dragState = useRef({
