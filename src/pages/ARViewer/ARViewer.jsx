@@ -554,9 +554,10 @@ const ARViewer = () => {
               fontSize: "14px",
               zIndex: 1002,
               pointerEvents: "none",
+              textAlign: "center",
             }}
           >
-            Tap on floor to place object
+            Tap on floor to place object after white reticle appears.
           </div>
         )}
 
@@ -579,7 +580,7 @@ const ARViewer = () => {
               }}
             >
               <button onClick={rotateLeft} style={btnStyle}>
-                Left
+                ◄ Left
               </button>
               <button
                 onClick={placeAgain}
@@ -588,7 +589,7 @@ const ARViewer = () => {
                 Place Again
               </button>
               <button onClick={rotateRight} style={btnStyle}>
-                Right
+                Right ►
               </button>
             </div>
 
@@ -608,6 +609,7 @@ const ARViewer = () => {
                 textAlign: "center",
                 maxWidth: "90%",
                 pointerEvents: "none",
+                whiteSpace: "nowrap",
               }}
             >
               Drag to rotate • Swipe to move
@@ -640,19 +642,19 @@ const ARViewer = () => {
 
 const btnStyle = {
   padding: "12px 24px",
-  background: "rgba(255, 255, 255, 0.15)", 
+  background: "rgba(255, 255, 255, 0.08)", 
   color: "#ffffff",
-  border: "1px solid rgba(255, 255, 255, 0.4)",
-  borderRadius: "12px",
-  backdropFilter: "blur(10px)", 
-  WebkitBackdropFilter: "blur(10px)", 
+  border: "none", 
+  borderRadius: "14px",
+  backdropFilter: "blur(14px) saturate(180%)", 
+  WebkitBackdropFilter: "blur(14px) saturate(180%)",
   cursor: "pointer",
   fontSize: "15px",
   fontWeight: "600",
   whiteSpace: "nowrap",
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)", 
   pointerEvents: "auto",
-  transition: "transform 0.1s ease",
+  transition: "transform 0.1s ease, background 0.3s ease",
 };
 
 
