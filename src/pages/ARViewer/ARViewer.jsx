@@ -230,19 +230,31 @@ const ARViewer = () => {
     a.hitTestSourceRequested = false;
     a.hitTestSource = null;
 
+    // FIXED: Store setIsPlaced in app.current so it can be called from onSelect
+    a.setIsPlacedCallback = setIsPlaced;
+
     const onSelect = () => {
+      console.log("onSelect triggered");
+      
       if (a.chair === undefined) {
         console.warn("No model loaded for placement");
         return;
       }
-      if (a.reticle.visible) {
+
+      // CRITICAL FIX: Only place if reticle is visible (prevents re-placement on touch)
+      if (a.reticle.visible && !a.isModelPlaced) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
         a.chair.visible = true;
-        console.log("Model placed at:", a.chair.position);
-        setIsPlaced(true);
         a.reticle.visible = false;
+        a.isModelPlaced = true; // Internal flag to prevent re-placement
+        
+        console.log("Model placed at:", a.chair.position);
+        console.log("Setting isPlaced to true");
+        
+        // Update React state to show controls
+        a.setIsPlacedCallback(true);
       } else {
-        console.warn("Reticle not visible, cannot place model");
+        console.log("Model already placed or reticle not visible, ignoring tap");
       }
     };
 
@@ -279,6 +291,7 @@ const ARViewer = () => {
       console.log("XR Session started");
       setIsLoading(true);
       setIsPlaced(false);
+      a.isModelPlaced = false; // Reset placement flag
 
       a.loadHDR?.();
       loadModel(a);
@@ -297,6 +310,7 @@ const ARViewer = () => {
       setIsLoading(false);
       setLoadingProgress(0);
       setIsPlaced(false);
+      a.isModelPlaced = false;
     };
 
     if (currentSession === null) {
@@ -377,7 +391,8 @@ const ARViewer = () => {
   };
 
   const getHitTestResults = (a, frame) => {
-    if (!a.hitTestSource || isPlaced) return;
+    // FIXED: Check internal flag instead of React state
+    if (!a.hitTestSource || a.isModelPlaced) return;
     const results = frame.getHitTestResults(a.hitTestSource);
     if (results.length > 0) {
       const hit = results[0];
@@ -392,7 +407,7 @@ const ARViewer = () => {
 
   const render = (a, timestamp, frame) => {
     if (frame) {
-      if (!a.hitTestSourceRequested && !isPlaced) requestHitTestSource(a);
+      if (!a.hitTestSourceRequested && !a.isModelPlaced) requestHitTestSource(a);
       if (a.hitTestSource) getHitTestResults(a, frame);
     }
     a.renderer.render(a.scene, a.camera);
@@ -402,23 +417,28 @@ const ARViewer = () => {
   const rotateLeft = () => {
     if (app.current.chair && isPlaced) {
       app.current.chair.rotation.y += 0.3;
+      console.log("Rotated left");
     }
   };
 
   const rotateRight = () => {
     if (app.current.chair && isPlaced) {
       app.current.chair.rotation.y -= 0.3;
+      console.log("Rotated right");
     }
   };
 
   const placeAgain = () => {
     if (!app.current.chair) return;
     
+    console.log("Place Again clicked");
+    
     // Hide the model and show reticle again
     app.current.chair.visible = false;
-    setIsPlaced(false);
+    app.current.isModelPlaced = false; // Reset internal flag
+    setIsPlaced(false); // Hide controls
     
-    // Reset hit test to show reticle
+    // Re-enable reticle
     if (app.current.hitTestSource) {
       app.current.reticle.visible = false;
     }
@@ -461,7 +481,7 @@ const ARViewer = () => {
           }}
           onClick={showChair}
         >
-          Start AR View
+          Start AR Vieww
         </button>
       )}
 
@@ -476,6 +496,9 @@ const ARViewer = () => {
               display: "flex",
               gap: "12px",
               zIndex: 1001,
+              flexWrap: "wrap",
+              justifyContent: "center",
+              maxWidth: "90%",
             }}
           >
             <button onClick={rotateLeft} style={btnStyle}>
@@ -502,6 +525,7 @@ const ARViewer = () => {
               fontSize: "14px",
               zIndex: 1001,
               textAlign: "center",
+              maxWidth: "90%",
             }}
           >
             💡 Drag to rotate • Swipe up/down to move
