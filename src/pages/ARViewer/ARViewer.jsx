@@ -4,7 +4,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams } from "react-router-dom";
 
-// Mock LoadingBar component
+// Mock LoadingBar
 const LoadingBar = ({ progress }) => (
   <div
     style={{
@@ -55,19 +55,17 @@ const isLowEndDevice = () => {
 
 const ARViewer = () => {
   const containerRef = useRef();
-  const overlayRef = useRef(); // DOM Overlay container
+  const overlayRef = useRef();
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isPlaced, setIsPlaced] = useState(false);
-    const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const app = useRef({});
   const isLowEnd = useRef(isLowEndDevice());
 
-  // Model URL from query parameter
   const modelUrl = searchParams.get("model");
 
-  // Drag state
   const dragState = useRef({
     isDragging: false,
     prevX: 0,
@@ -75,18 +73,15 @@ const ARViewer = () => {
     lastTime: 0,
   });
 
-  // === TOUCH HANDLERS FOR ROTATION AND POSITIONING ===
+  // === TOUCH HANDLERS ===
   useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
 
-    const THROTTLE_MS = 16; // ~60fps
+    const THROTTLE_MS = 16;
 
     const handleTouchStart = (e) => {
-      if (!app.current.chair || !isPlaced) return;
-
-      if (e.target.tagName === "BUTTON") return;
-
+      if (!app.current.chair || !isPlaced || e.target.tagName === "BUTTON") return;
       const touch = e.touches[0];
       dragState.current = {
         isDragging: true,
@@ -97,9 +92,7 @@ const ARViewer = () => {
     };
 
     const handleTouchMove = (e) => {
-      if (!dragState.current.isDragging || !app.current.chair || !isPlaced)
-        return;
-
+      if (!dragState.current.isDragging || !app.current.chair || !isPlaced) return;
       const now = Date.now();
       if (now - dragState.current.lastTime < THROTTLE_MS) return;
       dragState.current.lastTime = now;
@@ -110,14 +103,10 @@ const ARViewer = () => {
       const deltaY = touch.clientY - dragState.current.prevY;
 
       const chair = app.current.chair;
-
-      // Rotate around Y-axis
       chair.rotation.y += deltaX * 0.01;
 
-      // Move forward/backward
-      const camera = app.current.camera;
       const forward = new THREE.Vector3();
-      camera.getWorldDirection(forward);
+      app.current.camera.getWorldDirection(forward);
       forward.y = 0;
       forward.normalize();
       chair.position.addScaledVector(forward, -deltaY * 0.002);
@@ -130,9 +119,7 @@ const ARViewer = () => {
       dragState.current.isDragging = false;
     };
 
-    overlay.addEventListener("touchstart", handleTouchStart, {
-      passive: false,
-    });
+    overlay.addEventListener("touchstart", handleTouchStart, { passive: false });
     overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
     overlay.addEventListener("touchend", handleTouchEnd);
 
@@ -158,7 +145,6 @@ const ARViewer = () => {
     a.camera.position.set(0, 1.6, 0);
     a.scene = new THREE.Scene();
 
-    // Light
     const ambient = new THREE.HemisphereLight(
       0xffffff,
       0xbbbbff,
@@ -167,7 +153,6 @@ const ARViewer = () => {
     ambient.position.set(0.5, 1, 0.25);
     a.scene.add(ambient);
 
-    // Renderer
     a.renderer = new THREE.WebGLRenderer({
       antialias: !isLowEnd.current,
       alpha: true,
@@ -180,7 +165,6 @@ const ARViewer = () => {
     a.renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(a.renderer.domElement);
 
-    // Reticle
     a.reticle = new THREE.Mesh(
       new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({
@@ -262,12 +246,8 @@ const ARViewer = () => {
     a.setIsPlacedCallback = setIsPlaced;
 
     const onSelect = () => {
-      if (!a.chair) {
-        console.warn("No model loaded");
-        return;
-      }
-
-      if (a.reticle.visible && !a.isModelPlaced) {
+      if (!a.chair || a.isModelPlaced) return;
+      if (a.reticle.visible) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
         a.chair.visible = true;
         a.reticle.visible = false;
@@ -288,7 +268,6 @@ const ARViewer = () => {
       alert("No 3D model available.");
       return;
     }
-
     try {
       await initAR(a);
     } catch (error) {
@@ -298,7 +277,6 @@ const ARViewer = () => {
 
   const initAR = async (a) => {
     let currentSession = a.currentSession;
-
     const sessionInit = {
       requiredFeatures: ["hit-test"],
       optionalFeatures: ["dom-overlay"],
@@ -320,6 +298,10 @@ const ARViewer = () => {
       a.hitTestSourceRequested = false;
 
       a.loadHDR?.();
+
+      // REQUEST HIT-TEST IMMEDIATELY
+      requestHitTestSource(a);
+
       loadModel(a);
     };
 
@@ -343,10 +325,7 @@ const ARViewer = () => {
 
     if (currentSession === null) {
       try {
-        const session = await navigator.xr.requestSession(
-          "immersive-ar",
-          sessionInit
-        );
+        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
         onSessionStarted(session);
       } catch (error) {
         console.error("XR Session Request Failed:", error);
@@ -359,59 +338,7 @@ const ARViewer = () => {
     }
   };
 
-  const loadModel = (a) => {
-    const loader = new GLTFLoader();
-    setLoadingProgress(0);
-
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        const model = gltf.scene;
-        a.scene.add(model);
-        a.chair = model;
-        a.chair.visible = false;
-
-        if (!isLowEnd.current) {
-          model.traverse((child) => {
-            if (child.isMesh && child.material) {
-              child.material.envMapIntensity = 1.0;
-              if (child.material.map) child.material.map.anisotropy = 1;
-            }
-          });
-
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const scale = maxDim > 2 ? 1 / maxDim : 1;
-          model.scale.setScalar(scale);
-        } else {
-          model.scale.set(0.5, 0.5, 0.5);
-        }
-
-        console.log("GLTF Loaded Successfully");
-
-        // HIDE LOADING BAR IMMEDIATELY AFTER MODEL LOADS
-        setLoadingProgress(100);
-        setIsLoading(false);
-
-        a.renderer.setAnimationLoop((timestamp, frame) =>
-          render(a, timestamp, frame)
-        );
-      },
-      (xhr) => {
-        if (xhr.total) {
-          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
-        }
-      },
-      (error) => {
-        console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model.");
-        setLoadingProgress(0);
-        setIsLoading(false);
-      }
-    );
-  };
-
+  // REQUEST HIT-TEST AS SOON AS SESSION STARTS
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
     if (!session || a.hitTestSourceRequested) return;
@@ -420,6 +347,7 @@ const ARViewer = () => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
         a.hitTestSourceRequested = true;
+        console.log("Hit-test source requested immediately");
       });
     });
 
@@ -446,14 +374,68 @@ const ARViewer = () => {
 
   const render = (a, timestamp, frame) => {
     if (frame) {
-      if (!a.hitTestSourceRequested && !a.isModelPlaced) {
-        requestHitTestSource(a);
-      }
       if (a.hitTestSource) {
         getHitTestResults(a, frame);
       }
     }
     a.renderer.render(a.scene, a.camera);
+  };
+
+  const loadModel = (a) => {
+    const loader = new GLTFLoader();
+    setLoadingProgress(0);
+
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        const model = gltf.scene;
+        a.scene.add(model);
+        a.chair = model;
+        a.chair.visible = false;
+
+        // === REAL-WORLD SIZE SCALING ===
+        let targetHeight = 1.0; // Default: assume 1 meter tall
+        const asset = gltf.asset || {};
+        const extras = asset.extras || {};
+        const extensions = asset.extensions || {};
+
+        // 1. Check for known metadata
+        if (extras.height) targetHeight = parseFloat(extras.height);
+        else if (extras.dimensions) {
+          const dims = extras.dimensions;
+          targetHeight = Math.max(dims.height || 1, 0.1);
+        }
+        // 2. Fallback: measure bounding box
+        else {
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          targetHeight = size.y || 1;
+        }
+
+        // Apply scale to match real-world meters
+        const currentHeight = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y;
+        const scale = targetHeight / currentHeight;
+        model.scale.setScalar(scale);
+
+        console.log(`Model scaled to ${targetHeight.toFixed(2)}m height (scale: ${scale.toFixed(3)})`);
+
+        setLoadingProgress(100);
+        setIsLoading(false);
+
+        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
+      },
+      (xhr) => {
+        if (xhr.total) {
+          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
+        }
+      },
+      (error) => {
+        console.error("GLTF Load Error:", error);
+        alert("Failed to load 3D model.");
+        setLoadingProgress(0);
+        setIsLoading(false);
+      }
+    );
   };
 
   // === CONTROLS ===
@@ -471,19 +453,15 @@ const ARViewer = () => {
 
   const placeAgain = () => {
     if (!app.current.chair) return;
-
     const a = app.current;
-
-    console.log("Place Again clicked");
-
     a.chair.visible = false;
     a.isModelPlaced = false;
     a.reticle.visible = false;
     a.hitTestSource = null;
     a.hitTestSourceRequested = false;
-
     setIsPlaced(false);
-
+    // Re-request hit-test immediately
+    requestHitTestSource(a);
     console.log("Ready to place again – tap to place");
   };
 
@@ -501,7 +479,6 @@ const ARViewer = () => {
         background: "#000",
       }}
     >
-      {/* DOM Overlay */}
       <div
         ref={overlayRef}
         style={{
@@ -540,7 +517,6 @@ const ARViewer = () => {
           </button>
         )}
 
-        {/* Tap to Place Instruction */}
         {!isPlaced && app.current.currentSession && (
           <div
             style={{
@@ -564,7 +540,6 @@ const ARViewer = () => {
 
         {isPlaced && (
           <>
-            {/* Bottom Controls */}
             <div
               style={{
                 position: "absolute",
@@ -581,20 +556,16 @@ const ARViewer = () => {
               }}
             >
               <button onClick={rotateLeft} style={btnStyle}>
-                ◄ Left
+                Left
               </button>
-              <button
-                onClick={placeAgain}
-                style={{ ...btnStyle, background: "#00796B" }}
-              >
+              <button onClick={placeAgain} style={{ ...btnStyle, background: "#00796B" }}>
                 Place Again
               </button>
               <button onClick={rotateRight} style={btnStyle}>
-                Right ►
+                Right
               </button>
             </div>
 
-            {/* Drag Instructions */}
             <div
               style={{
                 position: "absolute",
@@ -643,20 +614,19 @@ const ARViewer = () => {
 
 const btnStyle = {
   padding: "12px 24px",
-  background: "rgba(255, 255, 255, 0.08)", 
+  background: "rgba(255, 255, 255, 0.08)",
   color: "#ffffff",
-  border: "none", 
+  border: "none",
   borderRadius: "14px",
-  backdropFilter: "blur(14px) saturate(180%)", 
+  backdropFilter: "blur(14px) saturate(180%)",
   WebkitBackdropFilter: "blur(14px) saturate(180%)",
   cursor: "pointer",
   fontSize: "15px",
   fontWeight: "600",
   whiteSpace: "nowrap",
-  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)", 
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
   pointerEvents: "auto",
   transition: "transform 0.1s ease, background 0.3s ease",
 };
-
 
 export default ARViewer;
