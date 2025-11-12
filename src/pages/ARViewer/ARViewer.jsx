@@ -5,29 +5,40 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 
 // Mock LoadingBar component
 const LoadingBar = ({ progress }) => (
-  <div style={{
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: "80%",
-    maxWidth: "300px",
-    background: "rgba(0,0,0,0.8)",
-    borderRadius: "12px",
-    padding: "20px",
-    zIndex: 1002,
-  }}>
+  <div
+    style={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "80%",
+      maxWidth: "300px",
+      background: "rgba(0,0,0,0.8)",
+      borderRadius: "12px",
+      padding: "20px",
+      zIndex: 1002,
+    }}
+  >
     <div style={{ color: "white", marginBottom: "10px", textAlign: "center" }}>
       Loading Model... {progress}%
     </div>
-    <div style={{ width: "100%", height: "8px", background: "#333", borderRadius: "4px" }}>
-      <div style={{
-        width: `${progress}%`,
-        height: "100%",
-        background: "#007bff",
+    <div
+      style={{
+        width: "100%",
+        height: "8px",
+        background: "#333",
         borderRadius: "4px",
-        transition: "width 0.3s",
-      }} />
+      }}
+    >
+      <div
+        style={{
+          width: `${progress}%`,
+          height: "100%",
+          background: "#007bff",
+          borderRadius: "4px",
+          transition: "width 0.3s",
+        }}
+      />
     </div>
   </div>
 );
@@ -36,7 +47,8 @@ const LoadingBar = ({ progress }) => (
 const isLowEndDevice = () => {
   const ua = navigator.userAgent;
   const ram = (navigator.deviceMemory || 4) <= 4;
-  const isAndroidLow = /Android/i.test(ua) && (/SM-|M[0-9][0-9]/.test(ua) || ram);
+  const isAndroidLow =
+    /Android/i.test(ua) && (/SM-|M[0-9][0-9]/.test(ua) || ram);
   return ram || isAndroidLow;
 };
 
@@ -51,7 +63,8 @@ const ARViewer = () => {
   const isLowEnd = useRef(isLowEndDevice());
 
   // Demo model URL - replace with actual model
-  const modelUrl = "https://cdn.glitch.global/36cb8393-65c6-408d-a538-055ada20431b/Astronaut.glb";
+  const modelUrl =
+    "https://cdn.glitch.global/36cb8393-65c6-408d-a538-055ada20431b/Astronaut.glb";
 
   // Drag state
   const dragState = useRef({
@@ -70,10 +83,10 @@ const ARViewer = () => {
 
     const handleTouchStart = (e) => {
       if (!app.current.chair || !isPlaced) return;
-      
+
       // Check if touch is on a button
-      if (e.target.tagName === 'BUTTON') return;
-      
+      if (e.target.tagName === "BUTTON") return;
+
       const touch = e.touches[0];
       dragState.current = {
         isDragging: true,
@@ -84,7 +97,8 @@ const ARViewer = () => {
     };
 
     const handleTouchMove = (e) => {
-      if (!dragState.current.isDragging || !app.current.chair || !isPlaced) return;
+      if (!dragState.current.isDragging || !app.current.chair || !isPlaced)
+        return;
 
       const now = Date.now();
       if (now - dragState.current.lastTime < THROTTLE_MS) return;
@@ -96,7 +110,7 @@ const ARViewer = () => {
       const deltaY = touch.clientY - dragState.current.prevY;
 
       const chair = app.current.chair;
-      
+
       // Rotate around Y-axis (left/right swipe)
       chair.rotation.y += deltaX * 0.01;
 
@@ -106,7 +120,7 @@ const ARViewer = () => {
       camera.getWorldDirection(forward);
       forward.y = 0; // Keep movement horizontal
       forward.normalize();
-      
+
       // Move along camera's forward direction
       chair.position.addScaledVector(forward, -deltaY * 0.002);
 
@@ -118,7 +132,9 @@ const ARViewer = () => {
       dragState.current.isDragging = false;
     };
 
-    overlay.addEventListener("touchstart", handleTouchStart, { passive: false });
+    overlay.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
     overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
     overlay.addEventListener("touchend", handleTouchEnd);
 
@@ -145,7 +161,11 @@ const ARViewer = () => {
     a.scene = new THREE.Scene();
 
     // Light
-    const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, isLowEnd.current ? 0.8 : 1);
+    const ambient = new THREE.HemisphereLight(
+      0xffffff,
+      0xbbbbff,
+      isLowEnd.current ? 0.8 : 1
+    );
     ambient.position.set(0.5, 1, 0.25);
     a.scene.add(ambient);
 
@@ -155,7 +175,9 @@ const ARViewer = () => {
       alpha: true,
       powerPreference: isLowEnd.current ? "low-power" : "high-performance",
     });
-    a.renderer.setPixelRatio(isLowEnd.current ? 1.0 : Math.min(window.devicePixelRatio, 2));
+    a.renderer.setPixelRatio(
+      isLowEnd.current ? 1.0 : Math.min(window.devicePixelRatio, 2)
+    );
     a.renderer.setSize(window.innerWidth, window.innerHeight);
     a.renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(a.renderer.domElement);
@@ -163,7 +185,11 @@ const ARViewer = () => {
     // Reticle
     a.reticle = new THREE.Mesh(
       new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.7, transparent: true })
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        opacity: 0.7,
+        transparent: true,
+      })
     );
     a.reticle.matrixAutoUpdate = false;
     a.reticle.visible = false;
@@ -238,7 +264,7 @@ const ARViewer = () => {
 
     const onSelect = () => {
       console.log("onSelect triggered");
-      
+
       if (a.chair === undefined) {
         console.warn("No model loaded for placement");
         return;
@@ -249,7 +275,7 @@ const ARViewer = () => {
         a.chair.visible = true;
         a.reticle.visible = false;
         a.isModelPlaced = true;
-        
+
         console.log("Model placed at:", a.chair.position);
         a.setIsPlacedCallback(true);
       } else {
@@ -279,12 +305,12 @@ const ARViewer = () => {
 
   const initAR = async (a) => {
     let currentSession = a.currentSession;
-    
+
     // CRITICAL: Add DOM overlay to session init
-    const sessionInit = { 
+    const sessionInit = {
       requiredFeatures: ["hit-test"],
       optionalFeatures: ["dom-overlay"],
-      domOverlay: { root: overlayRef.current }
+      domOverlay: { root: overlayRef.current },
     };
 
     const onSessionStarted = (session) => {
@@ -320,7 +346,10 @@ const ARViewer = () => {
 
     if (currentSession === null) {
       try {
-        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
+        const session = await navigator.xr.requestSession(
+          "immersive-ar",
+          sessionInit
+        );
         onSessionStarted(session);
       } catch (error) {
         console.error("XR Session Request Failed:", error);
@@ -363,7 +392,9 @@ const ARViewer = () => {
         }
 
         console.log("GLTF Loaded Successfully");
-        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
+        a.renderer.setAnimationLoop((timestamp, frame) =>
+          render(a, timestamp, frame)
+        );
         setLoadingProgress(100);
       },
       (xhr) => {
@@ -403,7 +434,11 @@ const ARViewer = () => {
       const pose = hit.getPose(a.renderer.xr.getReferenceSpace());
       a.reticle.visible = true;
       a.reticle.matrix.fromArray(pose.transform.matrix);
-      if (loadingProgress === 100) setIsLoading(false);
+
+      // Hide loading bar when reticle is visible and model is loaded
+      if (loadingProgress === 100 && isLoading) {
+        setIsLoading(false);
+      }
     } else {
       a.reticle.visible = false;
     }
@@ -411,7 +446,8 @@ const ARViewer = () => {
 
   const render = (a, timestamp, frame) => {
     if (frame) {
-      if (!a.hitTestSourceRequested && !a.isModelPlaced) requestHitTestSource(a);
+      if (!a.hitTestSourceRequested && !a.isModelPlaced)
+        requestHitTestSource(a);
       if (a.hitTestSource) getHitTestResults(a, frame);
     }
     a.renderer.render(a.scene, a.camera);
@@ -420,45 +456,45 @@ const ARViewer = () => {
   // === ENHANCED CONTROLS ===
   const rotateLeft = () => {
     if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y += 0.3;
+      app.current.chair.rotation.y -= 0.3;
       console.log("Rotated left");
     }
   };
 
   const rotateRight = () => {
     if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y -= 0.3;
+      app.current.chair.rotation.y += 0.3;
       console.log("Rotated right");
     }
   };
 
   const placeAgain = () => {
     if (!app.current.chair) return;
-    
+
     console.log("Place Again clicked");
     app.current.chair.visible = false;
     app.current.isModelPlaced = false;
     setIsPlaced(false);
-    
+
     if (app.current.hitTestSource) {
       app.current.reticle.visible = false;
     }
-    
+
     console.log("Ready to place model again");
   };
 
   return (
     <div
       ref={containerRef}
-      style={{ 
-        position: "fixed", 
-        top: 0, 
-        left: 0, 
-        width: "100%", 
-        height: "100%", 
-        zIndex: 1000, 
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: 1000,
         touchAction: "none",
-        background: "#000"
+        background: "#000",
       }}
     >
       {/* DOM Overlay - This will be visible in AR */}
@@ -510,19 +546,22 @@ const ARViewer = () => {
                 left: "50%",
                 transform: "translateX(-50%)",
                 display: "flex",
-                gap: "10px",
-                zIndex: 1002,
-                flexWrap: "wrap",
+                flexDirection: "row", 
+                alignItems: "center",
                 justifyContent: "center",
-                maxWidth: "95%",
+                gap: "15px", 
+                zIndex: 1002,
                 pointerEvents: "auto",
               }}
             >
               <button onClick={rotateLeft} style={btnStyle}>
                 ◄ Left
               </button>
-              <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>
-                📍 Place Again
+              <button
+                onClick={placeAgain}
+                style={{ ...btnStyle, background: "#28a745" }}
+              >
+                Place Again
               </button>
               <button onClick={rotateRight} style={btnStyle}>
                 Right ►
@@ -553,17 +592,19 @@ const ARViewer = () => {
         )}
 
         {!isSupported && (
-          <div style={{ 
-            color: "white", 
-            textAlign: "center", 
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            padding: "20px",
-            background: "rgba(0,0,0,0.8)",
-            borderRadius: "12px",
-          }}>
+          <div
+            style={{
+              color: "white",
+              textAlign: "center",
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              padding: "20px",
+              background: "rgba(0,0,0,0.8)",
+              borderRadius: "12px",
+            }}
+          >
             <h2>AR Not Supported</h2>
             <p>WebXR is not available on this device/browser.</p>
           </div>
