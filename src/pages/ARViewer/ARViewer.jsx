@@ -25,7 +25,7 @@ const ARViewer = () => {
 
   const modelUrl = searchParams.get("model");
 
-  // Drag state for repositioning
+  // Drag state
   const dragState = useRef({
     isDragging: false,
     prevX: 0,
@@ -33,7 +33,7 @@ const ARViewer = () => {
     lastTime: 0,
   });
 
-  // === TOUCH HANDLERS: Drag to Move + Rotate Y (Left/Right) ===
+  // === TOUCH HANDLERS: Drag to Move + Rotate Y ===
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -67,11 +67,10 @@ const ARViewer = () => {
       const chair = app.current.chair;
       const camera = app.current.camera;
 
-      // === ROTATE Y (Left/Right) ===
+      // Rotate Y (left/right)
       chair.rotation.y += deltaX * 0.01;
 
-      // === MOVE ON GROUND PLANE (X/Z) ===
-      // Get camera forward and right vectors (ignore Y)
+      // Move on ground plane (X/Z)
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
       forward.y = 0;
@@ -80,10 +79,7 @@ const ARViewer = () => {
       const right = new THREE.Vector3();
       right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-      // Move forward/back with vertical drag
       chair.position.addScaledVector(forward, -deltaY * 0.002);
-
-      // Move left/right with horizontal drag
       chair.position.addScaledVector(right, deltaX * 0.002);
 
       dragState.current.prevX = touch.clientX;
@@ -213,6 +209,7 @@ const ARViewer = () => {
         a.chair.visible = true;
         setIsPlaced(true);
         a.reticle.visible = false;
+        setIsLoading(false);
       }
     };
 
@@ -321,7 +318,7 @@ const ARViewer = () => {
 
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
-    if (!session || a.hitTestSourceRequested) return;
+    if (!session || a.hitTestSourceRequested || isPlaced) return;
     session.requestReferenceSpace("viewer").then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
@@ -355,13 +352,13 @@ const ARViewer = () => {
   // === CONTROL FUNCTIONS ===
   const rotateLeft = () => {
     if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y += 0.3;
+      app.current.chair.rotation.y += Math.PI / 6; // 30° per tap
     }
   };
 
   const rotateRight = () => {
     if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y -= 0.3;
+      app.current.chair.rotation.y -= Math.PI / 6; // 30° per tap
     }
   };
 
@@ -371,8 +368,9 @@ const ARViewer = () => {
       app.current.chair.visible = false;
     }
     setIsLoading(true);
-    // Re-enable hit test on next frame
-    app.current.hitTestSourceRequested = false;
+    const a = app.current;
+    a.hitTestSourceRequested = false;
+    a.hitTestSource = null;
   };
 
   return (
@@ -405,9 +403,9 @@ const ARViewer = () => {
         </button>
       )}
 
+      {/* CONTROL BUTTONS - ALWAYS VISIBLE AFTER PLACEMENT */}
       {isPlaced && (
         <>
-          {/* Control Buttons */}
           <div
             style={{
               position: "absolute",
@@ -426,7 +424,6 @@ const ARViewer = () => {
             <button onClick={rotateRight} style={btnStyle}>Rotate Right</button>
           </div>
 
-          {/* Instruction Tooltip */}
           <div
             style={{
               position: "absolute",
@@ -441,7 +438,7 @@ const ARViewer = () => {
               zIndex: 1001,
             }}
           >
-            Drag to rotate & move • Tap buttons to control
+            Drag to move & rotate • Tap buttons for control
           </div>
         </>
       )}
