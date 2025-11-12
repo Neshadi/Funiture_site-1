@@ -2,8 +2,35 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { useSearchParams } from "react-router-dom";
-import LoadingBar from "../../components/ARView/LoadingBar.jsx";
+
+// Mock LoadingBar component
+const LoadingBar = ({ progress }) => (
+  <div style={{
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "80%",
+    maxWidth: "300px",
+    background: "rgba(0,0,0,0.8)",
+    borderRadius: "12px",
+    padding: "20px",
+    zIndex: 1002,
+  }}>
+    <div style={{ color: "white", marginBottom: "10px", textAlign: "center" }}>
+      Loading Model... {progress}%
+    </div>
+    <div style={{ width: "100%", height: "8px", background: "#333", borderRadius: "4px" }}>
+      <div style={{
+        width: `${progress}%`,
+        height: "100%",
+        background: "#007bff",
+        borderRadius: "4px",
+        transition: "width 0.3s",
+      }} />
+    </div>
+  </div>
+);
 
 // Detect low-end device
 const isLowEndDevice = () => {
@@ -15,7 +42,6 @@ const isLowEndDevice = () => {
 
 const ARViewer = () => {
   const containerRef = useRef();
-  const [searchParams] = useSearchParams();
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -23,7 +49,8 @@ const ARViewer = () => {
   const app = useRef({});
   const isLowEnd = useRef(isLowEndDevice());
 
-  const modelUrl = searchParams.get("model");
+  // Demo model URL - replace with actual model
+  const modelUrl = "https://cdn.glitch.global/36cb8393-65c6-408d-a538-055ada20431b/Astronaut.glb";
 
   // Drag state
   const dragState = useRef({
@@ -33,13 +60,12 @@ const ARViewer = () => {
     lastTime: 0,
   });
 
-  // === TOUCH HANDLERS: Drag to Move + Rotate Y ===
+  // === TOUCH HANDLERS FOR ROTATION AND POSITIONING ===
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    let lastTouchTime = 0;
-    const THROTTLE_MS = 16;
+    const THROTTLE_MS = 16; // ~60fps
 
     const handleTouchStart = (e) => {
       if (!app.current.chair || !isPlaced) return;
@@ -65,22 +91,19 @@ const ARViewer = () => {
       const deltaY = touch.clientY - dragState.current.prevY;
 
       const chair = app.current.chair;
-      const camera = app.current.camera;
-
-      // Rotate Y (left/right)
+      
+      // Rotate around Y-axis (left/right swipe)
       chair.rotation.y += deltaX * 0.01;
 
-      // Move on ground plane (X/Z)
+      // Move model forward/backward based on up/down swipe
+      const camera = app.current.camera;
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
-      forward.y = 0;
+      forward.y = 0; // Keep movement horizontal
       forward.normalize();
-
-      const right = new THREE.Vector3();
-      right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
-
+      
+      // Move along camera's forward direction
       chair.position.addScaledVector(forward, -deltaY * 0.002);
-      chair.position.addScaledVector(right, deltaX * 0.002);
 
       dragState.current.prevX = touch.clientX;
       dragState.current.prevY = touch.clientY;
@@ -107,7 +130,6 @@ const ARViewer = () => {
     if (!container) return;
 
     const a = app.current;
-    a.assetsPath = "/assets/ar-shop/";
     a.camera = new THREE.PerspectiveCamera(
       70,
       window.innerWidth / window.innerHeight,
@@ -163,17 +185,18 @@ const ARViewer = () => {
   const setEnvironment = (a) => {
     a.loadHDR = () => {
       if (a.hdrLoaded || isLowEnd.current) return;
-      const loader = new RGBELoader().setPath("/assets/");
+      const loader = new RGBELoader();
       loader.setDataType(THREE.UnsignedByteType);
       loader.load(
-        "hdr/venice_sunset_1k.hdr",
+        "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/equirectangular/venice_sunset_1k.hdr",
         (texture) => {
           texture.mapping = THREE.EquirectangularReflectionMapping;
           a.scene.environment = texture;
           a.hdrLoaded = true;
+          console.log("HDR Environment loaded");
         },
         undefined,
-        (error) => console.error("HDR Load Error:", error)
+        (error) => console.warn("HDR Load Error:", error)
       );
     };
   };
@@ -193,9 +216,14 @@ const ARViewer = () => {
         .isSessionSupported("immersive-ar")
         .then((supported) => {
           setIsSupported(supported);
+          console.log("Immersive AR supported:", supported);
         })
-        .catch(() => setIsSupported(false));
+        .catch((error) => {
+          console.error("Error checking AR support:", error);
+          setIsSupported(false);
+        });
     } else {
+      console.error("WebXR API not available");
       setIsSupported(false);
     }
 
@@ -203,13 +231,18 @@ const ARViewer = () => {
     a.hitTestSource = null;
 
     const onSelect = () => {
-      if (a.chair === undefined || isPlaced) return;
+      if (a.chair === undefined) {
+        console.warn("No model loaded for placement");
+        return;
+      }
       if (a.reticle.visible) {
         a.chair.position.setFromMatrixPosition(a.reticle.matrix);
         a.chair.visible = true;
+        console.log("Model placed at:", a.chair.position);
         setIsPlaced(true);
         a.reticle.visible = false;
-        setIsLoading(false);
+      } else {
+        console.warn("Reticle not visible, cannot place model");
       }
     };
 
@@ -221,13 +254,15 @@ const ARViewer = () => {
   const showChair = async () => {
     const a = app.current;
     if (!modelUrl) {
+      console.error("No model URL provided");
       alert("No 3D model available for this product.");
       return;
     }
+
     try {
       await initAR(a);
     } catch (error) {
-      console.error("AR init failed:", error);
+      console.error("Error in AR initialization:", error);
     }
   };
 
@@ -239,7 +274,9 @@ const ARViewer = () => {
       session.addEventListener("end", onSessionEnded);
       a.renderer.xr.setReferenceSpaceType("local");
       a.renderer.xr.setSession(session);
-      a.currentSession = session;
+      currentSession = session;
+      a.currentSession = currentSession;
+      console.log("XR Session started");
       setIsLoading(true);
       setIsPlaced(false);
 
@@ -248,6 +285,9 @@ const ARViewer = () => {
     };
 
     const onSessionEnded = () => {
+      console.log("XR Session ended");
+      currentSession?.removeEventListener("end", onSessionEnded);
+      currentSession = null;
       a.currentSession = null;
       if (a.chair) {
         a.scene.remove(a.chair);
@@ -259,13 +299,15 @@ const ARViewer = () => {
       setIsPlaced(false);
     };
 
-    if (!currentSession) {
+    if (currentSession === null) {
       try {
         const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
         onSessionStarted(session);
       } catch (error) {
-        alert("Failed to start AR. Check device compatibility.");
+        console.error("XR Session Request Failed:", error);
+        alert("Failed to start AR session. Check device compatibility.");
         setIsSupported(false);
+        throw error;
       }
     } else {
       currentSession.end();
@@ -301,15 +343,18 @@ const ARViewer = () => {
           model.scale.set(0.5, 0.5, 0.5);
         }
 
+        console.log("GLTF Loaded Successfully");
         a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
         setLoadingProgress(100);
       },
       (xhr) => {
-        if (xhr.total) setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
+        if (xhr.total) {
+          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
+        }
       },
       (error) => {
         console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model.");
+        alert("Failed to load 3D model. Check console for details.");
         setLoadingProgress(0);
         setIsLoading(false);
       }
@@ -318,11 +363,15 @@ const ARViewer = () => {
 
   const requestHitTestSource = (a) => {
     const session = a.renderer.xr.getSession();
-    if (!session || a.hitTestSourceRequested || isPlaced) return;
+    if (!session) return;
     session.requestReferenceSpace("viewer").then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
       });
+    });
+    session.addEventListener("end", () => {
+      a.hitTestSourceRequested = false;
+      a.hitTestSource = null;
     });
     a.hitTestSourceRequested = true;
   };
@@ -349,34 +398,47 @@ const ARViewer = () => {
     a.renderer.render(a.scene, a.camera);
   };
 
-  // === CONTROL FUNCTIONS ===
+  // === ENHANCED CONTROLS ===
   const rotateLeft = () => {
     if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y += Math.PI / 6; // 30° per tap
+      app.current.chair.rotation.y += 0.3;
     }
   };
 
   const rotateRight = () => {
     if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y -= Math.PI / 6; // 30° per tap
+      app.current.chair.rotation.y -= 0.3;
     }
   };
 
   const placeAgain = () => {
+    if (!app.current.chair) return;
+    
+    // Hide the model and show reticle again
+    app.current.chair.visible = false;
     setIsPlaced(false);
-    if (app.current.chair) {
-      app.current.chair.visible = false;
+    
+    // Reset hit test to show reticle
+    if (app.current.hitTestSource) {
+      app.current.reticle.visible = false;
     }
-    setIsLoading(true);
-    const a = app.current;
-    a.hitTestSourceRequested = false;
-    a.hitTestSource = null;
+    
+    console.log("Ready to place model again");
   };
 
   return (
     <div
       ref={containerRef}
-      style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 1000, touchAction: "none" }}
+      style={{ 
+        position: "fixed", 
+        top: 0, 
+        left: 0, 
+        width: "100%", 
+        height: "100%", 
+        zIndex: 1000, 
+        touchAction: "none",
+        background: "#000"
+      }}
     >
       {isLoading && <LoadingBar progress={loadingProgress} />}
 
@@ -403,7 +465,6 @@ const ARViewer = () => {
         </button>
       )}
 
-      {/* CONTROL BUTTONS - ALWAYS VISIBLE AFTER PLACEMENT */}
       {isPlaced && (
         <>
           <div
@@ -417,11 +478,15 @@ const ARViewer = () => {
               zIndex: 1001,
             }}
           >
-            <button onClick={rotateLeft} style={btnStyle}>Rotate Left</button>
-            <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>
-              Place Again
+            <button onClick={rotateLeft} style={btnStyle}>
+              ← Rotate Left
             </button>
-            <button onClick={rotateRight} style={btnStyle}>Rotate Right</button>
+            <button onClick={placeAgain} style={{ ...btnStyle, background: "#28a745" }}>
+              📍 Place Again
+            </button>
+            <button onClick={rotateRight} style={btnStyle}>
+              Rotate Right →
+            </button>
           </div>
 
           <div
@@ -436,17 +501,27 @@ const ARViewer = () => {
               borderRadius: "30px",
               fontSize: "14px",
               zIndex: 1001,
+              textAlign: "center",
             }}
           >
-            Drag to move & rotate • Tap buttons for control
+            💡 Drag to rotate • Swipe up/down to move
           </div>
         </>
       )}
 
       {!isSupported && (
-        <p style={{ color: "white", textAlign: "center", marginTop: "50%" }}>
-          AR is not supported on this device.
-        </p>
+        <div style={{ 
+          color: "white", 
+          textAlign: "center", 
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          padding: "20px"
+        }}>
+          <h2>AR Not Supported</h2>
+          <p>WebXR is not available on this device/browser.</p>
+        </div>
       )}
     </div>
   );
@@ -461,6 +536,7 @@ const btnStyle = {
   cursor: "pointer",
   fontSize: "14px",
   fontWeight: "600",
+  whiteSpace: "nowrap",
 };
 
 export default ARViewer;
