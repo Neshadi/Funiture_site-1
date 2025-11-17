@@ -49,7 +49,9 @@ const ItemDetails = ({ onCartUpdate }) => {
           { withCredentials: true }
         );
 
-        const refreshed = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
+        const refreshed = await axios.get(
+          `https://new-sever.vercel.app/api/products/${id}`
+        );
         setProduct(refreshed.data);
       }
     } catch (error) {
@@ -62,15 +64,21 @@ const ItemDetails = ({ onCartUpdate }) => {
     const fetchItemDetails = async () => {
       try {
         setLoading(true);
-        const productRes = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
+        const productRes = await axios.get(
+          `https://new-sever.vercel.app/api/products/${id}`
+        );
         setProduct(productRes.data);
 
-        const reviewsRes = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
+        const reviewsRes = await axios.get(
+          `https://new-sever.vercel.app/api/products/reviews/${id}`
+        );
         const fetchedReviews = reviewsRes.data || [];
         setReviews(fetchedReviews);
 
         if (fetchedReviews.length > 0) {
-          const avg = fetchedReviews.reduce((a, r) => a + r.rating, 0) / fetchedReviews.length;
+          const avg =
+            fetchedReviews.reduce((a, r) => a + r.rating, 0) /
+            fetchedReviews.length;
           setAverageRating(avg);
           setNumReviews(fetchedReviews.length);
         }
@@ -110,22 +118,11 @@ const ItemDetails = ({ onCartUpdate }) => {
         <div className="product-layout">
           {/* Product Image */}
           <div className="product-image-wrapper">
-            <img src={product.image} alt={product.name} className="product-img" />
-
-            {/* QR Code - Bottom Left */}
-            {product.modelImageUrl && (
-              <div className="qr-container">
-                <div className="qr-code">
-                  <QRCode value={arUrl} size={80} />
-                </div>
-                <div className="ar-tooltip">
-                  <span>AR View</span>
-                  <p>
-                    Scan this QR code using your mobile for view item in AR, if you are using a desktop now.
-                  </p>
-                </div>
-              </div>
-            )}
+            <img
+              src={product.image}
+              alt={product.name}
+              className="product-img"
+            />
           </div>
 
           {/* Product Details */}
@@ -146,13 +143,17 @@ const ItemDetails = ({ onCartUpdate }) => {
                 ))}
               </div>
               <span className="rating-text">
-                {averageRating.toFixed(1)} <span className="review-count">({numReviews} Reviews)</span>
+                {averageRating.toFixed(1)}{" "}
+                <span className="review-count">({numReviews} Reviews)</span>
               </span>
             </div>
 
             {/* Description */}
             <p className="description">
-              Browse our curated selection of furniture and home equipment, designed to blend style with functionality. Use our augmented reality feature to visualize each piece in your home, ensuring the perfect fit for your space and style preferences.
+              Browse our curated selection of furniture and home equipment,
+              designed to blend style with functionality. Use our augmented
+              reality feature to visualize each piece in your home, ensuring the
+              perfect fit for your space and style preferences.
             </p>
 
             {/* Price */}
@@ -160,10 +161,13 @@ const ItemDetails = ({ onCartUpdate }) => {
 
             {/* Actions */}
             <div className="actions-row">
-              <button onClick={addToCart} className="btn-add-to-cart" disabled={product.countInStock <= 0}>
+              <button
+                onClick={addToCart}
+                className="btn-add-to-cart-desktop"
+                disabled={product.countInStock <= 0}
+              >
                 Add to Cart
               </button>
-
               <div className="quantity-selector">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -174,7 +178,9 @@ const ItemDetails = ({ onCartUpdate }) => {
                 </button>
                 <span className="qty-value">{quantity}</span>
                 <button
-                  onClick={() => setQuantity((q) => Math.min(product.countInStock, q + 1))}
+                  onClick={() =>
+                    setQuantity((q) => Math.min(product.countInStock, q + 1))
+                  }
                   disabled={quantity >= product.countInStock}
                   className="qty-btn"
                 >
@@ -184,6 +190,13 @@ const ItemDetails = ({ onCartUpdate }) => {
                   (Only {product.countInStock} Available)
                 </span>
               </div>
+              <button
+                onClick={addToCart}
+                className="btn-add-to-cart-mobile"
+                disabled={product.countInStock <= 0}
+              >
+                Add to Cart
+              </button>
             </div>
 
             <div className="buy-now-row">
@@ -194,22 +207,49 @@ const ItemDetails = ({ onCartUpdate }) => {
               >
                 Buy Now
               </button>
-              <span className="in-stock">
-                <span className="dot"></span> In Stock
-              </span>
+              <div className="in-stock">In Stock</div>
             </div>
 
-            {/* AR Button (Mobile Only - Optional) */}
+            {/* QR Code - Bottom Left */}
             {product.modelImageUrl && (
+              <div className="qr-container">
+                <div className="qr-code">
+                  <QRCode value={arUrl} size={80} />
+                </div>
+                <div className="ar-tooltip">
+                  <span>AR View</span>
+                  <p>
+                    Scan this QR code using your mobile for view item in AR, if
+                    you are using a desktop now.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* AR Button (Mobile Only - Optional) */}
+          {product.modelImageUrl && (
+            <div className="ar-section">
+              {/* AR View Button */}
               <button
                 className="ar-mobile-btn"
-                onClick={() => navigate(`/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}`)}
+                onClick={() =>
+                  navigate(
+                    `/ar-viewer?model=${encodeURIComponent(
+                      product.modelImageUrl
+                    )}&name=${encodeURIComponent(product.name)}`
+                  )
+                }
               >
                 <img src={CameraIcon} alt="AR" className="ar-icon" />
                 <b>AR View</b>
               </button>
-            )}
-          </div>
+
+              {/* Blue Help Link (exactly like the image) */}
+              <a href="https://your-help-link.com" className="ar-help-link">
+                If you need help Click Here
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Reviews Section */}
@@ -231,7 +271,9 @@ const ItemDetails = ({ onCartUpdate }) => {
                       ))}
                     </div>
                     <div className="review-meta">
-                      <span className="reviewer-name">{review.name || "Anonymous"}</span>
+                      <span className="reviewer-name">
+                        {review.name || "Anonymous"}
+                      </span>
                       <span className="review-date">
                         {new Date(review.createdAt).toLocaleDateString()}
                       </span>

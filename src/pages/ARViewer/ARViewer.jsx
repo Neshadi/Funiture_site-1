@@ -556,13 +556,13 @@ const ARViewer = () => {
               }}
             >
               <button onClick={rotateLeft} style={btnStyle}>
-                Left
+                ◄ Left
               </button>
               <button onClick={placeAgain} style={{ ...btnStyle, background: "#00796B" }}>
                 Place Again
               </button>
               <button onClick={rotateRight} style={btnStyle}>
-                Right
+                Right ►
               </button>
             </div>
 

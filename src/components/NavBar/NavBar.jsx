@@ -1,14 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { assets } from '../../assets/assets.js';
-import QRScanner from '../QRScanner/QRScanner';
-import './NavBar.css';
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { assets } from "../../assets/assets.js";
+import "./NavBar.css";
 
 const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   const [menu, setMenu] = useState("home");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for hamburger menu
-  const [showQRScanner, setShowQRScanner] = useState(false); // State for QR scanner
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -21,7 +19,7 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   };
 
   const handleCartClick = () => {
-    navigate('/cart');
+    navigate("/cart");
     setIsMenuOpen(false); // Close menu on navigation
   };
 
@@ -45,11 +43,6 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
     setIsMenuOpen(!isMenuOpen); // Toggle hamburger menu
   };
 
-  const handleQRScannerClick = () => {
-    setShowQRScanner(true);
-    setIsMenuOpen(false); // Close menu when opening QR scanner
-  };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -64,26 +57,40 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   }, []);
 
   return (
-    <div className='navbar'>
-      <img src={assets.logo_black} alt="logo" className="logo" onClick={() => {
-        navigate('/');
-        setIsMenuOpen(false); // Close menu on logo click
-      }} />
-      <ul className={`navbar-menu ${isMenuOpen ? 'active' : ''}`}>
-        <li onClick={() => handleMenuItemClick("home")} className={menu === "home" ? "active" : ""}>
+    <div className="navbar">
+      <img
+        src={assets.logo_black}
+        alt="logo"
+        className="logo"
+        onClick={() => {
+          navigate("/");
+          setIsMenuOpen(false); // Close menu on logo click
+        }}
+      />
+      <ul className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
+        <li
+          onClick={() => handleMenuItemClick("home")}
+          className={menu === "home" ? "active" : ""}
+        >
           <Link to="/">Home</Link>
         </li>
-        <li onClick={() => handleMenuItemClick("category")} className={menu === "category" ? "active" : ""}>
+        <li
+          onClick={() => handleMenuItemClick("category")}
+          className={menu === "category" ? "active" : ""}
+        >
           <Link to="/category">Category</Link>
         </li>
-        <li onClick={() => handleMenuItemClick("mobile-app")} className={menu === "mobile-app" ? "active" : ""}>
+        <li
+          onClick={() => handleMenuItemClick("mobile-app")}
+          className={menu === "mobile-app" ? "active" : ""}
+        >
           <Link to="/mobile-app">Mobile App</Link>
         </li>
-        <li onClick={() => handleMenuItemClick("about-us")} className={menu === "about-us" ? "active" : ""}>
+        <li
+          onClick={() => handleMenuItemClick("about-us")}
+          className={menu === "about-us" ? "active" : ""}
+        >
           <Link to="/about-us">About Us</Link>
-        </li>
-        <li onClick={handleQRScannerClick} className="qr-scanner-menu-item">
-          <span>📱 Scan QR</span>
         </li>
       </ul>
       <div className="navbar-toggle" onClick={toggleMenu}>
@@ -91,13 +98,24 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
         <span className="bar"></span>
         <span className="bar"></span>
       </div>
-      <div className='navbar-right'>
+      <div className="navbar-right">
         {isLoggedIn && (
           <>
-            <div className='profile-image-container' onClick={handleProfileClick}>
-              <img src={assets.profile} alt="profile" className="profile-image" />
+            <div
+              className="profile-image-container"
+              onClick={handleProfileClick}
+            >
+              <img
+                src={assets.profile}
+                alt="profile"
+                className="profile-image"
+              />
             </div>
-            <div className='navbar-search-icon' onClick={handleCartClick} style={{ cursor: 'pointer' }}>
+            <div
+              className="navbar-search-icon"
+              onClick={handleCartClick}
+              style={{ cursor: "pointer" }}
+            >
               <img src={assets.cart} alt="cart" className="cart" />
               {/* Show red dot only if cartItemCount > 0 */}
               {cartItemCount > 0 && <div className="dot"></div>}
@@ -105,22 +123,30 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
           </>
         )}
         <button onClick={handleButtonClick}>
-          {isLoggedIn ? 'Sign Out' : 'Sign In'}
+          {isLoggedIn ? "Sign Out" : "Sign In"}
         </button>
       </div>
       {showDropdown && (
         <div className="profile-dropdown" ref={dropdownRef}>
           <ul>
-            <li><Link to="/profile" onClick={() => setShowDropdown(false)}>Edit Profile</Link></li>
-            <li><Link to="/my-orders" onClick={() => setShowDropdown(false)}>My Orders</Link></li>
-            <li><Link to="/report-issue" onClick={() => setShowDropdown(false)}>Report an Issue</Link></li>
+            <li>
+              <Link to="/profile" onClick={() => setShowDropdown(false)}>
+                Edit Profile
+              </Link>
+            </li>
+            <li>
+              <Link to="/my-orders" onClick={() => setShowDropdown(false)}>
+                My Orders
+              </Link>
+            </li>
+            <li>
+              <Link to="/report-issue" onClick={() => setShowDropdown(false)}>
+                Report an Issue
+              </Link>
+            </li>
             <li onClick={handleSignOut}>Sign Out</li>
           </ul>
         </div>
-      )}
-
-      {showQRScanner && (
-        <QRScanner onClose={() => setShowQRScanner(false)} />
       )}
     </div>
   );
