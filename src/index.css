@@ -13,6 +13,11 @@
   src: url(../src/assets/fonts/Candara.ttf);
 }
 
+@font-face {
+  font-family: candaraBold;
+  src: url(../src/assets/fonts/Candarab.ttf);
+}
+
 :root {
   --green: #0C5E69;
   --red: #E00A0A;

@@ -3,7 +3,7 @@
     margin-top: 10vw;
     margin: 100px auto;
     text-align: left;
-    padding: 20px;
+    padding: 40px;
 }
 
 .explore-menu-text {
@@ -40,4 +40,11 @@
     color: rgb(255, 255, 255);
     border: none;
     transition: 1s;
+}
+
+
+@media (max-width: 768px) {
+  .explore-menu {
+    padding: 8px;
+}
 }

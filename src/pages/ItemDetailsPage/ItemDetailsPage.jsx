@@ -8,7 +8,7 @@ import CameraIcon from "../../assets/camera.png";
 
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(2); // Default 2 as per design
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
@@ -16,9 +16,9 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showArViewer, setShowArViewer] = useState(false); // State to toggle AR Viewer
+  const navigate = useNavigate();
 
-  // Function to hide notification after 3 seconds
+  // Hide notification after 3s
   const hideNotification = () => {
     setTimeout(() => {
       setNotification("");
@@ -30,49 +30,27 @@ const ItemDetails = ({ onCartUpdate }) => {
     try {
       const response = await axios.post(
         "https://new-sever.vercel.app/api/cart",
-        {
-          productId: id,
-          quantity: quantity,
-        },
-        {
-          withCredentials: true,
-        }
+        { productId: id, quantity },
+        { withCredentials: true }
       );
 
       if (response.status === 201) {
         setIsAdded(true);
         setNotification("Item added to cart successfully!");
-        if (onCartUpdate) {
-          onCartUpdate(); // Update cart count in navbar
-        }
+        onCartUpdate?.();
         hideNotification();
 
         const updatedStock = product.countInStock - quantity;
-        setProduct((prevProduct) => ({
-          ...prevProduct,
-          countInStock: updatedStock,
-        }));
+        setProduct((prev) => ({ ...prev, countInStock: updatedStock }));
 
-        // Update the stock on the backend
-        const updateStockResponse = await axios.put(
+        await axios.put(
           `https://new-sever.vercel.app/api/products/${id}`,
-          {
-            countInStock: updatedStock,
-          },
+          { countInStock: updatedStock },
           { withCredentials: true }
         );
 
-        if (updateStockResponse.status === 200) {
-          console.log("Stock updated on backend:", updateStockResponse.data);
-          const productResponse = await axios.get(
-            `https://new-sever.vercel.app/api/products/${id}`
-          );
-          if (productResponse.status === 200) {
-            setProduct(productResponse.data); // Update product details
-          }
-        } else {
-          console.error("Failed to update stock on backend");
-        }
+        const refreshed = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
+        setProduct(refreshed.data);
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -80,270 +58,198 @@ const ItemDetails = ({ onCartUpdate }) => {
     }
   };
 
-  // Fetch product details and reviews
   useEffect(() => {
     const fetchItemDetails = async () => {
       try {
         setLoading(true);
-        const productResponse = await axios.get(
-          `https://new-sever.vercel.app/api/products/${id}`
-        );
+        const productRes = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
+        setProduct(productRes.data);
 
-        if (productResponse.status === 200) {
-          console.log("Fetched product:", productResponse.data);
-          setProduct(productResponse.data);
+        const reviewsRes = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
+        const fetchedReviews = reviewsRes.data || [];
+        setReviews(fetchedReviews);
 
-          // Fetch reviews for this product
-          const reviewsResponse = await axios.get(
-            `https://new-sever.vercel.app/api/products/reviews/${id}`
-          );
-
-          if (reviewsResponse.status === 200) {
-            const fetchedReviews = reviewsResponse.data || [];
-            setReviews(fetchedReviews);
-            if (fetchedReviews.length > 0) {
-              const totalRating = fetchedReviews.reduce(
-                (acc, r) => acc + r.rating,
-                0
-              );
-              setAverageRating(totalRating / fetchedReviews.length);
-              setNumReviews(fetchedReviews.length);
-            } else {
-              setAverageRating(0);
-              setNumReviews(0);
-            }
-            console.log("Fetched reviews:", fetchedReviews);
-          }
+        if (fetchedReviews.length > 0) {
+          const avg = fetchedReviews.reduce((a, r) => a + r.rating, 0) / fetchedReviews.length;
+          setAverageRating(avg);
+          setNumReviews(fetchedReviews.length);
         }
       } catch (err) {
-        console.error("Error fetching product data or reviews:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchItemDetails();
   }, [id]);
 
-  // Log the product count in stock whenever the product state changes
-  useEffect(() => {
-    if (product) {
-      console.log("Count in Stock:", product.countInStock);
-    }
-  }, [product]);
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading product details...</p>
+      </div>
+    );
+  }
 
-  // Function to handle AR button click
-  const handleArView = () => {
-    setShowArViewer(true);
-  };
-  const navigate = useNavigate();
+  if (!product) return <p>Product not found.</p>;
+
+  const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
+    product.modelImageUrl
+  )}&name=${encodeURIComponent(product.name)}`;
 
   return (
-    <div>
+    <>
       {notification && (
         <div className={`notification ${isAdded ? "success" : "error"}`}>
           {notification}
         </div>
       )}
 
-      <div className="container">
-        {loading ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading product details...</p>
-          </div>
-        ) : product ? (
-          <div className="product">
-            {/* Product Image */}
-            <div className="product-image">
-              <img src={product.image} alt={product.name} />
-            
-              {product.modelImageUrl && (
-              <div className="qr-code-container">
-                <div className="QrCode">
-                  <QRCode
-                    size={256}
-                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                    value={`${
-                      window.location.origin
-                    }/ar-viewer?model=${encodeURIComponent(
-                      product.modelImageUrl
-                    )}&name=${encodeURIComponent(product.name)}`}
-                    viewBox={`0 0 256 256`}
-                  />
-                  <p className="qr-instructions">
-                    Scan with your phone to view in AR
+      <div className="item-details-container">
+        <div className="product-layout">
+          {/* Product Image */}
+          <div className="product-image-wrapper">
+            <img src={product.image} alt={product.name} className="product-img" />
+
+            {/* QR Code - Bottom Left */}
+            {product.modelImageUrl && (
+              <div className="qr-container">
+                <div className="qr-code">
+                  <QRCode value={arUrl} size={80} />
+                </div>
+                <div className="ar-tooltip">
+                  <span>AR View</span>
+                  <p>
+                    Scan this QR code using your mobile for view item in AR, if you are using a desktop now.
                   </p>
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Product Details */}
+          <div className="product-details">
+            <h1 className="product-title">{product.name}</h1>
+
+            {/* Rating */}
+            <div className="rating">
+              <div className="stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={20}
+                    fill={averageRating >= star ? "#FFD700" : "none"}
+                    stroke={averageRating >= star ? "#FFD700" : "#999"}
+                    className="star"
+                  />
+                ))}
+              </div>
+              <span className="rating-text">
+                {averageRating.toFixed(1)} <span className="review-count">({numReviews} Reviews)</span>
+              </span>
             </div>
 
-            {product.modelImageUrl && (
-              <div className="ar-button-container">
-              <button
-                className="button-ar-button"
-                onClick={() =>
-                  navigate(
-                    `/ar-viewer?model=${encodeURIComponent(
-                      product.modelImageUrl
-                    )}&name=${encodeURIComponent(product.name)}`
-                  )
-                }
-              >
-                <img src={CameraIcon} alt="AR" className="ar-icon" />
-                <b>AR View</b>
+            {/* Description */}
+            <p className="description">
+              Browse our curated selection of furniture and home equipment, designed to blend style with functionality. Use our augmented reality feature to visualize each piece in your home, ensuring the perfect fit for your space and style preferences.
+            </p>
 
+            {/* Price */}
+            <p className="price">LKR {product.price?.toFixed(0)}</p>
+
+            {/* Actions */}
+            <div className="actions-row">
+              <button onClick={addToCart} className="btn-add-to-cart" disabled={product.countInStock <= 0}>
+                Add to Cart
               </button>
-              </div>    
-            )}
-            
-            {/* Product Details */}
-            <div className="details">
-              <h2>{product.name}</h2>
-               {/* Rating Display */}
-              <div className="rating-display">
-                <div className="rating-stars">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`star ${
-                        averageRating >= star ? "filled" : ""
-                      }`}
-                      fill={averageRating >= star ? "#FFD700" : "none"}
-                      stroke={
-                        averageRating >= star ? "#FFD700" : "currentColor"
-                      }
-                      size={24}
-                    />
-                  ))}
-                </div>
-                <span className="rating-value">{averageRating.toFixed(1)}</span>
-                <span className="review-count">({numReviews} reviews)</span>
-              </div>
-              <p className="description">{product.description}</p>
-              
-              <p className="price">LKR.{product.price?.toFixed(2)}</p>
-             
-              {/* Action Buttons */}
-              <div className="actions">
+
+              <div className="quantity-selector">
                 <button
-                  onClick={addToCart}
-                  className="button add-to-cart"
-                  disabled={product.countInStock <= 0}
-                >
-                  Add to Cart
-                </button>
-                {/* Quantity Selector */}
-              <div className="quantity">
-                <button
-                  onClick={() => setQuantity((prev) => Math.max(prev - 1, 1))}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                   disabled={quantity <= 1}
+                  className="qty-btn"
                 >
-                  -
+                  –
                 </button>
-                <span>{quantity}</span>
+                <span className="qty-value">{quantity}</span>
                 <button
-                  onClick={() => setQuantity((prev) => prev + 1)}
+                  onClick={() => setQuantity((q) => Math.min(product.countInStock, q + 1))}
                   disabled={quantity >= product.countInStock}
+                  className="qty-btn"
                 >
                   +
                 </button>
-                 <p
-                className={`stock1 ${
-                  product.countInStock > 0 ? "in-stock" : "out-of-stock"
-                }`}
-              >
-                {product.countInStock > 0
-                  ? `(Only${product.countInStock} available)`
-                  : " "}
-              </p>
-              </div>
-             
-              </div>
-              <div className="actions-buy-now">
-                <button
-                  className="button buy-now"
-                  disabled={product.countInStock <= 0}
-                >
-                  Buy Now
-                </button>
-                <p
-                className={`stock2 ${
-                  product.countInStock > 0 ? "in-stock" : "out-of-stock"
-                }`}
-              >
-                {product.countInStock > 0
-                  ? `In Stock `
-                  : "Out of Stock"}
-              </p>
-           
+                <span className="stock-availability">
+                  (Only {product.countInStock} Available)
+                </span>
               </div>
             </div>
 
-          
+            <div className="buy-now-row">
+              <button
+                className="btn-buy-now"
+                disabled={product.countInStock <= 0}
+                onClick={() => addToCart()}
+              >
+                Buy Now
+              </button>
+              <span className="in-stock">
+                <span className="dot"></span> In Stock
+              </span>
+            </div>
+
+            {/* AR Button (Mobile Only - Optional) */}
+            {product.modelImageUrl && (
+              <button
+                className="ar-mobile-btn"
+                onClick={() => navigate(`/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}`)}
+              >
+                <img src={CameraIcon} alt="AR" className="ar-icon" />
+                <b>AR View</b>
+              </button>
+            )}
           </div>
-        ) : (
-          <p>Product not found.</p>
-        )}
+        </div>
 
-        {/* AR Viewer */}
-        {showArViewer && product && (
-          <ArViewer
-            modelId={id}
-            modelPath={product.modelImageUrl}
-            onClose={() => setShowArViewer(false)}
-          />
-        )}
-      </div>
-
-      {/* Reviews Section */}
-      {/* <div className="reviews-section">
-        <h3>Customer Reviews</h3>
-
-        {reviews.length > 0 ? (
-          <div className="reviews-list">
-            {reviews.map((review, index) => (
-              <div className="review-item" key={index}>
-                <div className="review-header">
-                  <div className="review-rating">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`star-small ${
-                          review.rating >= star ? "filled" : ""
-                        }`}
-                        fill={review.rating >= star ? "#FFD700" : "none"}
-                        stroke={
-                          review.rating >= star ? "#FFD700" : "currentColor"
-                        }
-                        size={16}
-                      />
-                    ))}
+        {/* Reviews Section */}
+        <div className="reviews-section">
+          <h3>Customer Reviews</h3>
+          {reviews.length > 0 ? (
+            <div className="reviews-list">
+              {reviews.map((review, i) => (
+                <div key={i} className="review-card">
+                  <div className="review-header">
+                    <div className="review-stars">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          size={16}
+                          fill={review.rating >= s ? "#FFD700" : "none"}
+                          stroke={review.rating >= s ? "#FFD700" : "#ccc"}
+                        />
+                      ))}
+                    </div>
+                    <div className="review-meta">
+                      <span className="reviewer-name">{review.name || "Anonymous"}</span>
+                      <span className="review-date">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="review-user">
-                    <span className="user-name">
-                      {review.name || "Anonymous"}
-                    </span>
-                    <span className="review-date">
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                  <p className="review-comment">{review.comment}</p>
                 </div>
-                <div className="review-content">{review.comment}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="no-reviews">
-            <p>No reviews available for this product yet.</p>
-            <p className="review-prompt">
-              Purchase this item to leave a review!
-            </p>
-          </div>
-        )}
-      </div> */}
-    </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-reviews">
+              <p>No reviews available for this product yet.</p>
+              <p>Purchase this item to leave a review!</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 };
 

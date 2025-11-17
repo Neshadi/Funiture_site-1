@@ -122,7 +122,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
             <div className="item-info">
                 <p className='item-name'>{name}</p>
                 <p className='item-desc'>{description}</p>
-                <p className='item-price'>Rs. {price}</p>
+                <p className='item-price'>LKR {price}</p>
                 <button 
                     className='item-button' 
                     onClick={handleAddToCartButtonClick}

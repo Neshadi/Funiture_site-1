@@ -62,7 +62,7 @@ const ExploreMenu = ({ category, setCategory }) => {
 
     return (
         <div className="explore-menu" id="explore-menu">
-            <hr />
+            
             <h1>Explore Our Collection</h1>
             <p className="explore-menu-text">
                 Browse our curated selection of furniture and home equipment, designed to blend style with functionality. Use our augmented reality feature to visualize each piece in your home, ensuring the perfect fit for your space and style preferences.
@@ -91,7 +91,7 @@ const ExploreMenu = ({ category, setCategory }) => {
                 ))}
             </div>
 
-            <h2>Top Items For You</h2>
+            <h2>All Items</h2>
 
             {/* Products */}
             <div className="explore-menu-products">
