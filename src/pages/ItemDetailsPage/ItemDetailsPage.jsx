@@ -244,10 +244,12 @@ const ItemDetails = ({ onCartUpdate }) => {
                 <b>AR View</b>
               </button>
 
-              {/* Blue Help Link (exactly like the image) */}
-              <a href="https://your-help-link.com" className="ar-help-link">
-                If you need help Click Here
-              </a>
+              {/* Blue Help Link  */}
+              {window.innerWidth < 1024 && (
+                <a href="/ar-help" className="ar-help-link">
+                  If you need help Click Here
+                </a>
+              )}
             </div>
           )}
         </div>

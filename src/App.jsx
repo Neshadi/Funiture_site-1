@@ -27,6 +27,7 @@ import VerifyEmail from './pages/verifyEmail/verifyEmail';
 import NotFound from './pages/404/NotFound';
 import ReportIssue from './pages/ReportIssue/ReportIssue';
 import ARViewer from "./pages/ARViewer/ARViewer";
+import ARHelpPage from "./pages/ItemDetailsPage/ARHelpPage";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 // Reusable Layout Components
@@ -187,6 +188,7 @@ const App = () => {
 
         {/* Fullscreen AR Viewer - No Layout */}
         <Route path="/ar-viewer" element={<ARViewer />} />
+        <Route path="/ar-help" element={<ARHelpPage />} />
 
         {/* Auth Required Routes */}
         <Route
