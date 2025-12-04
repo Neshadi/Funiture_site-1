@@ -273,7 +273,7 @@ const ARViewer = () => {
 
       // Apply downward offset to fix floating
       a.chair.position.copy(reticlePos);
-      a.chair.position.y -= 0.02;
+      a.chair.position.y -= 0.05;
 
       a.chair.visible = true;
       a.reticle.visible = false;
@@ -281,7 +281,7 @@ const ARViewer = () => {
       a.setIsPlacedCallback(true);
 
       console.log("Model placed at:", a.chair.position);
-      console.log("Applied floor correction: -2cm");
+      console.log("Applied floor correction: -5cm");
     }
   };
 
