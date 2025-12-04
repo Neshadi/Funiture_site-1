@@ -265,16 +265,25 @@ const ARViewer = () => {
     a.setIsPlacedCallback = setIsPlaced;
 
     const onSelect = () => {
-      if (!a.chair || a.isModelPlaced) return;
-      if (a.reticle.visible) {
-        a.chair.position.setFromMatrixPosition(a.reticle.matrix);
-        a.chair.visible = true;
-        a.reticle.visible = false;
-        a.isModelPlaced = true;
-        a.setIsPlacedCallback(true);
-        console.log("Model placed at:", a.chair.position);
-      }
-    };
+    if (!a.chair || a.isModelPlaced) return;
+    if (a.reticle.visible) {
+      // Get position from reticle
+      const reticlePos = new THREE.Vector3();
+      reticlePos.setFromMatrixPosition(a.reticle.matrix);
+
+      // Apply downward offset to fix floating
+      a.chair.position.copy(reticlePos);
+      a.chair.position.y -= 0.02;
+
+      a.chair.visible = true;
+      a.reticle.visible = false;
+      a.isModelPlaced = true;
+      a.setIsPlacedCallback(true);
+
+      console.log("Model placed at:", a.chair.position);
+      console.log("Applied floor correction: -2cm");
+    }
+  };
 
     a.controller = a.renderer.xr.getController(0);
     a.controller.addEventListener("select", onSelect);
