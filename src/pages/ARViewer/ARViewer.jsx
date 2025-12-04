@@ -269,25 +269,41 @@ const ARViewer = () => {
     const onSelect = () => {
       if (!a.chair || a.isModelPlaced) return;
       if (a.reticle.visible) {
-        // Get position from reticle
+        // Get exact position from reticle matrix
         const reticlePos = new THREE.Vector3();
         reticlePos.setFromMatrixPosition(a.reticle.matrix);
 
-        // Calculate model's bounding box to find bottom
+        // Position model at exact plane location first
+        a.chair.position.set(reticlePos.x, reticlePos.y, reticlePos.z);
+        
+        // Force update to calculate accurate bounding box
+        a.chair.updateMatrixWorld(true);
+        
+        // Get bounding box in world coordinates
         const box = new THREE.Box3().setFromObject(a.chair);
-        const modelBottom = box.min.y;
-
-        // Place model so its bottom touches the detected plane
-        a.chair.position.copy(reticlePos);
-        a.chair.position.y -= modelBottom;
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        
+        // Calculate how much the model's bottom is offset from its position
+        const bottomOffset = a.chair.position.y - box.min.y;
+        
+        // Adjust Y position so bottom touches the plane exactly
+        // The formula: plane_y + (position_y - bottom_y) = plane_y + bottomOffset
+        a.chair.position.y = reticlePos.y + bottomOffset;
 
         a.chair.visible = true;
         a.reticle.visible = false;
         a.isModelPlaced = true;
         a.setIsPlacedCallback(true);
 
-        console.log("Model placed at:", a.chair.position);
-        console.log("Floor alignment offset:", -modelBottom);
+        console.log("=== PLACEMENT DEBUG ===");
+        console.log("Reticle (Plane) Y:", reticlePos.y.toFixed(4));
+        console.log("Model Height:", size.y.toFixed(4));
+        console.log("Bounding Box Min Y:", box.min.y.toFixed(4));
+        console.log("Bottom Offset:", bottomOffset.toFixed(4));
+        console.log("Final Model Y:", a.chair.position.y.toFixed(4));
+        console.log("Model Bottom Y:", (a.chair.position.y - bottomOffset).toFixed(4));
+        console.log("=======================");
       }
     };
 
