@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 // Mock LoadingBar
 const LoadingBar = ({ progress }) => (
@@ -54,6 +54,7 @@ const isLowEndDevice = () => {
 };
 
 const ARViewer = () => {
+  const navigate = useNavigate();
   const containerRef = useRef();
   const overlayRef = useRef();
   const [isSupported, setIsSupported] = useState(false);
@@ -72,6 +73,24 @@ const ARViewer = () => {
     prevY: 0,
     lastTime: 0,
   });
+
+  // Auto-start AR when component mounts and model is available
+  useEffect(() => {
+    if (!modelUrl) {
+      alert("No 3D model URL provided.");
+      navigate(-1);
+      return;
+    }
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      if (app.current.currentSession === null && isSupported) {
+        showChair();
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [modelUrl, isSupported]);
 
   // === TOUCH HANDLERS ===
   useEffect(() => {
@@ -493,29 +512,7 @@ const ARViewer = () => {
       >
         {isLoading && <LoadingBar progress={loadingProgress} />}
 
-        {isSupported && !app.current.currentSession && (
-          <button
-            style={{
-              position: "absolute",
-              bottom: "20px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              padding: "15px 30px",
-              background: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "18px",
-              fontWeight: "bold",
-              zIndex: 1002,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-            }}
-            onClick={showChair}
-          >
-            Start AR View
-          </button>
-        )}
+        
 
         {!isPlaced && app.current.currentSession && (
           <div
