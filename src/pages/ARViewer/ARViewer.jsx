@@ -5,7 +5,7 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 // Mock LoadingBar
-const LoadingBar = ({ progress, reticleVisible }) => (
+const LoadingBar = ({ progress }) => (
   <div
     style={{
       position: "absolute",
@@ -21,10 +21,7 @@ const LoadingBar = ({ progress, reticleVisible }) => (
     }}
   >
     <div style={{ color: "white", marginBottom: "10px", textAlign: "center" }}>
-      {reticleVisible
-        ? "Floor detected! Tap to place"
-        : "Searching for floor..."}{" "}
-      {Math.round(progress)}%
+      Loading Model... {progress}%
     </div>
     <div
       style={{
@@ -64,7 +61,7 @@ const ARViewer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isPlaced, setIsPlaced] = useState(false);
-  const [reticleVisible, setReticleVisible] = useState(false);
+  const [reticleReady, setReticleReady] = useState(false);
   const [searchParams] = useSearchParams();
   const app = useRef({});
   const isLowEnd = useRef(isLowEndDevice());
@@ -104,8 +101,7 @@ const ARViewer = () => {
     const THROTTLE_MS = 16;
 
     const handleTouchStart = (e) => {
-      if (!app.current.chair || !isPlaced || e.target.tagName === "BUTTON")
-        return;
+      if (!app.current.chair || !isPlaced || e.target.tagName === "BUTTON") return;
       const touch = e.touches[0];
       dragState.current = {
         isDragging: true,
@@ -116,8 +112,7 @@ const ARViewer = () => {
     };
 
     const handleTouchMove = (e) => {
-      if (!dragState.current.isDragging || !app.current.chair || !isPlaced)
-        return;
+      if (!dragState.current.isDragging || !app.current.chair || !isPlaced) return;
       const now = Date.now();
       if (now - dragState.current.lastTime < THROTTLE_MS) return;
       dragState.current.lastTime = now;
@@ -144,9 +139,7 @@ const ARViewer = () => {
       dragState.current.isDragging = false;
     };
 
-    overlay.addEventListener("touchstart", handleTouchStart, {
-      passive: false,
-    });
+    overlay.addEventListener("touchstart", handleTouchStart, { passive: false });
     overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
     overlay.addEventListener("touchend", handleTouchEnd);
 
@@ -270,6 +263,7 @@ const ARViewer = () => {
     a.hitTestSourceRequested = false;
     a.hitTestSource = null;
     a.isModelPlaced = false;
+    a.reticleAppeared = false;
     a.setIsPlacedCallback = setIsPlaced;
 
     const onSelect = () => {
@@ -279,9 +273,13 @@ const ARViewer = () => {
         const reticlePos = new THREE.Vector3();
         reticlePos.setFromMatrixPosition(a.reticle.matrix);
 
-        // Apply downward offset to fix floating
+        // Calculate model's bounding box to find bottom
+        const box = new THREE.Box3().setFromObject(a.chair);
+        const modelBottom = box.min.y;
+
+        // Place model so its bottom touches the detected plane
         a.chair.position.copy(reticlePos);
-        a.chair.position.y -= 0.05;
+        a.chair.position.y -= modelBottom;
 
         a.chair.visible = true;
         a.reticle.visible = false;
@@ -289,7 +287,7 @@ const ARViewer = () => {
         a.setIsPlacedCallback(true);
 
         console.log("Model placed at:", a.chair.position);
-        console.log("Applied floor correction: -5cm");
+        console.log("Floor alignment offset:", -modelBottom);
       }
     };
 
@@ -328,12 +326,13 @@ const ARViewer = () => {
 
       setIsLoading(true);
       setLoadingProgress(0);
-      setReticleVisible(false);
+      setReticleReady(false);
       setIsPlaced(false);
       a.isModelPlaced = false;
       a.reticle.visible = false;
       a.hitTestSource = null;
       a.hitTestSourceRequested = false;
+      a.reticleAppeared = false;
 
       a.loadHDR?.();
 
@@ -354,19 +353,18 @@ const ARViewer = () => {
       a.renderer.setAnimationLoop(null);
       setIsLoading(false);
       setLoadingProgress(0);
+      setReticleReady(false);
       setIsPlaced(false);
       a.isModelPlaced = false;
       a.reticle.visible = false;
       a.hitTestSource = null;
       a.hitTestSourceRequested = false;
+      a.reticleAppeared = false;
     };
 
     if (currentSession === null) {
       try {
-        const session = await navigator.xr.requestSession(
-          "immersive-ar",
-          sessionInit
-        );
+        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
         onSessionStarted(session);
       } catch (error) {
         console.error("XR Session Request Failed:", error);
@@ -384,12 +382,19 @@ const ARViewer = () => {
     const session = a.renderer.xr.getSession();
     if (!session || a.hitTestSourceRequested) return;
 
+    a.hitTestSourceRequested = true;
+
     session.requestReferenceSpace("viewer").then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
-        a.hitTestSourceRequested = true;
-        console.log("Hit-test source requested immediately");
+        console.log("Hit-test source ready");
+      }).catch((err) => {
+        console.error("Hit-test source error:", err);
+        a.hitTestSourceRequested = false;
       });
+    }).catch((err) => {
+      console.error("Reference space error:", err);
+      a.hitTestSourceRequested = false;
     });
 
     const onEnd = () => {
@@ -402,27 +407,22 @@ const ARViewer = () => {
 
   const getHitTestResults = (a, frame) => {
     if (!a.hitTestSource || a.isModelPlaced) return;
-
     const results = frame.getHitTestResults(a.hitTestSource);
-    const wasVisible = a.reticle.visible;
-
     if (results.length > 0) {
       const hit = results[0];
       const pose = hit.getPose(a.renderer.xr.getReferenceSpace());
       a.reticle.visible = true;
       a.reticle.matrix.fromArray(pose.transform.matrix);
-
-      // FIRST TIME reticle appears → trigger loading complete
-      if (!wasVisible) {
-        setReticleVisible(true);
-        setLoadingProgress(100); // Final jump to 100%
-        console.log("Reticle detected! Floor found. Ready to place.");
+      
+      // Signal that reticle is ready
+      if (!a.reticleAppeared) {
+        a.reticleAppeared = true;
+        setReticleReady(true);
+        setLoadingProgress(100);
+        console.log("Reticle detected - ready to place");
       }
     } else {
       a.reticle.visible = false;
-      if (wasVisible) {
-        setReticleVisible(false);
-      }
     }
   };
 
@@ -437,7 +437,7 @@ const ARViewer = () => {
 
   const loadModel = (a) => {
     const loader = new GLTFLoader();
-    setLoadingProgress(0);
+    let modelLoadProgress = 0;
 
     loader.load(
       modelUrl,
@@ -455,31 +455,23 @@ const ARViewer = () => {
 
         console.log("MODEL LOADED AT ORIGINAL SIZE (NO SCALING APPLIED)");
         console.log("Model File:", modelUrl.split("/").pop());
-        console.log(
-          "Item Name:",
-          new URLSearchParams(window.location.search).get("name") || "Unknown"
-        );
+        console.log("Item Name:", new URLSearchParams(window.location.search).get("name") || "Unknown");
         console.log("Original Dimensions → Height:", size.y.toFixed(3) + "m");
-        console.log(
-          "                              Width :",
-          size.x.toFixed(3) + "m"
-        );
-        console.log(
-          "                              Depth :",
-          size.z.toFixed(3) + "m"
-        );
+        console.log("                              Width :", size.x.toFixed(3) + "m");
+        console.log("                              Depth :", size.z.toFixed(3) + "m");
         console.log("Model placed at exact imported scale (1 unit = 1 meter)");
         console.log("===========================================");
 
-        setIsLoading(false);
+        modelLoadProgress = 100;
+        // Don't hide loading yet - wait for reticle
+        updateLoadingProgress(a, modelLoadProgress);
 
-        a.renderer.setAnimationLoop((timestamp, frame) =>
-          render(a, timestamp, frame)
-        );
+        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
       },
       (xhr) => {
         if (xhr.total) {
-          setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 100));
+          modelLoadProgress = Math.round((xhr.loaded / xhr.total) * 100);
+          updateLoadingProgress(a, modelLoadProgress);
         }
       },
       (error) => {
@@ -489,6 +481,17 @@ const ARViewer = () => {
         setIsLoading(false);
       }
     );
+  };
+
+  const updateLoadingProgress = (a, modelProgress) => {
+    // Show progress based on: 70% model load + 30% waiting for reticle
+    if (a.reticleAppeared) {
+      setLoadingProgress(100);
+      setIsLoading(false);
+    } else {
+      const progress = Math.min(70, (modelProgress * 0.7));
+      setLoadingProgress(Math.round(progress));
+    }
   };
 
   // === CONTROLS ===
@@ -512,25 +515,15 @@ const ARViewer = () => {
     a.reticle.visible = false;
     a.hitTestSource = null;
     a.hitTestSourceRequested = false;
+    a.reticleAppeared = false;
     setIsPlaced(false);
+    setReticleReady(false);
+    setIsLoading(true);
+    setLoadingProgress(70);
     // Re-request hit-test immediately
     requestHitTestSource(a);
-    console.log("Ready to place again – tap to place");
+    console.log("Ready to place again – waiting for reticle");
   };
-
-  // Smooth loading animation until reticle appears
-  useEffect(() => {
-    if (isLoading && loadingProgress < 98 && !reticleVisible) {
-      const interval = setInterval(() => {
-        setLoadingProgress((prev) => {
-          const next = prev + Math.random() * 8;
-          return Math.min(next, 98); // Never reach 100 until reticle
-        });
-      }, 200);
-
-      return () => clearInterval(interval);
-    }
-  }, [isLoading, loadingProgress, reticleVisible]);
 
   return (
     <div
@@ -554,17 +547,13 @@ const ARViewer = () => {
           left: 0,
           width: "100%",
           height: "100%",
-          pointerEvents: "auto",
+          pointerEvents: "none",
           zIndex: 1001,
         }}
       >
-        {(isLoading || loadingProgress < 100) && (
-          <LoadingBar
-            progress={loadingProgress}
-            reticleVisible={reticleVisible}
-          />
-        )}
-        {!isPlaced && app.current.currentSession && reticleVisible && (
+        {isLoading && <LoadingBar progress={loadingProgress} />}
+
+        {!isPlaced && app.current.currentSession && reticleReady && (
           <div
             style={{
               position: "absolute",
@@ -581,9 +570,10 @@ const ARViewer = () => {
               textAlign: "center",
             }}
           >
-            Tap on floor to place object after white reticle appears.
+            Tap on floor to place object
           </div>
         )}
+
         {isPlaced && (
           <>
             <div
@@ -604,10 +594,7 @@ const ARViewer = () => {
               <button onClick={rotateLeft} style={btnStyle}>
                 ◄ Left
               </button>
-              <button
-                onClick={placeAgain}
-                style={{ ...btnStyle, background: "#00796B" }}
-              >
+              <button onClick={placeAgain} style={{ ...btnStyle, background: "#00796B" }}>
                 Place Again
               </button>
               <button onClick={rotateRight} style={btnStyle}>
@@ -637,6 +624,7 @@ const ARViewer = () => {
             </div>
           </>
         )}
+
         {!isSupported && (
           <div
             style={{
@@ -672,8 +660,7 @@ const btnStyle = {
   fontSize: "15px",
   fontWeight: "600",
   whiteSpace: "nowrap",
-  boxShadow:
-    "0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
   pointerEvents: "auto",
   transition: "transform 0.1s ease, background 0.3s ease",
 };
