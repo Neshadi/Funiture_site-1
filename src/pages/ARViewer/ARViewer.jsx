@@ -412,31 +412,20 @@ const ARViewer = () => {
         a.chair = model;
         a.chair.visible = false;
 
-        // === REAL-WORLD SIZE SCALING ===
-        let targetHeight = 1.0; // Default: assume 1 meter tall
-        const asset = gltf.asset || {};
-        const extras = asset.extras || {};
-        const extensions = asset.extensions || {};
+        // NO SCALING — Keep model at original imported size
+        // (Assumes your .glb files are already authored in real-world meters)
 
-        // 1. Check for known metadata
-        if (extras.height) targetHeight = parseFloat(extras.height);
-        else if (extras.dimensions) {
-          const dims = extras.dimensions;
-          targetHeight = Math.max(dims.height || 1, 0.1);
-        }
-        // 2. Fallback: measure bounding box
-        else {
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          targetHeight = size.y || 1;
-        }
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
 
-        // Apply scale to match real-world meters
-        const currentHeight = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y;
-        const scale = targetHeight / currentHeight;
-        model.scale.setScalar(scale);
-
-        console.log(`Model scaled to ${targetHeight.toFixed(2)}m height (scale: ${scale.toFixed(3)})`);
+        console.log("MODEL LOADED AT ORIGINAL SIZE (NO SCALING APPLIED)");
+        console.log("Model File:", modelUrl.split("/").pop());
+        console.log("Item Name:", new URLSearchParams(window.location.search).get("name") || "Unknown");
+        console.log("Original Dimensions → Height:", size.y.toFixed(3) + "m");
+        console.log("                              Width :", size.x.toFixed(3) + "m");
+        console.log("                              Depth :", size.z.toFixed(3) + "m");
+        console.log("Model placed at exact imported scale (1 unit = 1 meter)");
+        console.log("===========================================");
 
         setLoadingProgress(100);
         setIsLoading(false);
