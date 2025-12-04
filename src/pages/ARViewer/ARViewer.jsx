@@ -346,6 +346,13 @@ const ARViewer = () => {
       currentSession?.removeEventListener("end", onSessionEnded);
       currentSession = null;
       a.currentSession = null;
+      
+      // Clear progress interval if exists
+      if (a.progressInterval) {
+        clearInterval(a.progressInterval);
+        a.progressInterval = null;
+      }
+      
       if (a.chair) {
         a.scene.remove(a.chair);
         a.chair = null;
@@ -417,8 +424,21 @@ const ARViewer = () => {
       // Signal that reticle is ready
       if (!a.reticleAppeared) {
         a.reticleAppeared = true;
+        
+        // Clear progress interval if it exists
+        if (a.progressInterval) {
+          clearInterval(a.progressInterval);
+          a.progressInterval = null;
+        }
+        
         setReticleReady(true);
         setLoadingProgress(100);
+        
+        // Hide loading bar after showing 100%
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
+        
         console.log("Reticle detected - ready to place");
       }
     } else {
@@ -438,6 +458,25 @@ const ARViewer = () => {
   const loadModel = (a) => {
     const loader = new GLTFLoader();
     let modelLoadProgress = 0;
+
+    // Start smooth progress animation for reticle detection phase
+    const startReticleProgressAnimation = () => {
+      let progress = 70;
+      const interval = setInterval(() => {
+        if (a.reticleAppeared) {
+          clearInterval(interval);
+          return;
+        }
+        // Slowly increment from 70 to 95 while waiting for reticle
+        if (progress < 95) {
+          progress += 0.5;
+          setLoadingProgress(Math.round(progress));
+        }
+      }, 100);
+      
+      // Store interval reference for cleanup
+      a.progressInterval = interval;
+    };
 
     loader.load(
       modelUrl,
@@ -463,15 +502,18 @@ const ARViewer = () => {
         console.log("===========================================");
 
         modelLoadProgress = 100;
-        // Don't hide loading yet - wait for reticle
-        updateLoadingProgress(a, modelLoadProgress);
+        setLoadingProgress(70);
+        
+        // Start smooth animation while waiting for reticle
+        startReticleProgressAnimation();
 
         a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
       },
       (xhr) => {
         if (xhr.total) {
           modelLoadProgress = Math.round((xhr.loaded / xhr.total) * 100);
-          updateLoadingProgress(a, modelLoadProgress);
+          const progress = Math.round(modelLoadProgress * 0.7);
+          setLoadingProgress(progress);
         }
       },
       (error) => {
@@ -487,7 +529,10 @@ const ARViewer = () => {
     // Show progress based on: 70% model load + 30% waiting for reticle
     if (a.reticleAppeared) {
       setLoadingProgress(100);
-      setIsLoading(false);
+      // Hide loading bar after a brief moment to show 100%
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
     } else {
       const progress = Math.min(70, (modelProgress * 0.7));
       setLoadingProgress(Math.round(progress));
@@ -510,6 +555,13 @@ const ARViewer = () => {
   const placeAgain = () => {
     if (!app.current.chair) return;
     const a = app.current;
+    
+    // Clear any existing progress interval
+    if (a.progressInterval) {
+      clearInterval(a.progressInterval);
+      a.progressInterval = null;
+    }
+    
     a.chair.visible = false;
     a.isModelPlaced = false;
     a.reticle.visible = false;
@@ -520,6 +572,21 @@ const ARViewer = () => {
     setReticleReady(false);
     setIsLoading(true);
     setLoadingProgress(70);
+    
+    // Start smooth progress animation again
+    let progress = 70;
+    const interval = setInterval(() => {
+      if (a.reticleAppeared) {
+        clearInterval(interval);
+        return;
+      }
+      if (progress < 95) {
+        progress += 0.5;
+        setLoadingProgress(Math.round(progress));
+      }
+    }, 100);
+    a.progressInterval = interval;
+    
     // Re-request hit-test immediately
     requestHitTestSource(a);
     console.log("Ready to place again – waiting for reticle");
