@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import "./ItemDetailsPage.css";
 import axios from "axios";
 import QRCode from "react-qr-code";
@@ -9,14 +10,40 @@ import CameraIcon from "../../assets/camera.png";
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(2); // Default 2 as per design
-  const [product, setProduct] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [averageRating, setAverageRating] = useState(0);
-  const [numReviews, setNumReviews] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const { 
+    data: product, 
+    isLoading: productLoading, 
+    refetch: refetchProduct // We need this to update stock after adding to cart
+  } = useQuery({
+    queryKey: ['product', id], // Unique ID for cache
+    queryFn: async () => {
+      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
+  });
+
+  const { 
+    data: reviews = [], // Default to empty array if undefined
+    isLoading: reviewsLoading 
+  } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: async () => {
+      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
+    : 0;
+  const numReviews = reviews.length;
+  const isLoading = productLoading || reviewsLoading;
 
   // Hide notification after 3s
   const hideNotification = () => {
@@ -41,7 +68,6 @@ const ItemDetails = ({ onCartUpdate }) => {
         hideNotification();
 
         const updatedStock = product.countInStock - quantity;
-        setProduct((prev) => ({ ...prev, countInStock: updatedStock }));
 
         await axios.put(
           `https://new-sever.vercel.app/api/products/${id}`,
@@ -49,10 +75,7 @@ const ItemDetails = ({ onCartUpdate }) => {
           { withCredentials: true }
         );
 
-        const refreshed = await axios.get(
-          `https://new-sever.vercel.app/api/products/${id}`
-        );
-        setProduct(refreshed.data);
+        refetchProduct();
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -60,38 +83,8 @@ const ItemDetails = ({ onCartUpdate }) => {
     }
   };
 
-  useEffect(() => {
-    const fetchItemDetails = async () => {
-      try {
-        setLoading(true);
-        const productRes = await axios.get(
-          `https://new-sever.vercel.app/api/products/${id}`
-        );
-        setProduct(productRes.data);
 
-        const reviewsRes = await axios.get(
-          `https://new-sever.vercel.app/api/products/reviews/${id}`
-        );
-        const fetchedReviews = reviewsRes.data || [];
-        setReviews(fetchedReviews);
-
-        if (fetchedReviews.length > 0) {
-          const avg =
-            fetchedReviews.reduce((a, r) => a + r.rating, 0) /
-            fetchedReviews.length;
-          setAverageRating(avg);
-          setNumReviews(fetchedReviews.length);
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchItemDetails();
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
