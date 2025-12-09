@@ -61,7 +61,7 @@ const ExploreMenu = ({ category, setCategory }) => {
     };
 
     return (
-        <div className="explore-menu" id="explore-menu">
+        <div className="explore-menucat" id="explore-menucat">
             
             <h1>Explore Our Collection</h1>
             <p className="explore-menu-text">

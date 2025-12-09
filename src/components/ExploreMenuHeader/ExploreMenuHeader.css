@@ -1,3 +1,4 @@
+/* Existing styles (kept for large screens) */
 .explore-menu {
     position: relative;
     margin-top: 10vw;
@@ -6,45 +7,108 @@
     padding: 40px;
 }
 
+.explore-menu h1 {
+    font-size: 40px;
+    font-family: calisto;
+    text-align: left;
+}
+
 .explore-menu-text {
+    font-size: 24px;
     margin-bottom: 20px;
+    font-family: candara;
     position: relative;
     text-align: left;
 }
 
 .explore-button {
     position: absolute;
-    height: 40px;
-    width: 200px;
-    padding-left: 10px;
+    height: 67px;
+    width: 345px;
+    padding: 10px;
     margin-top: 5vw;
-    right: 10px;
-    background-color: #ffffff; /* Adjust to your theme color */
+    right: 50px;
+    background-color: #ffffff;
     color: rgb(0, 0, 0);
     border: 1px solid black;
-    border-radius: 5px;
+    border-radius: 35px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    font-size: 14px;
+    justify-content: center;
+    font-size: 24px;
+    font-family: calisto;
 }
 
-.arrow-image {
+.explore-button .arrow-image {
     width: 30px;
     height: auto;
-    margin-left: 15px;
 }
 
 .explore-button:hover {
-    background-color: var(--green); 
+    background-color: var(--green);
     color: rgb(255, 255, 255);
     border: none;
     transition: 1s;
 }
 
+/* Responsive styles for smaller screens */
+@media (max-width: 1024px) {
+    .explore-menu {
+        padding: 20px;
+        margin-top: 8vw;
+    }
+
+    .explore-menu h1 {
+        font-size: 32px;
+    }
+
+    .explore-menu-text {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    .explore-button {
+        width: 280px;
+        height: 60px;
+        font-size: 20px;
+        right: 40px;
+    }
+
+    .arrow-image {
+        width: 25px;
+    }
+}
 
 @media (max-width: 768px) {
-  .explore-menu {
-    padding: 8px;
-}
+    .explore-menu {
+        padding: 12px;
+        margin-top: 6vw;
+        text-align: center;
+    }
+
+    .explore-menu h1 {
+        font-size: 28px;
+        text-align: center;
+    }
+
+    .explore-menu-text {
+        font-size: 16px;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .explore-button {
+        width: 90%;
+        max-width: 260px;
+        height: 55px;
+        margin-top: 4vw;
+        right: 50%;
+        transform: translateX(50%);
+        font-size: 18px;
+    }
+
+    .arrow-image {
+        width: 22px;
+    }
 }
