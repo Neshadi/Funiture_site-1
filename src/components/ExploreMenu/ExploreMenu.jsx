@@ -4,10 +4,9 @@ import { assets } from "../../assets/assets";
 import Item from "../Item/Item";
 import "./ExploreMenu.css";
 import Loading from "../Loading/Loading";
+import { useQuery } from "@tanstack/react-query";
 
 const ExploreMenu = ({ category, setCategory }) => {
-    const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
     const [searchQuery, setSearchQuery] = useState(""); // State for search query
 
     const categories = [
@@ -18,47 +17,36 @@ const ExploreMenu = ({ category, setCategory }) => {
         { name: "Wall Designs", image: assets.ellipse5 },
     ];
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await axios.get("https://new-sever.vercel.app/api/products");
-                if (response.status === 200) {
-                    setProducts(response.data);
-                    setFilteredProducts(response.data);
-                }
-            } catch (error) {
-                console.error("Error fetching products:", error);
-            }
-        };
-        fetchProducts();
-    }, []);
+    const { data: allProducts = [], isLoading, isError } = useQuery({
+        queryKey: ['products'], 
+        queryFn: async () => {
+            const response = await axios.get("https://new-sever.vercel.app/api/products");
+            return response.data;
+        },
+        staleTime: 1000 * 60 * 500, // Cache for 500 minutes (Instant load on return)
+    });
+
+    const filteredProducts = allProducts.filter((product) => {
+        // Step A: Check Category
+        const matchesCategory = category === "All" || product.category === category;
+        
+        // Step B: Check Search Text
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery);
+
+        return matchesCategory && matchesSearch;
+    });
 
     const handleCategoryClick = (selectedCategory) => {
-        if (category === selectedCategory) {
-            setCategory("All");
-            setFilteredProducts(products);
-        } else {
-            setCategory(selectedCategory);
-            setFilteredProducts(products.filter((product) => product.category === selectedCategory));
-        }
+        setCategory(prev => prev === selectedCategory ? "All" : selectedCategory);
     };
 
     // Handle search input change
     const handleSearchChange = (e) => {
-        const query = e.target.value.toLowerCase();
-        setSearchQuery(query);
-        if (query === "") {
-            setFilteredProducts(products.filter((product) => product.category === category || category === "All"));
-        } else {
-            setFilteredProducts(
-                products.filter(
-                    (product) =>
-                        product.name.toLowerCase().includes(query) &&
-                        (product.category === category || category === "All")
-                )
-            );
-        }
+        setSearchQuery(e.target.value.toLowerCase());
     };
+
+    if (isLoading) return <Loading />;
+    if (isError) return <div className="error-message">Failed to load products. Please try again.</div>;
 
     return (
         <div className="explore-menu" id="explore-menu">
@@ -110,7 +98,7 @@ const ExploreMenu = ({ category, setCategory }) => {
                     ))
                 ) : (
                   
-                    <Loading/>
+                    <div className="no-results">No items found.</div>
                   
                 )}
             </div>
