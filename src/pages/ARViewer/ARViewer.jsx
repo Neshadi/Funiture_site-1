@@ -5,7 +5,7 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 // Mock LoadingBar
-const LoadingBar = ({ progress }) => (
+const LoadingBar = ({ progress, statusMessage }) => (
   <div
     style={{
       position: "absolute",
@@ -14,21 +14,37 @@ const LoadingBar = ({ progress }) => (
       transform: "translate(-50%, -50%)",
       width: "80%",
       maxWidth: "300px",
-      background: "rgba(0,0,0,0.8)",
+      background: "rgba(0,0,0,0.85)", // Slightly darker for better contrast
       borderRadius: "12px",
       padding: "20px",
       zIndex: 1002,
+      backdropFilter: "blur(10px)",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+      border: "1px solid rgba(255,255,255,0.1)"
     }}
   >
-    <div style={{ color: "white", marginBottom: "10px", textAlign: "center" }}>
+    <div style={{ color: "white", marginBottom: "5px", textAlign: "center", fontWeight: "bold" }}>
       Loading Model... {progress}%
     </div>
+    
+    {/* === NEW: STATUS MESSAGE === */}
+    <div style={{ 
+      color: "#aaa", 
+      marginBottom: "15px", 
+      textAlign: "center", 
+      fontSize: "12px",
+      fontStyle: "italic" 
+    }}>
+      {statusMessage}
+    </div>
+
     <div
       style={{
         width: "100%",
-        height: "8px",
-        background: "#333",
+        height: "6px",
+        background: "rgba(255,255,255,0.1)",
         borderRadius: "4px",
+        overflow: "hidden"
       }}
     >
       <div
@@ -37,7 +53,7 @@ const LoadingBar = ({ progress }) => (
           height: "100%",
           background: "#007bff",
           borderRadius: "4px",
-          transition: "width 0.3s",
+          transition: "width 0.3s ease-out",
         }}
       />
     </div>
@@ -74,6 +90,8 @@ const ARViewer = () => {
     prevY: 0,
     lastTime: 0,
   });
+
+  const [cacheStatus, setCacheStatus] = useState("Checking cache...");
 
   // Auto-start AR when component mounts and model is available
   useEffect(() => {
@@ -475,21 +493,24 @@ const ARViewer = () => {
     const CACHE_NAME = "ar-3d-models-v1";
     
     try {
-      // 1. Check if browser supports Caching
       if ("caches" in window) {
         const cache = await caches.open(CACHE_NAME);
         const cachedResponse = await cache.match(url);
 
         if (cachedResponse) {
+          // === SCENARIO 1: FOUND IN CACHE ===
           console.log("Loading model from Cache...");
-          // If found in cache, simulate 100% progress
+          setCacheStatus("⚡ Loading from Device Cache"); // Update UI message
+          
           onProgress({ loaded: 1, total: 1 });
           const blob = await cachedResponse.blob();
           return URL.createObjectURL(blob);
         }
       }
 
-      // 2. If not in cache, download with XHR (to track progress)
+      // === SCENARIO 2: DOWNLOADING ===
+      setCacheStatus("⬇️ Downloading from Server..."); // Update UI message
+
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.responseType = "blob";
@@ -504,19 +525,14 @@ const ARViewer = () => {
         xhr.onload = async () => {
           if (xhr.status === 200) {
             const blob = xhr.response;
-            
-            // 3. Save to Cache for next time
             if ("caches" in window) {
               try {
                 const cache = await caches.open(CACHE_NAME);
-                // We must create a Response object to store in Cache API
                 await cache.put(url, new Response(blob));
-                console.log("Model saved to Cache");
               } catch (err) {
-                console.warn("Failed to cache model:", err);
+                console.warn("Failed to cache:", err);
               }
             }
-
             resolve(URL.createObjectURL(blob));
           } else {
             reject(new Error(`Failed to load: ${xhr.status}`));
@@ -528,7 +544,6 @@ const ARViewer = () => {
       });
 
     } catch (error) {
-      // Fallback: If caching fails entirely, just return the original URL
       console.warn("Cache logic failed, falling back to network", error);
       return url;
     }
@@ -698,7 +713,7 @@ const ARViewer = () => {
           zIndex: 1001,
         }}
       >
-        {isLoading && <LoadingBar progress={loadingProgress} />}
+        {isLoading && <LoadingBar progress={loadingProgress} statusMessage={cacheStatus} />}
 
         {!isPlaced && app.current.currentSession && reticleReady && (
           <div
