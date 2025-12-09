@@ -100,9 +100,11 @@ const ItemDetails = ({ onCartUpdate }) => {
 
   if (!product) return <p>Product not found.</p>;
 
-  const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
-    product.modelImageUrl
-  )}&name=${encodeURIComponent(product.name)}`;
+  // const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
+  //   product.modelImageUrl
+  // )}&name=${encodeURIComponent(product.name)}`;
+  const arUrl = `https://www.decorit.store/Item-Page/${id}`;
+
 
   return (
     <>
