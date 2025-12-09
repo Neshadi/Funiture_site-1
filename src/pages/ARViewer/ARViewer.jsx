@@ -471,7 +471,70 @@ const ARViewer = () => {
     a.renderer.render(a.scene, a.camera);
   };
 
-  const loadModel = (a) => {
+  const fetchWithCache = async (url, onProgress) => {
+    const CACHE_NAME = "ar-3d-models-v1";
+    
+    try {
+      // 1. Check if browser supports Caching
+      if ("caches" in window) {
+        const cache = await caches.open(CACHE_NAME);
+        const cachedResponse = await cache.match(url);
+
+        if (cachedResponse) {
+          console.log("Loading model from Cache...");
+          // If found in cache, simulate 100% progress
+          onProgress({ loaded: 1, total: 1 });
+          const blob = await cachedResponse.blob();
+          return URL.createObjectURL(blob);
+        }
+      }
+
+      // 2. If not in cache, download with XHR (to track progress)
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = "blob";
+        xhr.open("GET", url, true);
+
+        xhr.onprogress = (event) => {
+          if (event.lengthComputable) {
+            onProgress({ loaded: event.loaded, total: event.total });
+          }
+        };
+
+        xhr.onload = async () => {
+          if (xhr.status === 200) {
+            const blob = xhr.response;
+            
+            // 3. Save to Cache for next time
+            if ("caches" in window) {
+              try {
+                const cache = await caches.open(CACHE_NAME);
+                // We must create a Response object to store in Cache API
+                await cache.put(url, new Response(blob));
+                console.log("Model saved to Cache");
+              } catch (err) {
+                console.warn("Failed to cache model:", err);
+              }
+            }
+
+            resolve(URL.createObjectURL(blob));
+          } else {
+            reject(new Error(`Failed to load: ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Network Error"));
+        xhr.send();
+      });
+
+    } catch (error) {
+      // Fallback: If caching fails entirely, just return the original URL
+      console.warn("Cache logic failed, falling back to network", error);
+      return url;
+    }
+  };
+
+  const loadModel = async (a) => {
     const loader = new GLTFLoader();
     let modelLoadProgress = 0;
 
@@ -483,62 +546,63 @@ const ARViewer = () => {
           clearInterval(interval);
           return;
         }
-        // Slowly increment from 70 to 95 while waiting for reticle
         if (progress < 95) {
           progress += 0.5;
           setLoadingProgress(Math.round(progress));
         }
       }, 100);
-      
-      // Store interval reference for cleanup
       a.progressInterval = interval;
     };
 
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        const model = gltf.scene;
-        a.scene.add(model);
-        a.chair = model;
-        a.chair.visible = false;
-
-        // NO SCALING — Keep model at original imported size
-        // (Assumes your .glb files are already authored in real-world meters)
-
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-
-        console.log("MODEL LOADED AT ORIGINAL SIZE (NO SCALING APPLIED)");
-        console.log("Model File:", modelUrl.split("/").pop());
-        console.log("Item Name:", new URLSearchParams(window.location.search).get("name") || "Unknown");
-        console.log("Original Dimensions → Height:", size.y.toFixed(3) + "m");
-        console.log("                              Width :", size.x.toFixed(3) + "m");
-        console.log("                              Depth :", size.z.toFixed(3) + "m");
-        console.log("Model placed at exact imported scale (1 unit = 1 meter)");
-        console.log("===========================================");
-
-        modelLoadProgress = 100;
-        setLoadingProgress(70);
-        
-        // Start smooth animation while waiting for reticle
-        startReticleProgressAnimation();
-
-        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
-      },
-      (xhr) => {
-        if (xhr.total) {
-          modelLoadProgress = Math.round((xhr.loaded / xhr.total) * 100);
+    try {
+      // 1. Fetch the Blob URL (from Cache or Network)
+      const blobUrl = await fetchWithCache(modelUrl, (progressEvent) => {
+        if (progressEvent.total) {
+          modelLoadProgress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
           const progress = Math.round(modelLoadProgress * 0.7);
           setLoadingProgress(progress);
         }
-      },
-      (error) => {
-        console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model.");
-        setLoadingProgress(0);
-        setIsLoading(false);
-      }
-    );
+      });
+
+      // 2. Pass the Blob URL to GLTFLoader
+      loader.load(
+        blobUrl,
+        (gltf) => {
+          const model = gltf.scene;
+          a.scene.add(model);
+          a.chair = model;
+          a.chair.visible = false;
+
+          // Clean up the Blob URL to free memory
+          URL.revokeObjectURL(blobUrl);
+
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+
+          console.log("MODEL LOADED & CACHED SUCCESSFULLY");
+          
+          modelLoadProgress = 100;
+          setLoadingProgress(70);
+          
+          startReticleProgressAnimation();
+
+          a.renderer.setAnimationLoop((timestamp, frame) =>
+            render(a, timestamp, frame)
+          );
+        },
+        undefined, // We handled progress in fetchWithCache
+        (error) => {
+          console.error("GLTF Parse Error:", error);
+          alert("Failed to parse 3D model.");
+          setLoadingProgress(0);
+          setIsLoading(false);
+        }
+      );
+    } catch (error) {
+      console.error("Model Download Error:", error);
+      alert("Failed to download model.");
+      setIsLoading(false);
+    }
   };
 
   const updateLoadingProgress = (a, modelProgress) => {
