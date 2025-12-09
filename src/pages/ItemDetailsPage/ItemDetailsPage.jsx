@@ -9,6 +9,11 @@ import CameraIcon from "../../assets/camera.png";
 
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
+
+  useEffect(() => {
+      window.scrollTo(0, 0);
+    }, [id]);
+    
   const [quantity, setQuantity] = useState(2); // Default 2 as per design
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
