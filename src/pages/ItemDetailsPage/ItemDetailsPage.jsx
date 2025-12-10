@@ -32,20 +32,17 @@ const ItemDetails = ({ onCartUpdate }) => {
     staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
   });
 
-  // const { 
-  //   data: reviews = [], // Default to empty array if undefined
-  //   isLoading: reviewsLoading 
-  // } = useQuery({
-  //   queryKey: ['reviews', id],
-  //   queryFn: async () => {
-  //     const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
-  //     return data || [];
-  //   },
-  //   staleTime: 1000 * 60 * 5,
-  // });
-
-   // ✅ FIXED: safely extract reviews (fallback to empty array)
-  const reviews = product?.reviews || [];
+  const { 
+    data: reviews = [], // Default to empty array if undefined
+    isLoading: reviewsLoading 
+  } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: async () => {
+      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
   const averageRating = reviews.length > 0
     ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
