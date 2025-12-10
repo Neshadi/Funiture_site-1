@@ -15,6 +15,7 @@ body {
   
   .cart-main {
     padding: 20px;
+    margin-top: 200px;
   }
   
   .cart-table {
@@ -85,8 +86,8 @@ body {
     border: none;
     border-radius: 100%;
     cursor: pointer;
-    width: 25px;
-    height: 25px;
+    width: 50px;
+    height: 40px;
    
   }
 
