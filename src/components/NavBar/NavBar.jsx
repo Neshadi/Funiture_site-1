@@ -29,7 +29,6 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   };
 
   const handleSignOut = () => {
-    Cookies.remove('token');
     handleLogout();
     setShowDropdown(false);
     setIsMenuOpen(false); // Close menu on sign out
