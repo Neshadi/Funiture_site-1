@@ -31,16 +31,17 @@ const ExploreMenu = ({ category, setCategory }) => {
 
     // --- Core Filtering Logic ---
     const filteredProducts = allProducts.filter(product => {
-        const modelUrl = product.modelImageUrl || ""; // Use an empty string if modelImageUrl is missing
+        const modelUrl = product.modelImageUrl || "";
 
         if (device === 'ios') {
-            // If iOS, only keep products with a .usdz modelImageUrl
-            return modelUrl.endsWith('.usdz');
+            // Checks if the full URL ends with '.usdz'
+            // Example: ...Table.usdz?alt=media&token=... -> TRUE
+            return modelUrl.endsWith('.usdz'); 
         } else if (device === 'Android') {
-            // If Android, only keep products with a .glb modelImageUrl
+            // Checks if the full URL ends with '.glb'
             return modelUrl.endsWith('.glb');
         } else {
-            // If 'other', keep all products
+            // Keep all products for 'other' devices
             return true;
         }
     });
