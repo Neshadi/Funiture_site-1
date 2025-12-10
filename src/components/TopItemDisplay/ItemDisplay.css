@@ -10,16 +10,94 @@
 .item-display h2 {
     font-size: 2rem;
     font-weight: 600;
+    font-family: calisto;
     margin-bottom: 20px;
     color: #222;
 }
 
-.item-display-name {
+.item-display p {
+    font-family: candara;
+}
+
+/* Fixed class name + responsive grid */
+.item-display-products {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 20px;
-    align-items: start;
+    align-items: stretch;
+    margin-top: 30px;
 }
 
+/* "+ More Items" Card – Same size as Item cards */
+.more-items-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    height: 100%;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 2px dashed #a6a99e;
+}
 
+.more-items-card:hover {
+    transform: translateY(-8px);
+    box-shadow:0 12px 20px rgba(138, 154, 91, 0.15);
+    background: #f1f8e9;
+}
 
+.more-items-inner {
+    text-align: center;
+    color: #555;
+}
+
+.plus-sign {
+    font-size: 4rem;
+    font-weight: 300;
+    color: #8e9087;
+    line-height: 1;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.more-items-inner p {
+    margin: 0;
+    font-family: candara;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .item-display {
+        margin: 60px 20px;
+    }
+
+    .item-display-products {
+        grid-template-columns: repeat(auto-fill, minmax(200px));
+        gap: 16px;
+    }
+
+    .more-items-card {
+        min-height: 280px;
+    }
+
+    .plus-sign {
+        font-size: 3.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .item-display-products {
+        grid-template-columns: 1fr 1fr;
+        justify-content: center;
+    }
+
+    .more-items-card {
+        min-height: 260px;
+    }
+}

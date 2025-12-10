@@ -7,7 +7,7 @@ import Loading from "../Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
 
 const ExploreMenu = ({ category, setCategory }) => {
-    const [searchQuery, setSearchQuery] = useState(""); // State for search query
+    const [searchQuery, setSearchQuery] = useState("");
 
     const categories = [
         { name: "Furnitures", image: assets.ellipse1 },
