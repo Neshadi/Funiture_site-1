@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Item from "../Item/Item";
 import Loading from "../Loading/Loading";
+import { Link } from "react-router-dom";
 import "./ItemDisplay.css";
 
 const ItemDisplay = ({ category = "All" }) => {
@@ -46,12 +47,13 @@ const ItemDisplay = ({ category = "All" }) => {
         ))}
 
         {/* + More Items Card */}
-        <div className="more-items-card" onClick={handleShowMore}>
+        <Link to="/category" className="more-items-card">
           <div className="more-items-inner">
             <span className="plus-sign">+</span>
             <p>More Items</p>
           </div>
-        </div>
+        </Link>
+
       </div>
     </div>
   );
