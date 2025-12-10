@@ -29,6 +29,7 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   };
 
   const handleSignOut = () => {
+    localStorage.removeItem('jwt');
     handleLogout();
     setShowDropdown(false);
     setIsMenuOpen(false); // Close menu on sign out
