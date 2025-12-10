@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { USDZExporter } from "three/examples/jsm/exporters/USDZExporter.js"; // <--- NEW IMPORT
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-// Mock LoadingBar
-const LoadingBar = ({ progress }) => (
+// === HELPER: Detect iOS ===
+const checkIsIOS = () => {
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+};
+
+const LoadingBar = ({ progress, statusText }) => (
   <div
     style={{
       position: "absolute",
@@ -20,17 +28,10 @@ const LoadingBar = ({ progress }) => (
       zIndex: 1002,
     }}
   >
-    <div style={{ color: "white", marginBottom: "10px", textAlign: "center" }}>
-      Loading Model... {progress}%
+    <div style={{ color: "white", marginBottom: "10px", textAlign: "center", fontSize: "14px" }}>
+      {statusText || "Loading Model..."} {progress > 0 ? `${progress}%` : ""}
     </div>
-    <div
-      style={{
-        width: "100%",
-        height: "8px",
-        background: "#333",
-        borderRadius: "4px",
-      }}
-    >
+    <div style={{ width: "100%", height: "8px", background: "#333", borderRadius: "4px" }}>
       <div
         style={{
           width: `${progress}%`,
@@ -44,28 +45,22 @@ const LoadingBar = ({ progress }) => (
   </div>
 );
 
-// Detect low-end device
-const isLowEndDevice = () => {
-  const ua = navigator.userAgent;
-  const ram = (navigator.deviceMemory || 4) <= 4;
-  const isAndroidLow =
-    /Android/i.test(ua) && (/SM-|M[0-9][0-9]/.test(ua) || ram);
-  return ram || isAndroidLow;
-};
-
 const ARViewer = () => {
   const navigate = useNavigate();
   const containerRef = useRef();
   const overlayRef = useRef();
+  
+  // States
   const [isSupported, setIsSupported] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("Loading...");
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isPlaced, setIsPlaced] = useState(false);
   const [reticleReady, setReticleReady] = useState(false);
+  
   const [searchParams] = useSearchParams();
   const app = useRef({});
-  const isLowEnd = useRef(isLowEndDevice());
-
   const modelUrl = searchParams.get("model");
 
   const dragState = useRef({
@@ -75,56 +70,109 @@ const ARViewer = () => {
     lastTime: 0,
   });
 
-  // Auto-start AR when component mounts and model is available
+  // === 1. INITIALIZATION ===
   useEffect(() => {
+    const iosCheck = checkIsIOS();
+    setIsIOS(iosCheck);
+
     if (!modelUrl) {
       alert("No 3D model URL provided.");
       navigate(-1);
       return;
     }
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      if (app.current.currentSession === null && isSupported) {
-        showChair();
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
+    // Only auto-start WebXR on Android
+    if (!iosCheck) {
+      const timer = setTimeout(() => {
+        if (app.current.currentSession === null && isSupported) {
+          showChair();
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    } 
   }, [modelUrl, isSupported]);
 
-  // === TOUCH HANDLERS ===
+  // === 2. IOS CONVERSION & LAUNCHER ===
+  const handleIOSLaunch = async () => {
+    if (isLoading) return; // Prevent double clicks
+    
+    setIsLoading(true);
+    setLoadingProgress(10);
+    setLoadingStatus("Downloading Model...");
+
+    try {
+      // Step A: Load GLB
+      const loader = new GLTFLoader();
+      const gltf = await new Promise((resolve, reject) => {
+        loader.load(
+          modelUrl,
+          (gltf) => {
+             setLoadingProgress(60);
+             resolve(gltf);
+          }, 
+          (xhr) => {
+            if(xhr.total) setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 50));
+          },
+          (err) => reject(err)
+        );
+      });
+
+      // Step B: Convert to USDZ
+      setLoadingStatus("Converting for iPhone...");
+      const exporter = new USDZExporter();
+      const usdzArrayBuffer = await exporter.parse(gltf.scene);
+      setLoadingProgress(90);
+
+      // Step C: Create Blob and Launch
+      const blob = new Blob([usdzArrayBuffer], { type: "model/vnd.usdz+zip" });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.rel = "ar";
+      link.href = url;
+      
+      // Dummy image required for anchor to work effectively in some contexts
+      const img = document.createElement("img");
+      img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      link.appendChild(img);
+      
+      link.click(); // Launch AR Quick Look
+      
+      setLoadingProgress(100);
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingProgress(0);
+      }, 1000);
+
+    } catch (error) {
+      console.error("Conversion failed:", error);
+      alert("Failed to convert model for iPhone.");
+      setIsLoading(false);
+    }
+  };
+
+  // === 3. TOUCH HANDLERS (Android) ===
   useEffect(() => {
+    if (isIOS) return;
     const overlay = overlayRef.current;
     if (!overlay) return;
-
-    const THROTTLE_MS = 16;
 
     const handleTouchStart = (e) => {
       if (!app.current.chair || !isPlaced || e.target.tagName === "BUTTON") return;
       const touch = e.touches[0];
-      dragState.current = {
-        isDragging: true,
-        prevX: touch.clientX,
-        prevY: touch.clientY,
-        lastTime: Date.now(),
-      };
+      dragState.current = { isDragging: true, prevX: touch.clientX, prevY: touch.clientY };
     };
 
     const handleTouchMove = (e) => {
-      if (!dragState.current.isDragging || !app.current.chair || !isPlaced) return;
-      const now = Date.now();
-      if (now - dragState.current.lastTime < THROTTLE_MS) return;
-      dragState.current.lastTime = now;
-
+      if (!dragState.current.isDragging || !isPlaced) return;
       e.preventDefault();
       const touch = e.touches[0];
       const deltaX = touch.clientX - dragState.current.prevX;
       const deltaY = touch.clientY - dragState.current.prevY;
-
+      
       const chair = app.current.chair;
       chair.rotation.y += deltaX * 0.01;
-
+      
       const forward = new THREE.Vector3();
       app.current.camera.getWorldDirection(forward);
       forward.y = 0;
@@ -135,9 +183,7 @@ const ARViewer = () => {
       dragState.current.prevY = touch.clientY;
     };
 
-    const handleTouchEnd = () => {
-      dragState.current.isDragging = false;
-    };
+    const handleTouchEnd = () => { dragState.current.isDragging = false; };
 
     overlay.addEventListener("touchstart", handleTouchStart, { passive: false });
     overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
@@ -148,583 +194,180 @@ const ARViewer = () => {
       overlay.removeEventListener("touchmove", handleTouchMove);
       overlay.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [isPlaced]);
+  }, [isPlaced, isIOS]);
 
-  // === THREE.JS SETUP ===
+  // === 4. THREE.JS SETUP (Android) ===
   useEffect(() => {
+    if (isIOS) return; 
+
     const container = containerRef.current;
     if (!container) return;
 
     const a = app.current;
-    a.camera = new THREE.PerspectiveCamera(
-      70,
-      window.innerWidth / window.innerHeight,
-      0.01,
-      20
-    );
-    a.camera.position.set(0, 1.6, 0);
     a.scene = new THREE.Scene();
+    a.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+    a.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    a.renderer.setSize(window.innerWidth, window.innerHeight);
+    a.renderer.xr.enabled = true;
+    container.appendChild(a.renderer.domElement);
 
-    const ambient = new THREE.HemisphereLight(
-      0xffffff,
-      0xbbbbff,
-      isLowEnd.current ? 0.8 : 1
-    );
+    // Light
+    const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
     ambient.position.set(0.5, 1, 0.25);
     a.scene.add(ambient);
 
-    a.renderer = new THREE.WebGLRenderer({
-      antialias: !isLowEnd.current,
-      alpha: true,
-      powerPreference: isLowEnd.current ? "low-power" : "high-performance",
-    });
-    a.renderer.setPixelRatio(
-      isLowEnd.current ? 1.0 : Math.min(window.devicePixelRatio, 2)
-    );
-    a.renderer.setSize(window.innerWidth, window.innerHeight);
-    a.renderer.outputEncoding = THREE.sRGBEncoding;
-    container.appendChild(a.renderer.domElement);
-
+    // Reticle
     a.reticle = new THREE.Mesh(
       new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        opacity: 0.7,
-        transparent: true,
-      })
+      new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.7, transparent: true })
     );
-    a.reticle.matrixAutoUpdate = false;
     a.reticle.visible = false;
     a.scene.add(a.reticle);
 
-    setupXR(a);
-    setEnvironment(a);
-
-    const resizeListener = () => resize(a);
-    window.addEventListener("resize", resizeListener);
+    // Check Android Support
+    if ("xr" in navigator) {
+      navigator.xr.isSessionSupported("immersive-ar").then(setIsSupported);
+    }
 
     return () => {
-      window.removeEventListener("resize", resizeListener);
       if (a.renderer) {
-        a.renderer.dispose();
+        a.renderer.dispose(); 
         a.renderer.forceContextLoss();
       }
-      if (container.contains(a.renderer?.domElement)) {
+      if (container && container.contains(a.renderer?.domElement)) {
         container.removeChild(a.renderer.domElement);
       }
     };
-  }, []);
+  }, [isIOS]);
 
-  const setEnvironment = (a) => {
-    a.loadHDR = () => {
-      if (a.hdrLoaded || isLowEnd.current) return;
-      const loader = new RGBELoader();
-      loader.setDataType(THREE.UnsignedByteType);
-      loader.load(
-        "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/equirectangular/venice_sunset_1k.hdr",
-        (texture) => {
-          texture.mapping = THREE.EquirectangularReflectionMapping;
-          a.scene.environment = texture;
-          a.hdrLoaded = true;
-          console.log("HDR Environment loaded");
-        },
-        undefined,
-        (error) => console.warn("HDR Load Error:", error)
-      );
-    };
-  };
-
-  const resize = (a) => {
-    a.camera.aspect = window.innerWidth / window.innerHeight;
-    a.camera.updateProjectionMatrix();
-    a.renderer.setSize(window.innerWidth, window.innerHeight);
-  };
-
-  const setupXR = (a) => {
-    a.renderer.xr.enabled = true;
-    a.currentSession = null;
-
-    if ("xr" in navigator) {
-      navigator.xr
-        .isSessionSupported("immersive-ar")
-        .then((supported) => {
-          setIsSupported(supported);
-          console.log("Immersive AR supported:", supported);
-        })
-        .catch((error) => {
-          console.error("Error checking AR support:", error);
-          setIsSupported(false);
-        });
-    } else {
-      console.error("WebXR API not available");
-      setIsSupported(false);
-    }
-
-    a.hitTestSourceRequested = false;
-    a.hitTestSource = null;
-    a.isModelPlaced = false;
-    a.reticleAppeared = false;
-    a.setIsPlacedCallback = setIsPlaced;
-
-    const onSelect = () => {
-      if (!a.chair || a.isModelPlaced) return;
-      if (a.reticle.visible) {
-        // Get exact position from reticle matrix
-        const reticlePos = new THREE.Vector3();
-        reticlePos.setFromMatrixPosition(a.reticle.matrix);
-
-        // Position model at exact plane location first
-        a.chair.position.set(reticlePos.x, reticlePos.y, reticlePos.z);
-        
-        // Force update to calculate accurate bounding box
-        a.chair.updateMatrixWorld(true);
-        
-        // Get bounding box in world coordinates
-        const box = new THREE.Box3().setFromObject(a.chair);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        
-        // Calculate how much the model's bottom is offset from its position
-        const bottomOffset = a.chair.position.y - box.min.y;
-        
-        // Adjust Y position so bottom touches the plane exactly
-        // The formula: plane_y + (position_y - bottom_y) = plane_y + bottomOffset
-        a.chair.position.y = reticlePos.y + bottomOffset;
-
-        a.chair.visible = true;
-        a.reticle.visible = false;
-        a.isModelPlaced = true;
-        a.setIsPlacedCallback(true);
-
-        console.log("=== PLACEMENT DEBUG ===");
-        console.log("Reticle (Plane) Y:", reticlePos.y.toFixed(4));
-        console.log("Model Height:", size.y.toFixed(4));
-        console.log("Bounding Box Min Y:", box.min.y.toFixed(4));
-        console.log("Bottom Offset:", bottomOffset.toFixed(4));
-        console.log("Final Model Y:", a.chair.position.y.toFixed(4));
-        console.log("Model Bottom Y:", (a.chair.position.y - bottomOffset).toFixed(4));
-        console.log("=======================");
-      }
-    };
-
-    a.controller = a.renderer.xr.getController(0);
-    a.controller.addEventListener("select", onSelect);
-    a.scene.add(a.controller);
-  };
-
+  // === ANDROID LOGIC ===
   const showChair = async () => {
     const a = app.current;
-    if (!modelUrl) {
-      alert("No 3D model available.");
-      return;
-    }
-    try {
-      await initAR(a);
-    } catch (error) {
-      console.error("Error in AR initialization:", error);
-    }
-  };
-
-  const initAR = async (a) => {
-    let currentSession = a.currentSession;
-    const sessionInit = {
+    const session = await navigator.xr.requestSession("immersive-ar", {
       requiredFeatures: ["hit-test"],
       optionalFeatures: ["dom-overlay"],
       domOverlay: { root: overlayRef.current },
-    };
-
-    const onSessionStarted = (session) => {
-      session.addEventListener("end", onSessionEnded);
-      a.renderer.xr.setReferenceSpaceType("local");
-      a.renderer.xr.setSession(session);
-      currentSession = session;
-      a.currentSession = currentSession;
-
-      setIsLoading(true);
-      setLoadingProgress(0);
-      setReticleReady(false);
-      setIsPlaced(false);
-      a.isModelPlaced = false;
-      a.reticle.visible = false;
-      a.hitTestSource = null;
-      a.hitTestSourceRequested = false;
-      a.reticleAppeared = false;
-
-      a.loadHDR?.();
-
-      // REQUEST HIT-TEST IMMEDIATELY
-      requestHitTestSource(a);
-
-      loadModel(a);
-    };
-
-    const onSessionEnded = () => {
-      currentSession?.removeEventListener("end", onSessionEnded);
-      currentSession = null;
+    });
+    
+    a.renderer.xr.setReferenceSpaceType("local");
+    a.renderer.xr.setSession(session);
+    a.currentSession = session;
+    
+    session.addEventListener("end", () => {
       a.currentSession = null;
-      
-      // Clear progress interval if exists
-      if (a.progressInterval) {
-        clearInterval(a.progressInterval);
-        a.progressInterval = null;
-      }
-      
-      if (a.chair) {
-        a.scene.remove(a.chair);
-        a.chair = null;
-      }
-      a.renderer.setAnimationLoop(null);
-      setIsLoading(false);
-      setLoadingProgress(0);
-      setReticleReady(false);
       setIsPlaced(false);
-      a.isModelPlaced = false;
-      a.reticle.visible = false;
-      a.hitTestSource = null;
-      a.hitTestSourceRequested = false;
-      a.reticleAppeared = false;
-    };
+      setReticleReady(false);
+      a.scene.remove(a.chair);
+    });
 
-    if (currentSession === null) {
-      try {
-        const session = await navigator.xr.requestSession("immersive-ar", sessionInit);
-        onSessionStarted(session);
-      } catch (error) {
-        console.error("XR Session Request Failed:", error);
-        alert("Failed to start AR. Check device compatibility.");
-        setIsSupported(false);
-        throw error;
-      }
-    } else {
-      currentSession.end();
-    }
-  };
+    // Load Model
+    setIsLoading(true);
+    setLoadingStatus("Loading 3D Model...");
+    new GLTFLoader().load(modelUrl, (gltf) => {
+       a.chair = gltf.scene;
+       a.chair.visible = false;
+       a.scene.add(a.chair);
+       setIsLoading(false);
+       setReticleReady(true);
+    });
 
-  // REQUEST HIT-TEST AS SOON AS SESSION STARTS
-  const requestHitTestSource = (a) => {
-    const session = a.renderer.xr.getSession();
-    if (!session || a.hitTestSourceRequested) return;
-
-    a.hitTestSourceRequested = true;
-
+    // Hit Test Setup
     session.requestReferenceSpace("viewer").then((refSpace) => {
       session.requestHitTestSource({ space: refSpace }).then((source) => {
         a.hitTestSource = source;
-        console.log("Hit-test source ready");
-      }).catch((err) => {
-        console.error("Hit-test source error:", err);
-        a.hitTestSourceRequested = false;
       });
-    }).catch((err) => {
-      console.error("Reference space error:", err);
-      a.hitTestSourceRequested = false;
     });
 
-    const onEnd = () => {
-      a.hitTestSourceRequested = false;
-      a.hitTestSource = null;
-      session.removeEventListener("end", onEnd);
+    // Render Loop
+    a.renderer.setAnimationLoop((time, frame) => {
+      if (frame && a.hitTestSource && !isPlaced) {
+         const results = frame.getHitTestResults(a.hitTestSource);
+         if (results.length) {
+           const pose = results[0].getPose(a.renderer.xr.getReferenceSpace());
+           a.reticle.visible = true;
+           a.reticle.matrix.fromArray(pose.transform.matrix);
+         } else {
+           a.reticle.visible = false;
+         }
+      }
+      a.renderer.render(a.scene, a.camera);
+    });
+
+    // Tap Listener
+    const onSelect = () => {
+      if (a.reticle.visible && !isPlaced) {
+        a.chair.position.setFromMatrixPosition(a.reticle.matrix);
+        a.chair.visible = true;
+        a.reticle.visible = false;
+        setIsPlaced(true);
+      }
     };
-    session.addEventListener("end", onEnd);
+    const controller = a.renderer.xr.getController(0);
+    controller.addEventListener("select", onSelect);
+    a.scene.add(controller);
   };
 
-  const getHitTestResults = (a, frame) => {
-    if (!a.hitTestSource || a.isModelPlaced) return;
-    const results = frame.getHitTestResults(a.hitTestSource);
-    if (results.length > 0) {
-      const hit = results[0];
-      const pose = hit.getPose(a.renderer.xr.getReferenceSpace());
-      a.reticle.visible = true;
-      a.reticle.matrix.fromArray(pose.transform.matrix);
-      
-      // Signal that reticle is ready
-      if (!a.reticleAppeared) {
-        a.reticleAppeared = true;
-        
-        // Clear progress interval if it exists
-        if (a.progressInterval) {
-          clearInterval(a.progressInterval);
-          a.progressInterval = null;
-        }
-        
-        setReticleReady(true);
-        setLoadingProgress(100);
-        
-        // Hide loading bar after showing 100%
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
-        
-        console.log("Reticle detected - ready to place");
-      }
-    } else {
-      a.reticle.visible = false;
-    }
-  };
-
-  const render = (a, timestamp, frame) => {
-    if (frame) {
-      if (a.hitTestSource) {
-        getHitTestResults(a, frame);
-      }
-    }
-    a.renderer.render(a.scene, a.camera);
-  };
-
-  const loadModel = (a) => {
-    const loader = new GLTFLoader();
-    let modelLoadProgress = 0;
-
-    // Start smooth progress animation for reticle detection phase
-    const startReticleProgressAnimation = () => {
-      let progress = 70;
-      const interval = setInterval(() => {
-        if (a.reticleAppeared) {
-          clearInterval(interval);
-          return;
-        }
-        // Slowly increment from 70 to 95 while waiting for reticle
-        if (progress < 95) {
-          progress += 0.5;
-          setLoadingProgress(Math.round(progress));
-        }
-      }, 100);
-      
-      // Store interval reference for cleanup
-      a.progressInterval = interval;
-    };
-
-    loader.load(
-      modelUrl,
-      (gltf) => {
-        const model = gltf.scene;
-        a.scene.add(model);
-        a.chair = model;
-        a.chair.visible = false;
-
-        // NO SCALING — Keep model at original imported size
-        // (Assumes your .glb files are already authored in real-world meters)
-
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-
-        console.log("MODEL LOADED AT ORIGINAL SIZE (NO SCALING APPLIED)");
-        console.log("Model File:", modelUrl.split("/").pop());
-        console.log("Item Name:", new URLSearchParams(window.location.search).get("name") || "Unknown");
-        console.log("Original Dimensions → Height:", size.y.toFixed(3) + "m");
-        console.log("                              Width :", size.x.toFixed(3) + "m");
-        console.log("                              Depth :", size.z.toFixed(3) + "m");
-        console.log("Model placed at exact imported scale (1 unit = 1 meter)");
-        console.log("===========================================");
-
-        modelLoadProgress = 100;
-        setLoadingProgress(70);
-        
-        // Start smooth animation while waiting for reticle
-        startReticleProgressAnimation();
-
-        a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
-      },
-      (xhr) => {
-        if (xhr.total) {
-          modelLoadProgress = Math.round((xhr.loaded / xhr.total) * 100);
-          const progress = Math.round(modelLoadProgress * 0.7);
-          setLoadingProgress(progress);
-        }
-      },
-      (error) => {
-        console.error("GLTF Load Error:", error);
-        alert("Failed to load 3D model.");
-        setLoadingProgress(0);
-        setIsLoading(false);
-      }
-    );
-  };
-
-  const updateLoadingProgress = (a, modelProgress) => {
-    // Show progress based on: 70% model load + 30% waiting for reticle
-    if (a.reticleAppeared) {
-      setLoadingProgress(100);
-      // Hide loading bar after a brief moment to show 100%
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-    } else {
-      const progress = Math.min(70, (modelProgress * 0.7));
-      setLoadingProgress(Math.round(progress));
-    }
-  };
-
-  // === CONTROLS ===
-  const rotateLeft = () => {
-    if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y -= 0.3;
-    }
-  };
-
-  const rotateRight = () => {
-    if (app.current.chair && isPlaced) {
-      app.current.chair.rotation.y += 0.3;
-    }
-  };
-
-  const placeAgain = () => {
-    if (!app.current.chair) return;
-    const a = app.current;
-    
-    // Clear any existing progress interval
-    if (a.progressInterval) {
-      clearInterval(a.progressInterval);
-      a.progressInterval = null;
-    }
-    
-    a.chair.visible = false;
-    a.isModelPlaced = false;
-    a.reticle.visible = false;
-    a.hitTestSource = null;
-    a.hitTestSourceRequested = false;
-    a.reticleAppeared = false;
-    setIsPlaced(false);
-    setReticleReady(false);
-    setIsLoading(true);
-    setLoadingProgress(70);
-    
-    // Start smooth progress animation again
-    let progress = 70;
-    const interval = setInterval(() => {
-      if (a.reticleAppeared) {
-        clearInterval(interval);
-        return;
-      }
-      if (progress < 95) {
-        progress += 0.5;
-        setLoadingProgress(Math.round(progress));
-      }
-    }, 100);
-    a.progressInterval = interval;
-    
-    // Re-request hit-test immediately
-    requestHitTestSource(a);
-    console.log("Ready to place again – waiting for reticle");
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        zIndex: 1000,
-        touchAction: "none",
-        background: "#000",
-      }}
-    >
-      <div
-        ref={overlayRef}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          zIndex: 1001,
-        }}
-      >
-        {isLoading && <LoadingBar progress={loadingProgress} />}
-
-        {!isPlaced && app.current.currentSession && reticleReady && (
-          <div
-            style={{
-              position: "absolute",
-              top: "20px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: "rgba(0,0,0,0.8)",
-              color: "#fff",
-              padding: "12px 20px",
-              borderRadius: "25px",
-              fontSize: "14px",
-              zIndex: 1002,
-              pointerEvents: "none",
-              textAlign: "center",
-            }}
-          >
-            Tap on floor to place object
-          </div>
-        )}
-
-        {isPlaced && (
+  // === RENDER ===
+  
+  // 1. IOS VIEW
+  if (isIOS) {
+    return (
+      <div style={{
+        height: "100vh", width: "100vw", background: "#111",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        color: "white", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif"
+      }}>
+        {isLoading ? (
+          <LoadingBar progress={loadingProgress} statusText={loadingStatus} />
+        ) : (
           <>
-            <div
+            <h1 style={{fontSize: "24px", marginBottom: "10px"}}>AR Viewer</h1>
+            <p style={{color: "#888", marginBottom: "40px"}}>Visualize this object in your space</p>
+            
+            <button 
+              onClick={handleIOSLaunch}
               style={{
-                position: "absolute",
-                bottom: "20px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "15px",
-                zIndex: 1002,
-                pointerEvents: "auto",
+                background: "#007AFF", color: "white", border: "none",
+                padding: "16px 32px", fontSize: "17px", fontWeight: "600",
+                borderRadius: "28px", display: "flex", alignItems: "center", gap: "10px",
+                cursor: "pointer", boxShadow: "0 4px 12px rgba(0,122,255,0.3)"
               }}
             >
-              <button onClick={rotateLeft} style={btnStyle}>
-                ◄ Left
-              </button>
-              <button onClick={placeAgain} style={{ ...btnStyle, background: "#00796B" }}>
-                Place Again
-              </button>
-              <button onClick={rotateRight} style={btnStyle}>
-                Right ►
-              </button>
-            </div>
-
-            <div
-              style={{
-                position: "absolute",
-                top: "20px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                background: "rgba(0,0,0,0.8)",
-                color: "#fff",
-                padding: "12px 20px",
-                borderRadius: "25px",
-                fontSize: "13px",
-                zIndex: 1002,
-                textAlign: "center",
-                maxWidth: "90%",
-                pointerEvents: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Drag to rotate • Swipe to move
-            </div>
+              <span>View in AR</span>
+              {/* Simple AR Cube Icon */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 3l10 6v6l-10 6L2 15V9l10-6z"/>
+                <path d="M12 3v12"/>
+                <path d="M2 9l10 6 10-6"/>
+              </svg>
+            </button>
+            
+            <p style={{marginTop: "20px", fontSize: "12px", color: "#555"}}>
+              Optimized for iPhone & iPad
+            </p>
           </>
         )}
+      </div>
+    );
+  }
 
-        {!isSupported && (
-          <div
-            style={{
-              color: "white",
-              textAlign: "center",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              padding: "20px",
-              background: "rgba(0,0,0,0.8)",
-              borderRadius: "12px",
-            }}
-          >
-            <h2>AR Not Supported</h2>
-            <p>WebXR is not available on this device/browser.</p>
+  // 2. ANDROID / WEBXR VIEW
+  return (
+    <div ref={containerRef} style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "#000" }}>
+      <div ref={overlayRef} style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
+        {isLoading && <LoadingBar progress={loadingProgress} statusText={loadingStatus} />}
+        
+        {!isPlaced && reticleReady && !isLoading && (
+          <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.6)", color: "white", padding: "10px 20px", borderRadius: "20px" }}>
+            Tap floor to place
           </div>
+        )}
+        
+        {isPlaced && (
+           <div style={{ position: "absolute", bottom: "30px", width: "100%", display: "flex", justifyContent: "center", gap: "20px", pointerEvents: "auto" }}>
+             <button onClick={() => app.current.chair.rotation.y -= 0.5} style={btnStyle}>Rotate Left</button>
+             <button onClick={() => app.current.chair.rotation.y += 0.5} style={btnStyle}>Rotate Right</button>
+           </div>
         )}
       </div>
     </div>
@@ -732,20 +375,8 @@ const ARViewer = () => {
 };
 
 const btnStyle = {
-  padding: "12px 24px",
-  background: "rgba(255, 255, 255, 0.08)",
-  color: "#ffffff",
-  border: "none",
-  borderRadius: "14px",
-  backdropFilter: "blur(14px) saturate(180%)",
-  WebkitBackdropFilter: "blur(14px) saturate(180%)",
-  cursor: "pointer",
-  fontSize: "15px",
-  fontWeight: "600",
-  whiteSpace: "nowrap",
-  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
-  pointerEvents: "auto",
-  transition: "transform 0.1s ease, background 0.3s ease",
+  padding: "12px 24px", background: "rgba(255, 255, 255, 0.2)", color: "white",
+  border: "none", borderRadius: "30px", backdropFilter: "blur(10px)", fontWeight: "600"
 };
 
 export default ARViewer;
