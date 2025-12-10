@@ -5,8 +5,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import './List.css';
 import { assets } from '../../assets/assets';
 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 const List = ({ url }) => {
-  const [list, setList] = useState([]);
   const [editingItem, setEditingItem] = useState(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -17,35 +18,36 @@ const List = ({ url }) => {
     countInStock: '',
   });
 
-  const fetchList = async () => {
-    try {
-      const response = await axios.get('https://new-sever.vercel.app/api/products/');
-      if (response.status === 200) {
-        setList(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching list:", error);
-      toast.error("An error occurred while fetching the list");
-    }
-  };
+  const queryClient = useQueryClient();
 
-  const removeItem = async (itemId) => {
-    try {
-      const response = await axios.delete(
+  const { data: list = [], isLoading, isError } = useQuery({
+    queryKey: ['products'], // The unique ID for this cache
+    queryFn: async () => {
+      const response = await axios.get('https://new-sever.vercel.app/api/products/');
+      return response.data;
+    },
+    staleTime: 1000 * 60 * 5, // Cache stays fresh for 5 minutes
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (itemId) => {
+      return await axios.delete(
         `https://new-sever.vercel.app/api/products/${itemId}`,
         { withCredentials: true }
       );
-
-      if (response.status === 200) {
-        setList(prevList => prevList.filter(item => item._id !== itemId));
-        toast.success("Item deleted successfully");
-      } else {
-        toast.error("Failed to delete item");
-      }
-    } catch (error) {
-      console.error("Error removing item:", error);
-      toast.error("An error occurred while removing the item");
+    },
+    onSuccess: () => {
+      toast.success("Item deleted successfully");
+      // This forces the list to refresh automatically!
+      queryClient.invalidateQueries(['products']);
+    },
+    onError: () => {
+      toast.error("Failed to delete item");
     }
+  });
+
+  const removeItem = async (itemId) => {
+    deleteMutation.mutate(itemId);
   };
 
   const startEditing = (item) => {
@@ -94,31 +96,32 @@ const List = ({ url }) => {
     });
   };
 
-  const updateItem = async (itemId) => {
-    try {
-      const response = await axios.put(
+  const updateMutation = useMutation({
+    mutationFn: async ({ itemId, formData }) => {
+      return await axios.put(
         `https://new-sever.vercel.app/api/products/${itemId}`,
-        editFormData,
+        formData,
         { withCredentials: true }
       );
-
-      if (response && response.data) {
-        const updatedList = list.map(item =>
-          item._id === itemId ? { ...item, ...editFormData } : item
-        );
-        setList(updatedList);
-        cancelEditing();
-        toast.success("Item updated successfully");
-      }
-    } catch (error) {
-      console.error("Error updating item:", error);
+    },
+    onSuccess: () => {
+      toast.success("Item updated successfully");
+      setEditingItem(null); // Close edit mode
+      // Refresh the list automatically
+      queryClient.invalidateQueries(['products']);
+    },
+    onError: () => {
       toast.error("An error occurred while updating the item");
     }
+  });
+
+  const updateItem = async (itemId) => {
+    updateMutation.mutate({ itemId, formData: editFormData });
   };
 
-  useEffect(() => {
-    fetchList();
-  }, []);
+  if (isLoading) return <div className="list add flex-col"><p>Loading items...</p></div>;
+  if (isError) return <div className="list add flex-col"><p>Error loading data!</p></div>;
+
 
   return (
     <>

@@ -254,10 +254,10 @@ const UserLoginPopUp = ({ setShowLogin, setUserType, setIsLoggedIn }) => {
                 <button type="submit" id="button1">
                     {currentState === "Sign Up" ? "Create Account" : "Log In"}
                 </button>
-                <button id="button2" onClick={googleLogin}>
+                {/* <button id="button2" onClick={googleLogin}>
                     {currentState !== "Sign Up" ? "Log In With Google" : "Sign Up With Google"}
                     <img src={assets.google} alt="Google Login" />
-                </button>
+                </button> */}
                 <button onClick={forgotPasswordNavigate} className='fogotPasswordButton'>
                     Forgot Password ?
                 </button>

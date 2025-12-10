@@ -20,6 +20,7 @@
     "@react-three/xr": "^6.6.27",
     "@stripe/react-stripe-js": "^3.1.1",
     "@stripe/stripe-js": "^5.6.0",
+    "@tanstack/react-query": "^5.90.12",
     "axios": "^1.7.4",
     "firebase": "^11.4.0",
     "font-awesome": "^4.7.0",
