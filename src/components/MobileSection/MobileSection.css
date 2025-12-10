@@ -31,12 +31,14 @@
 }
 
 .mobile-home-text h1 {
-    font-size: 2rem;
+    font-size: 40px;
     margin: 0;
+    font-family: calisto;
 }
 
 .mobile-home-text p {
-    font-size: 1.1rem;
+    font-size: 24px;
+    font-family: candara;
     color: #555;
     margin-top: 10px;
     line-height: 1.6;
@@ -44,17 +46,20 @@
 }
 
 /* Button Styling */
-.continue-button {
+ .continue-button {
     display: flex;
     align-items: center;
+    justify-items: center;
+    justify-content: center;
     height: 40px;
     width: 200px;
     padding-left: 10px; 
     padding: 10px 20px;
-    font-size: 1rem;
+    font-size: 20px;
+    font-family: calisto;
     color: #000000;
     border: 1px solid black;
-    border-radius: 5px;
+    border-radius: 15px;
     cursor: pointer;
     margin-top: 55px; /* Add space between paragraph and button */
 }
@@ -147,6 +152,7 @@
     .mobile-home-text p {
         font-size: 0.9rem;
         margin-top: 6px;
+        text-align: center;
     }
 
     .continue-button {

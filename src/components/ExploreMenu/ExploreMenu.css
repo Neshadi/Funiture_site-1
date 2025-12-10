@@ -1,79 +1,169 @@
-.explore-menu {
+.explore-menucat {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  padding: 40px 40px;
+  margin-top: 100px;
 }
 
-.explore-menu h1 {
+.explore-menucat h1 {
   color: black;
   font-weight: 500;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-family: calisto;
+  text-align: left;
+}
+
+.explore-menucat h2 {
+  font-family: calisto;
 }
 
 .explore-menu-text {
   margin-top: 10px;
   max-width: 100%;
-  color: grey;
+  color: #666;
+  font-size: clamp(1rem, 2.2vw, 1.1rem);
+  line-height: 1.7;
+  text-align: center;
 }
 
+.explore-menu-category-item p{
+  font-family: candara;
+}
+
+/* ====================== Horizontal Scrollable Categories ====================== */
 .explore-menu-categories {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 30px;
-  text-align: center;
-  margin: 20px 0px;
-  overflow-x: scroll;
+  gap: clamp(20px, 4vw, 40px);
+  margin: 40px 0;
+  padding: 10px 0;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .explore-menu-categories::-webkit-scrollbar {
   display: none;
 }
 
+.explore-menu-category-item {
+  flex: 0 0 auto;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
 .explore-menu-category-item img {
   width: 7.5vw;
-  height: 7.5vw; /* Set height equal to width */
+  height: 7.5vw;
+  min-width: 70px;
+  /* Prevents collapsing on small screens */
+  min-height: 70px;
+  max-width: 120px;
+  /* Caps size on very large screens */
+  max-height: 120px;
   object-fit: cover;
-  border-radius: 50%; /* Ensures circular shape */
-  border: 2px solid #ddd;
-  transition: transform 0.2s;
-  cursor: pointer;
+  border-radius: 50%;
+  border: 3px solid #ddd;
+  transition: all 0.3s ease;
 }
 
 .explore-menu-category-item img:hover {
+  transform: scale(1.08);
+  border-color: var(--green, #8a9a5b);
+}
+
+.explore-menucat-category-item.active img {
+  border: 5px solid var(--green, #8a9a5b);
   transform: scale(1.05);
 }
 
-.explore-menu-category-item.active img {
-  border: 4px solid var(--green); /* Highlight border for the selected category */
-}
-
 .explore-menu-category-item p {
-  margin-top: 10px;
-  font-size: 1.1em;
-  color: #333;
+  margin-top: 12px;
   font-weight: 500;
-  font-size: max(1vw, 16px);
-  text-align: center;
-  cursor: pointer;
+  color: #333;
+  font-size: clamp(0.95rem, 2vw, 1.1rem);
+  transition: color 0.3s ease;
 }
 
-.explore-menu-category-item .active {
-  border: 4px solid var(--green);
-  padding: 2px;
+.explore-menu-category-item.active p {
+  color: var(--green, #8a9a5b);
+  font-weight: 600;
 }
 
+/* ====================== Products Grid – Fully Responsive ====================== */
 .explore-menu-products {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+  gap: clamp(16px, 2.5vw, 30px);
   padding: 20px;
   justify-content: center;
 }
 
-@media (max-width: 600px) {
+/* Tablet & Mobile Adjustments */
+@media (max-width: 1024px) {
+  .explore-menu-categories {
+    gap: clamp(15px, 5vw, 30px);
+  }
+
+  .explore-menu-category-item img {
+    width: 9vw;
+    height: 9vw;
+  }
+}
+
+@media (max-width: 768px) {
+  .explore-menucat {
+    padding: 30px 30px;
+    margin-top: 60px;
+  }
+
   .explore-menu-products {
-    grid-template-columns: 1fr 1fr; /* Exactly 2 columns – no matter how small! */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    padding: 15px;
+  }
+
+  .explore-menucat h1 {
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .explore-menucat {
+    padding: 10px 10px;
+  }
+
+  .explore-menu-products {
+    grid-template-columns: 1fr 1fr;
+    /* Exactly 2 columns on mobile */
     gap: 14px;
     padding: 10px;
+  }
+
+  /* Force circular images to stay reasonable on small phones */
+  .explore-menu-category-item img {
+    width: 68px;
+    height: 68px;
+    min-width: 64px;
+    min-height: 64px;
+  }
+}
+
+@media (max-width: 480px) {
+  .explore-menucat h1 {
+    font-size: 1.8rem;
+  }
+
+  .explore-menu-text {
+    padding: 0 10px;
+    font-size: 0.95rem;
+  }
+
+  .explore-menu-categories {
+    gap: 16px;
+    padding: 10px 5px;
   }
 }

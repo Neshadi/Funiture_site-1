@@ -49,7 +49,7 @@ const ExploreMenu = ({ category, setCategory }) => {
     if (isError) return <div className="error-message">Failed to load products. Please try again.</div>;
 
     return (
-        <div className="explore-menu" id="explore-menu">
+        <div className="explore-menucat" id="explore-menucat">
             
             <h1>Explore Our Collection</h1>
             <p className="explore-menu-text">
