@@ -11,44 +11,46 @@ const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
 
   useEffect(() => {
-      window.scrollTo(0, 0);
-    }, [id]);
-    
-  const [quantity, setQuantity] = useState(2); // Default 2 as per design
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  const [quantity, setQuantity] = useState(2);
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const navigate = useNavigate();
 
   const { 
-    data: product, 
-    isLoading: productLoading, 
-    refetch: refetchProduct // We need this to update stock after adding to cart
+    data: product,
+    isLoading: productLoading,
+    refetch: refetchProduct
   } = useQuery({
-    queryKey: ['product', id], // Unique ID for cache
+    queryKey: ["product", id],
     queryFn: async () => {
-      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
+      const { data } = await axios.get(
+        `https://new-sever.vercel.app/api/products/${id}`
+      );
       return data;
-    },
-    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
-  });
-
-  const { 
-    data: reviews = [], // Default to empty array if undefined
-    isLoading: reviewsLoading 
-  } = useQuery({
-    queryKey: ['reviews', id],
-    queryFn: async () => {
-      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
-      return data || [];
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  const averageRating = reviews.length > 0
-    ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
-    : 0;
+  // ✅ FIXED: safely extract reviews (fallback to empty array)
+  const reviews = product?.reviews || [];
+
+  // ✅ FIXED: calculate average rating
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
+      : 0;
+
+  // Number of reviews
   const numReviews = reviews.length;
-  const isLoading = productLoading || reviewsLoading;
+
+  // No reviewsLoading variable existed → removed
+  const isLoading = productLoading;
+
+
+
 
   // Hide notification after 3s
   const hideNotification = () => {
