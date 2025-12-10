@@ -5,6 +5,7 @@ import Item from "../Item/Item";
 import "./ExploreMenu.css";
 import Loading from "../Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
+import { useDeviceType } from "../Test/DetectDevice";
 
 const ExploreMenu = ({ category, setCategory }) => {
     const [searchQuery, setSearchQuery] = useState(""); // State for search query
@@ -17,23 +18,31 @@ const ExploreMenu = ({ category, setCategory }) => {
         { name: "Wall Designs", image: assets.ellipse5 },
     ];
 
+    const device = useDeviceType();
+
     const { data: allProducts = [], isLoading, isError } = useQuery({
         queryKey: ['products'], 
         queryFn: async () => {
             const response = await axios.get("https://new-sever.vercel.app/api/products");
             return response.data;
         },
-        staleTime: 1000 * 60 * 500, // Cache for 500 minutes (Instant load on return)
+        staleTime: 1000 * 60 * 500, // Cache for 500 minutes
     });
 
-    const filteredProducts = allProducts.filter((product) => {
-        // Step A: Check Category
-        const matchesCategory = category === "All" || product.category === category;
-        
-        // Step B: Check Search Text
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery);
+    // --- Core Filtering Logic ---
+    const filteredProducts = allProducts.filter(product => {
+        const modelUrl = product.modelImageUrl || ""; // Use an empty string if modelImageUrl is missing
 
-        return matchesCategory && matchesSearch;
+        if (device === 'ios') {
+            // If iOS, only keep products with a .usdz modelImageUrl
+            return modelUrl.endsWith('.usdz');
+        } else if (device === 'Android') {
+            // If Android, only keep products with a .glb modelImageUrl
+            return modelUrl.endsWith('.glb');
+        } else {
+            // If 'other', keep all products
+            return true;
+        }
     });
 
     const handleCategoryClick = (selectedCategory) => {
