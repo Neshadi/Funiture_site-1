@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { USDZExporter } from "three/examples/jsm/exporters/USDZExporter.js";
 
 const IPhoneARViewer = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Get the model URL from parameters
   const modelUrl = searchParams.get("model");
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("");
+  // Determine the final AR URL:
+  // 1. If 'model' is already .usdz, use it.
+  // 2. If 'model' is .glb, swap the extension to .usdz automatically.
+  const arUrl = modelUrl ? modelUrl.replace(/\.glb$/i, ".usdz").replace(/\.usd$/i, ".usdz") : null;
 
   useEffect(() => {
     if (!modelUrl) {
@@ -19,78 +20,29 @@ const IPhoneARViewer = () => {
     }
   }, [modelUrl, navigate]);
 
-  const launchNativeAR = async () => {
-    if (isLoading) return;
+  const launchNativeAR = () => {
+    if (!arUrl) return;
 
-    try {
-      setIsLoading(true);
-      setStatus("Downloading Model...");
-      setProgress(10);
+    // Create the special Apple AR link
+    const link = document.createElement("a");
+    link.rel = "ar";
+    link.href = arUrl;
 
-      // 1. Load the GLB file
-      const loader = new GLTFLoader();
-      const gltf = await new Promise((resolve, reject) => {
-        loader.load(
-          modelUrl,
-          (data) => {
-            setProgress(50);
-            resolve(data);
-          },
-          (xhr) => {
-            if (xhr.total > 0) {
-              const percent = (xhr.loaded / xhr.total) * 40; // Scale to 40%
-              setProgress(10 + percent);
-            }
-          },
-          (err) => reject(err)
-        );
-      });
+    // Add a dummy image (required for the anchor to work securely in some contexts)
+    const img = document.createElement("img");
+    img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    link.appendChild(img);
 
-      // 2. Convert to USDZ (Apple Format)
-      setStatus("Processing for iPhone...");
-      setProgress(60);
-      
-      const exporter = new USDZExporter();
-      const usdzArrayBuffer = await exporter.parse(gltf.scene);
-      setProgress(90);
-
-      // 3. Create a Blob and URL
-      const blob = new Blob([usdzArrayBuffer], { type: "model/vnd.usdz+zip" });
-      const url = URL.createObjectURL(blob);
-
-      // 4. Create hidden link to trigger AR Quick Look
-      const link = document.createElement("a");
-      link.rel = "ar";
-      link.href = url;
-      
-      // Apple requires an image inside the anchor for some contexts, using a pixel
-      const img = document.createElement("img");
-      img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-      link.appendChild(img);
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Reset UI after a moment
-      setProgress(100);
-      setStatus("Opening AR...");
-      setTimeout(() => {
-        setIsLoading(false);
-        setProgress(0);
-      }, 2000);
-
-    } catch (error) {
-      console.error("AR Launch Error:", error);
-      alert("Could not load AR model.");
-      setIsLoading(false);
-    }
+    // Click it programmatically
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
     <div style={containerStyle}>
       <div style={contentCardStyle}>
-        {/* Icon */}
+        {/* Cube Icon */}
         <div style={iconContainerStyle}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
             <path d="M12 3l10 6v6l-10 6L2 15V9l10-6z" />
@@ -103,23 +55,12 @@ const IPhoneARViewer = () => {
           AR Viewer
         </h2>
         <p style={{ color: "#aaa", fontSize: "14px", marginBottom: "30px", lineHeight: "1.5" }}>
-          To view this object in your space, we need to open Apple's AR Quick Look.
+          Tap the button below to view this object in your space on iPhone.
         </p>
 
-        {isLoading ? (
-          <div style={loadingContainerStyle}>
-            <div style={{ marginBottom: "10px", fontSize: "14px", color: "#007AFF" }}>
-              {status} {Math.round(progress)}%
-            </div>
-            <div style={progressBarBg}>
-              <div style={{ ...progressBarFill, width: `${progress}%` }} />
-            </div>
-          </div>
-        ) : (
-          <button onClick={launchNativeAR} style={buttonStyle}>
-            View in My Space
-          </button>
-        )}
+        <button onClick={launchNativeAR} style={buttonStyle}>
+          View in My Space
+        </button>
 
         <div style={{ marginTop: "25px", fontSize: "12px", color: "#555" }}>
           Powered by iOS AR Quick Look
@@ -177,24 +118,7 @@ const buttonStyle = {
   cursor: "pointer",
   transition: "opacity 0.2s",
   WebkitTapHighlightColor: "transparent",
-};
-
-const loadingContainerStyle = {
-  width: "100%",
-};
-
-const progressBarBg = {
-  width: "100%",
-  height: "6px",
-  background: "#333",
-  borderRadius: "3px",
-  overflow: "hidden",
-};
-
-const progressBarFill = {
-  height: "100%",
-  background: "#007AFF",
-  transition: "width 0.3s ease",
+  boxShadow: "0 4px 12px rgba(0, 122, 255, 0.3)",
 };
 
 export default IPhoneARViewer;
