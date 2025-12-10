@@ -4,7 +4,7 @@
     align-items: center;
     padding: 20px;
     margin: 50px;
-    margin-top: 8vw;
+    margin-top: 15vw;
     text-align: left;
 }
 
@@ -31,13 +31,13 @@
 }
 
 .mobile-home-text h1 {
-    font-size: 40px;
+    font-size: 44px;
     margin: 0;
     font-family: calisto;
 }
 
 .mobile-home-text p {
-    font-size: 24px;
+    font-size: 20px;
     font-family: candara;
     color: #555;
     margin-top: 10px;

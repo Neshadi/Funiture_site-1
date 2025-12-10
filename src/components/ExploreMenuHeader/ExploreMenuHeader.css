@@ -52,6 +52,37 @@
     transition: 1s;
 }
 
+/* ====================== Compact adjustments for > 768px ====================== */
+@media (min-width: 769px) {
+    .explore-menu {
+        padding: 0 80px;      /* was 40px */
+        margin: 70px auto;  /* was 100px */
+        margin-top: 2vw;    /* less vertical space */
+    }
+
+    .explore-menu h1 {
+        font-size: 44px;
+        margin-bottom: 60px;
+    }
+
+    .explore-menu-text {
+        font-size: 20px;  /* reduced */
+        margin-bottom: 14px;
+    }
+
+    .explore-button {
+        width: 300px;     /* was 345px */
+        height: 60px;     /* was 67px */
+        font-size: 20px;  /* smaller */
+        margin-top: 3.5vw; /* reduced vertical space */
+        right: 40px;      /* slight adjustment */
+    }
+
+    .explore-button .arrow-image {
+        width: 26px; /* slightly smaller */
+    }
+}
+
 /* Responsive styles for smaller screens */
 @media (max-width: 1024px) {
     .explore-menu {

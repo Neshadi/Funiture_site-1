@@ -14,22 +14,20 @@
 .header-contents {
   position: absolute;
   left: 6vw;
-  bottom: 25%;
+  bottom: 45%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  /* kept exactly as you had */
   gap: 0.8rem;
   max-width: 75%;
   animation: fadeIn 3s;
 }
 
-/* ====================== Typography & Button – Fluid & Clean ====================== */
+/* ====================== Typography & Button ====================== */
 .header-contents h1 {
   font-family: 'Calisto', serif;
   font-weight: 600;
   font-size: clamp(1.8rem, 4.5vw, 5rem);
-  /* scales smoothly */
   color: white;
   margin-top: 5vw;
   line-height: 1.1;
@@ -39,7 +37,6 @@
   font-family: 'Calisto', serif;
   font-weight: 600;
   font-size: clamp(4.5rem, 10vw, 96px);
-  /* from ~45px mobile → 96px desktop */
   color: transparent;
   margin: 0;
   line-height: 1;
@@ -53,7 +50,6 @@
 .header-contents p {
   font-family: 'Candara', sans-serif;
   font-size: clamp(1rem, 2.2vw, 1.8rem);
-  /* readable on mobile, elegant on large screens */
   color: white;
   line-height: 1.6;
   margin: 20px 0;
@@ -77,13 +73,12 @@
   color: #ffffff;
 }
 
-/* ====================== Animations (unchanged) ====================== */
+/* ====================== Animations ====================== */
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(30px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -91,22 +86,48 @@
 }
 
 @keyframes colorFill {
-  0% {
-    background-position: 200% 0;
+  0% { background-position: 200% 0; }
+  50% { background-position: 0 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ====================== Compact adjustments for > 768px ====================== */
+@media (min-width: 769px) {
+  .header {
+    margin: 70px auto;
+    padding: 15px;
   }
 
-  50% {
-    background-position: 0 0;
+  .header-contents {
+    gap: 0.55rem;
+    max-width: 65%;
   }
 
-  100% {
-    background-position: 200% 0;
+  .header-contents h1 {
+    font-size: clamp(1.6rem, 3.8vw, 4.2rem);
+    margin-top: 3vw;
+  }
+
+  .header-contents h2 {
+    font-size: clamp(3.5rem, 8vw, 78px);
+    line-height: 0.95;
+  }
+
+  .header-contents p {
+    font-size: clamp(0.9rem, 1.8vw, 1.4rem);
+    margin: 10px 0;
+    line-height: 1.4;
+  }
+
+  .header-contents button {
+    font-size: 20px;
+    padding: clamp(0.6rem, 1.5vw, 0.9rem) clamp(1.5rem, 3vw, 2rem);
   }
 }
 
-/* ====================== Only minor adjustments for very small screens ====================== */
+/* ====================== Small screens ====================== */
 @media (max-width: 1024px) {
-  .header-contents button {font-size: 20px;}
+  .header-contents button { font-size: 20px; }
 }
 
 @media (max-width: 640px) {
@@ -121,17 +142,11 @@
     max-width: 90%;
   }
 
-  .header-contents h1 {
-    margin-top: 8vw;
-  }
+  .header-contents h1 { margin-top: 8vw; }
 
-  .header-contents h2 {
-    font-size: 15vw;
-  }
+  .header-contents h2 { font-size: 15vw; }
 
-  .header-contents button {
-    font-size: 18px;
-  }
+  .header-contents button { font-size: 18px; }
 }
 
 @media (max-width: 480px) {
