@@ -304,8 +304,22 @@
   }
 }
 
+@media (max-width: 1024px) {
+
+  .orders-section {
+  margin-bottom: 40px;
+  margin-top: 110px;
+  }
+}
+
 /* Media queries for responsiveness */
 @media (max-width: 768px) {
+
+  .orders-section {
+  margin-bottom: 40px;
+  margin-top: 80px;
+  }
+
   .order-row {
     flex-wrap: wrap;
     padding: 12px;
