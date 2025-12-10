@@ -11,46 +11,47 @@ const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
-
-  const [quantity, setQuantity] = useState(2);
+      window.scrollTo(0, 0);
+    }, [id]);
+    
+  const [quantity, setQuantity] = useState(2); // Default 2 as per design
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const navigate = useNavigate();
 
   const { 
-    data: product,
-    isLoading: productLoading,
-    refetch: refetchProduct
+    data: product, 
+    isLoading: productLoading, 
+    refetch: refetchProduct // We need this to update stock after adding to cart
   } = useQuery({
-    queryKey: ["product", id],
+    queryKey: ['product', id], // Unique ID for cache
     queryFn: async () => {
-      const { data } = await axios.get(
-        `https://new-sever.vercel.app/api/products/${id}`
-      );
+      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
       return data;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
   });
 
-  // ✅ FIXED: safely extract reviews (fallback to empty array)
+  // const { 
+  //   data: reviews = [], // Default to empty array if undefined
+  //   isLoading: reviewsLoading 
+  // } = useQuery({
+  //   queryKey: ['reviews', id],
+  //   queryFn: async () => {
+  //     const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
+  //     return data || [];
+  //   },
+  //   staleTime: 1000 * 60 * 5,
+  // });
+
+   // ✅ FIXED: safely extract reviews (fallback to empty array)
   const reviews = product?.reviews || [];
 
-  // ✅ FIXED: calculate average rating
-  const averageRating =
-    reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
-      : 0;
-
-  // Number of reviews
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
+    : 0;
   const numReviews = reviews.length;
-
-  // No reviewsLoading variable existed → removed
-  const isLoading = productLoading;
-
-
-
+  const isLoading = productLoading || reviewsLoading;
 
   // Hide notification after 3s
   const hideNotification = () => {
@@ -105,6 +106,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   // const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
   //   product.modelImageUrl
   // )}&name=${encodeURIComponent(product.name)}`;
+  // const arUrl = `https://www.decorit.store/Item-Page/${id}`;
   const arUrl = `https://funiture-site-1-git-webcash2-neshadis-projects.vercel.app/Item-Page/${id}`;
 
 
