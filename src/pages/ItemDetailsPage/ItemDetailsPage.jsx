@@ -105,7 +105,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   // const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
   //   product.modelImageUrl
   // )}&name=${encodeURIComponent(product.name)}`;
-  const arUrl = `https://www.decorit.store/Item-Page/${id}`;
+  const arUrl = `https://funiture-site-1-git-webcash2-neshadis-projects.vercel.app/Item-Page/${id}`;
 
 
   return (
