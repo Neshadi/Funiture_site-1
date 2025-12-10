@@ -1,124 +1,101 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-const IPhoneARViewer = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  
-  // Get the model URL from parameters
-  const modelUrl = searchParams.get("model");
+// Helper function to detect iOS devices
+const isIOS = () => {
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  return /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+};
 
-  // Determine the final AR URL:
-  // 1. If 'model' is already .usdz, use it.
-  // 2. If 'model' is .glb, swap the extension to .usdz automatically.
-  const arUrl = modelUrl ? modelUrl.replace(/\.glb$/i, ".usdz").replace(/\.usd$/i, ".usdz") : null;
+// Component to handle the native AR launch on iOS
+const ARViewer  = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isIPhone, setIsIPhone] = useState(false);
+  const modelUrl = searchParams.get("model");
+  const modelName = searchParams.get("name") || "3D Model";
 
   useEffect(() => {
+    setIsIPhone(isIOS());
     if (!modelUrl) {
-      alert("No model URL provided");
+      alert("No 3D model URL provided.");
       navigate(-1);
     }
   }, [modelUrl, navigate]);
 
-  const launchNativeAR = () => {
-    if (!arUrl) return;
-
-    // Create the special Apple AR link
-    const link = document.createElement("a");
-    link.rel = "ar";
-    link.href = arUrl;
-
-    // Add a dummy image (required for the anchor to work securely in some contexts)
-    const img = document.createElement("img");
-    img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-    link.appendChild(img);
-
-    // Click it programmatically
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // --- STYLES ---
+  const containerStyle = {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#1c1c1e",
+    color: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    padding: "20px",
+    zIndex: 1000,
   };
 
-  return (
-    <div style={containerStyle}>
-      <div style={contentCardStyle}>
-        {/* Cube Icon */}
-        <div style={iconContainerStyle}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-            <path d="M12 3l10 6v6l-10 6L2 15V9l10-6z" />
-            <path d="M12 3v12" />
-            <path d="M2 9l10 6 10-6" />
-          </svg>
-        </div>
+  const buttonStyle = {
+    padding: "15px 30px",
+    background: "#007AFF", // iOS blue
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "14px",
+    cursor: "pointer",
+    fontSize: "18px",
+    fontWeight: "600",
+    marginTop: "20px",
+    textDecoration: "none",
+    boxShadow: "0 4px 12px rgba(0, 122, 255, 0.3)",
+    display: "inline-block",
+  };
+  
+  // --- RENDERING ---
 
-        <h2 style={{ fontSize: "22px", fontWeight: "600", marginBottom: "8px" }}>
-          AR Viewer
-        </h2>
-        <p style={{ color: "#aaa", fontSize: "14px", marginBottom: "30px", lineHeight: "1.5" }}>
-          Tap the button below to view this object in your space on iPhone.
+  if (!modelUrl) return null;
+
+  if (isIPhone) {
+    // 1. **Native iOS AR Implementation (Quick Look AR)**
+    // The key is the <a> tag with rel="ar" and the .usdz file
+    return (
+      <div style={containerStyle}>
+        <h1>View {modelName} in AR</h1>
+        <p>This feature uses Apple's native AR viewer (Quick Look AR) for the best performance on your iPhone.</p>
+        
+        {/* The Magic: rel="ar" attribute and the .usdz file launch the native AR viewer */}
+        <a 
+          href={modelUrl} 
+          rel="ar" 
+          style={buttonStyle} 
+          // Sets the model's appearance in the AR scene before placement
+          // Fallback image for the item in the scene, before the AR view starts
+          aria-label={`View ${modelName} in Augmented Reality`}
+        >
+          Launch AR
+        </a>
+        
+        <p style={{ marginTop: '20px', fontSize: '14px', color: '#aaa' }}>
+          File: **{modelUrl.split('/').pop()}**
         </p>
-
-        <button onClick={launchNativeAR} style={buttonStyle}>
-          View in My Space
-        </button>
-
-        <div style={{ marginTop: "25px", fontSize: "12px", color: "#555" }}>
-          Powered by iOS AR Quick Look
-        </div>
       </div>
-    </div>
-  );
+    );
+  } else {
+    // 2. Fallback for non-iOS devices
+    // You could redirect, or render your original WebXR component here.
+    return (
+      <div style={containerStyle}>
+        <h1>Device Not Supported</h1>
+        <p>This AR viewer is optimized for **iPhone/iPad** to use native AR viewing.</p>
+        <p>Please switch to an iOS device to view the `.usdz` model in Augmented Reality.</p>
+      </div>
+    );
+  }
 };
 
-// === STYLES ===
-const containerStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100%",
-  height: "100%",
-  background: "#000000",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-  color: "white",
-};
-
-const contentCardStyle = {
-  width: "85%",
-  maxWidth: "350px",
-  textAlign: "center",
-  padding: "30px",
-  background: "#1c1c1e",
-  borderRadius: "24px",
-  boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
-};
-
-const iconContainerStyle = {
-  width: "60px",
-  height: "60px",
-  background: "#2c2c2e",
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  margin: "0 auto 20px auto",
-};
-
-const buttonStyle = {
-  width: "100%",
-  padding: "16px",
-  backgroundColor: "#007AFF",
-  color: "white",
-  border: "none",
-  borderRadius: "14px",
-  fontSize: "16px",
-  fontWeight: "600",
-  cursor: "pointer",
-  transition: "opacity 0.2s",
-  WebkitTapHighlightColor: "transparent",
-  boxShadow: "0 4px 12px rgba(0, 122, 255, 0.3)",
-};
-
-export default IPhoneARViewer;
+export default ARViewer ;
