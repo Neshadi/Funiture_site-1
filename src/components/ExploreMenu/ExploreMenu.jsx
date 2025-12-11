@@ -34,14 +34,11 @@ const ExploreMenu = ({ category, setCategory }) => {
         const modelUrl = product.modelImageUrl || "";
 
         if (device === 'ios') {
-            // Checks if the full URL ends with '.usdz'
-            // Example: ...Table.usdz?alt=media&token=... -> TRUE
-            return modelUrl.endsWith('.usdz'); 
+            // Regex: Matches .usdz followed by End of String ($) OR a query param (?)
+            return /\.usdz($|\?)/i.test(modelUrl); 
         } else if (device === 'Android') {
-            // Checks if the full URL ends with '.glb'
-            return modelUrl.endsWith('.glb');
+            return /\.glb($|\?)/i.test(modelUrl);
         } else {
-            // Keep all products for 'other' devices
             return true;
         }
     });
