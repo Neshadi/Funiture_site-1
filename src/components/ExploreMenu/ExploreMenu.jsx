@@ -6,6 +6,10 @@ import "./ExploreMenu.css";
 import Loading from "../Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
 
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+const isAndroid = () => /Android/.test(navigator.userAgent);
+
 const ExploreMenu = ({ category, setCategory }) => {
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -26,14 +30,22 @@ const ExploreMenu = ({ category, setCategory }) => {
         staleTime: 1000 * 60 * 500, // Cache for 500 minutes (Instant load on return)
     });
 
+    const isIOSDevice = isIOS();
+    const isAndroidDevice = isAndroid();
+
     const filteredProducts = allProducts.filter((product) => {
         // Step A: Check Category
         const matchesCategory = category === "All" || product.category === category;
         
         // Step B: Check Search Text
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery);
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-        return matchesCategory && matchesSearch;
+        // Step C: Check Device Compatibility
+        const matchesDevice = !isIOSDevice && !isAndroidDevice ||
+            (isIOSDevice && product.model?.toLowerCase().includes('.usdz')) ||
+            (isAndroidDevice && product.model?.toLowerCase().includes('.glb'));
+
+        return matchesCategory && matchesSearch && matchesDevice;
     });
 
     const handleCategoryClick = (selectedCategory) => {

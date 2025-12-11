@@ -53,6 +53,10 @@ const isLowEndDevice = () => {
   return ram || isAndroidLow;
 };
 
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+const isAndroid = () => /Android/.test(navigator.userAgent);
+
 const ARViewer = () => {
   const navigate = useNavigate();
   const containerRef = useRef();
@@ -65,6 +69,8 @@ const ARViewer = () => {
   const [searchParams] = useSearchParams();
   const app = useRef({});
   const isLowEnd = useRef(isLowEndDevice());
+  const [showARLink, setShowARLink] = useState(false);
+  const [instructionText, setInstructionText] = useState('Tap on floor to place object');
 
   const modelUrl = searchParams.get("model");
 
@@ -75,6 +81,25 @@ const ARViewer = () => {
     lastTime: 0,
   });
 
+  // Check support
+  useEffect(() => {
+    const checkSupport = async () => {
+      if (modelUrl && modelUrl.toLowerCase().includes('.usdz')) {
+        setIsSupported(isIOS());
+      } else if (modelUrl && modelUrl.toLowerCase().includes('.glb')) {
+        if ("xr" in navigator) {
+          const supported = await navigator.xr.isSessionSupported("immersive-ar");
+          setIsSupported(supported);
+        } else {
+          setIsSupported(false);
+        }
+      } else {
+        setIsSupported(false);
+      }
+    };
+    checkSupport();
+  }, [modelUrl]);
+
   // Auto-start AR when component mounts and model is available
   useEffect(() => {
     if (!modelUrl) {
@@ -83,15 +108,53 @@ const ARViewer = () => {
       return;
     }
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      if (app.current.currentSession === null && isSupported) {
-        showChair();
-      }
-    }, 300);
+    const extension = modelUrl.toLowerCase().includes('.usdz') ? 'usdz' : modelUrl.toLowerCase().includes('.glb') ? 'glb' : 'unknown';
 
-    return () => clearTimeout(timer);
-  }, [modelUrl, isSupported]);
+    if (extension === 'unknown') {
+      alert("Unsupported model format.");
+      navigate(-1);
+      return;
+    }
+
+    const device = isIOS() ? 'ios' : isAndroid() ? 'android' : 'other';
+
+    if (extension === 'usdz' && device !== 'ios') {
+      alert(".usdz models are only supported on iOS devices.");
+      navigate(-1);
+      return;
+    }
+
+    if (extension === 'glb' && device !== 'ios') {  // Wait, earlier said !== 'android', but to enforce, yes
+      alert(".glb models are only supported on Android devices.");
+      navigate(-1);
+      return;
+    }
+
+    if (extension === 'glb') {
+      const timer = setTimeout(() => {
+        if (app.current.currentSession === null && isSupported) {
+          showChair();
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
+    } else if (extension === 'usdz') {
+      setIsLoading(true);
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        setLoadingProgress(progress);
+        if (progress >= 100) {
+          clearInterval(interval);
+          setIsLoading(false);
+          setReticleReady(true);
+          setShowARLink(true);
+          setInstructionText('Tap anywhere to view in AR');
+        }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [modelUrl, isSupported, navigate]);
 
   // === TOUCH HANDLERS ===
   useEffect(() => {
@@ -152,6 +215,8 @@ const ARViewer = () => {
 
   // === THREE.JS SETUP ===
   useEffect(() => {
+    if (!modelUrl || modelUrl.toLowerCase().includes('.usdz')) return;
+
     const container = containerRef.current;
     if (!container) return;
 
@@ -213,7 +278,7 @@ const ARViewer = () => {
         container.removeChild(a.renderer.domElement);
       }
     };
-  }, []);
+  }, [modelUrl]);
 
   const setEnvironment = (a) => {
     a.loadHDR = () => {
@@ -636,7 +701,7 @@ const ARViewer = () => {
       >
         {isLoading && <LoadingBar progress={loadingProgress} />}
 
-        {!isPlaced && app.current.currentSession && reticleReady && (
+        {!isPlaced && reticleReady && (
           <div
             style={{
               position: "absolute",
@@ -653,7 +718,7 @@ const ARViewer = () => {
               textAlign: "center",
             }}
           >
-            Tap on floor to place object
+            {instructionText}
           </div>
         )}
 
@@ -725,6 +790,22 @@ const ARViewer = () => {
             <h2>AR Not Supported</h2>
             <p>WebXR is not available on this device/browser.</p>
           </div>
+        )}
+
+        {showARLink && (
+          <a
+            rel="ar"
+            href={modelUrl}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 1003,
+              opacity: 0,
+            }}
+          />
         )}
       </div>
     </div>
