@@ -15,11 +15,13 @@ body {
   
   .cart-main {
     padding: 20px;
+    margin-top: 200px;
   }
   
   .cart-table {
     width: 100%;
     border-collapse: collapse; 
+    margin-bottom: 40px;
   }
   .cart-table thead {
     border-bottom: 1px solid #ccc; 
@@ -85,8 +87,8 @@ body {
     border: none;
     border-radius: 100%;
     cursor: pointer;
-    width: 25px;
-    height: 25px;
+    width: 50px;
+    height: 40px;
    
   }
 
@@ -188,6 +190,11 @@ body {
     margin-bottom: 50px;
   }
 
+  .cart-main {
+    padding: 20px;
+    margin-top: 20px;
+  }
+
   .cart-totals-with-promo {
     flex-direction: column;
   }
@@ -205,6 +212,11 @@ body {
 @media (max-width: 768px) {
   .cart-container {
     margin: 0 20px;
+  }
+
+  .cart-main {
+    padding: 0px 20px 20px 20px;
+    margin-top: 0px;
   }
 
   .cart-table th,
@@ -253,8 +265,8 @@ body {
   }
 
   .remove-btn {
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 30px;
     font-size: 12px;
   }
 }
