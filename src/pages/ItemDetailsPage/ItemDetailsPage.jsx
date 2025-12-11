@@ -7,7 +7,7 @@ import axios from "axios";
 import QRCode from "react-qr-code";
 import CameraIcon from "../../assets/camera.png";
 
-const ItemDetails = ({ onCartUpdate }) => {
+const ItemDetails = ({ onCartUpdate, isLoggedIn, setShowLogin }) => {
   const { id } = useParams();
 
   useEffect(() => {
@@ -202,8 +202,15 @@ const ItemDetails = ({ onCartUpdate }) => {
             <div className="buy-now-row">
               <button
                 className="btn-buy-now"
-                disabled={product.countInStock <= 0}
-                onClick={() => addToCart()}
+                disabled={product.countInStock <= 0 || !isLoggedIn}
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    setShowLogin(true);
+                  } else {
+                    addToCart();
+                  }
+                }}
+                title={!isLoggedIn ? "Please login to buy" : ""}
               >
                 Buy Now
               </button>

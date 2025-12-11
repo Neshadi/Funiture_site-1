@@ -145,7 +145,7 @@ const App = () => {
           path="/Item-Page/:id"
           element={
             <UserLayout isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin}>
-              <ItemDetailsPage />
+              <ItemDetailsPage isLoggedIn={isLoggedIn} setShowLogin={setShowLogin} />
             </UserLayout>
           }
         />
