@@ -6,9 +6,9 @@ import "./ExploreMenu.css";
 import Loading from "../Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
 
-const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-const isAndroid = () => /Android/.test(navigator.userAgent);
+// Reliable device detection
+const isIOSDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isAndroidDevice = () => /Android/i.test(navigator.userAgent);
 
 const ExploreMenu = ({ category, setCategory }) => {
     const [searchQuery, setSearchQuery] = useState("");
@@ -22,39 +22,47 @@ const ExploreMenu = ({ category, setCategory }) => {
     ];
 
     const { data: allProducts = [], isLoading, isError } = useQuery({
-        queryKey: ['products'], 
+        queryKey: ['products'],
         queryFn: async () => {
             const response = await axios.get("https://new-sever.vercel.app/api/products");
             return response.data;
         },
-        staleTime: 1000 * 60 * 500, // Cache for 500 minutes (Instant load on return)
+        staleTime: 1000 * 60 * 30, // 30 minutes cache
     });
 
-    const isIOSDevice = isIOS();
-    const isAndroidDevice = isAndroid();
+    // Detect device once
+    const userIsIOS = isIOSDevice();
+    const userIsAndroid = isAndroidDevice();
 
     const filteredProducts = allProducts.filter((product) => {
-        // Step A: Check Category
+        // 1. Category filter
         const matchesCategory = category === "All" || product.category === category;
-        
-        // Step B: Check Search Text
+
+        // 2. Search filter
         const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Step C: Check Device Compatibility
-        const matchesDevice = !isIOSDevice && !isAndroidDevice ||
-            (isIOSDevice && product.model?.toLowerCase().includes('.usdz')) ||
-            (isAndroidDevice && product.model?.toLowerCase().includes('.glb'));
+        // 3. Device-specific model filter using the AR link pattern
+        const arLink = `https://www.decorit.store/ar-viewer?model=${encodeURIComponent(product.model || '')}`;
 
-        return matchesCategory && matchesSearch && matchesDevice;
+        let hasCorrectModel = true;
+
+        if (userIsIOS) {
+            hasCorrectModel = product.model?.toLowerCase().includes('.usdz') || false;
+        } else if (userIsAndroid) {
+            hasCorrectModel = product.model?.toLowerCase().includes('.glb') || false;
+        }
+        // On desktop → show all (for admin/preview)
+        // If no model field → still show (maybe image-only product)
+
+        return matchesCategory && matchesSearch && hasCorrectModel;
     });
 
     const handleCategoryClick = (selectedCategory) => {
         setCategory(prev => prev === selectedCategory ? "All" : selectedCategory);
     };
 
-    // Handle search input change
     const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value.toLowerCase());
+        setSearchQuery(e.target.value);
     };
 
     if (isLoading) return <Loading />;
@@ -62,10 +70,10 @@ const ExploreMenu = ({ category, setCategory }) => {
 
     return (
         <div className="explore-menucat" id="explore-menucat">
-            
             <h1>Explore Our Collection</h1>
             <p className="explore-menu-text">
-                Browse our curated selection of furniture and home equipment, designed to blend style with functionality. Use our augmented reality feature to visualize each piece in your home, ensuring the perfect fit for your space and style preferences.
+                Browse our curated selection of furniture and home equipment, designed to blend style with functionality. 
+                Use our augmented reality feature to visualize each piece in your home.
             </p>
 
             {/* Search Input */}
@@ -93,7 +101,6 @@ const ExploreMenu = ({ category, setCategory }) => {
 
             <h2>All Items</h2>
 
-            {/* Products */}
             <div className="explore-menu-products">
                 {filteredProducts.length > 0 ? (
                     filteredProducts.map((product) => (
@@ -106,12 +113,16 @@ const ExploreMenu = ({ category, setCategory }) => {
                             image={product.image}
                             rating={product.rating}
                             reviews={product.reviews}
+                            // Pass the raw model URL so Item component can build correct link
+                            modelUrl={product.model}
                         />
                     ))
                 ) : (
-                  
-                    <div className="no-results">No items found.</div>
-                  
+                    <div className="no-results">
+                        {userIsIOS || userIsAndroid
+                            ? "No AR models available for your device yet. We're adding more soon!"
+                            : "No items found."}
+                    </div>
                 )}
             </div>
         </div>
