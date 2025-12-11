@@ -46,8 +46,8 @@ const LoadingBar = ({ progress }) => (
 
 // Detect iOS
 const isIOS = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 };
 
 // Detect low-end device (only used on Android path)

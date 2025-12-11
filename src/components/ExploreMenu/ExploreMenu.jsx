@@ -10,7 +10,10 @@ import { useQuery } from "@tanstack/react-query";
 const IOS_ONLY_ITEMS = [
   "Dark Wood Round Table",
   "Table Lamp",
-  "Heavy-Duty Outdoor Bench"
+  "Heavy-Duty Outdoor Bench",
+  "Copper-Tone Saucepan",
+  "Modern Asymmetrical Cube Shelf",
+  "Home Wooden Chair"
 ];
 
 const ExploreMenu = ({ category, setCategory }) => {
