@@ -29,6 +29,7 @@ import ReportIssue from './pages/ReportIssue/ReportIssue';
 import ARViewer from "./pages/ARViewer/ARViewer";
 import ARHelpPage from "./pages/ItemDetailsPage/ARHelpPage";
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import ARViewFilter from './components/ARViewFilter/ARViewFilter';
 
 // Reusable Layout Components
 const UserLayout = ({ children, isLoggedIn, handleLogout, setShowLogin }) => (
@@ -187,7 +188,7 @@ const App = () => {
         />
 
         {/* Fullscreen AR Viewer - No Layout */}
-        <Route path="/ar-viewer" element={<ARViewer />} />
+        <Route path="/ar-viewer" element={<ARViewFilter/>} />
         <Route path="/ar-help" element={<ARHelpPage />} />
 
         {/* Auth Required Routes */}

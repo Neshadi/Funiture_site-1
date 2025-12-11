@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { assets } from "../../assets/assets";
 import Item from "../Item/Item";
 import "./ExploreMenu.css";
@@ -21,7 +21,7 @@ const ExploreMenu = ({ category, setCategory }) => {
     const device = useDeviceType();
 
     const { data: allProducts = [], isLoading, isError } = useQuery({
-        queryKey: ['products'], 
+        queryKey: ["products"],
         queryFn: async () => {
             const response = await axios.get("https://new-sever.vercel.app/api/products");
             return response.data;
@@ -29,22 +29,23 @@ const ExploreMenu = ({ category, setCategory }) => {
         staleTime: 1000 * 60 * 500, // Cache for 500 minutes
     });
 
-    // --- Core Filtering Logic ---
-    const filteredProducts = allProducts.filter(product => {
+    // Core Filtering Logic - Strictly device-specific models
+    const filteredProducts = allProducts.filter((product) => {
         const modelUrl = product.modelImageUrl || "";
 
-        if (device === 'ios') {
-            // Regex: Matches .usdz followed by End of String ($) OR a query param (?)
-            return /\.usdz($|\?)/i.test(modelUrl); 
-        } else if (device === 'Android') {
+        if (device === "ios") {
+            // Only show USDZ models on iOS
+            return /\.usdz($|\?)/i.test(modelUrl);
+        } else if (device === "Android") {
+            // Only show GLB models on Android
             return /\.glb($|\?)/i.test(modelUrl);
-        } else {
-            return true;
         }
+        // Desktop or unknown device - show everything
+        return true;
     });
 
     const handleCategoryClick = (selectedCategory) => {
-        setCategory(prev => prev === selectedCategory ? "All" : selectedCategory);
+        setCategory((prev) => (prev === selectedCategory ? "All" : selectedCategory));
     };
 
     // Handle search input change
@@ -53,14 +54,17 @@ const ExploreMenu = ({ category, setCategory }) => {
     };
 
     if (isLoading) return <Loading />;
-    if (isError) return <div className="error-message">Failed to load products. Please try again.</div>;
+
+    if (isError)
+        return <div className="error-message">Failed to load products. Please try again.</div>;
 
     return (
         <div className="explore-menucat" id="explore-menucat">
-            
             <h1>Explore Our Collection</h1>
             <p className="explore-menu-text">
-                Browse our curated selection of furniture and home equipment, designed to blend style with functionality. Use our augmented reality feature to visualize each piece in your home, ensuring the perfect fit for your space and style preferences.
+                Browse our curated selection of furniture and home equipment, designed to blend
+                style with functionality. Use our augmented reality feature to visualize each piece
+                in your home, ensuring the perfect fit for your space and style preferences.
             </p>
 
             {/* Search Input */}
@@ -77,7 +81,9 @@ const ExploreMenu = ({ category, setCategory }) => {
                 {categories.map((cat, index) => (
                     <div
                         key={index}
-                        className={`explore-menu-category-item ${category === cat.name ? "active" : ""}`}
+                        className={`explore-menu-category-item ${
+                            category === cat.name ? "active" : ""
+                        }`}
                         onClick={() => handleCategoryClick(cat.name)}
                     >
                         <img src={cat.image} alt={cat.name} />
@@ -88,7 +94,7 @@ const ExploreMenu = ({ category, setCategory }) => {
 
             <h2>All Items</h2>
 
-            {/* Products */}
+            {/* Products Grid */}
             <div className="explore-menu-products">
                 {filteredProducts.length > 0 ? (
                     filteredProducts.map((product) => (
@@ -104,9 +110,7 @@ const ExploreMenu = ({ category, setCategory }) => {
                         />
                     ))
                 ) : (
-                  
                     <div className="no-results">No items found.</div>
-                  
                 )}
             </div>
         </div>
