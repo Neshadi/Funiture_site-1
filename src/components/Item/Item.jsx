@@ -5,11 +5,11 @@ import './Item.css';
 import { useNavigate } from 'react-router-dom';
 
 
-const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews,countInStock}) => {
+const Item = ({ id, name, price, description, image, onCartUpdate, rating, reviews, countInStock }) => {
     const [quantity, setQuantity] = useState(1);
     const [isAdded, setIsAdded] = useState(false);
     const [notification, setNotification] = useState(''); // Notification message state
-    const Navigate =useNavigate();
+    const Navigate = useNavigate();
 
     useEffect(() => {
         checkCartStatus();
@@ -97,7 +97,7 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
     };
 
     const itemDetailPageNavigation = () => {
-    
+
         Navigate(`/Item-Page/${id}`);
     };
 
@@ -119,16 +119,19 @@ const Item = ({ id, name, price, description, image, onCartUpdate,rating,reviews
                     />
                 </div> */}
             </div>
-            <div className="item-info">
+            <div className="item-info" onClick={itemDetailPageNavigation}>
                 <p className='item-name'>{name}</p>
                 <p className='item-desc'>{description}</p>
                 <p className='item-price'>LKR {price}</p>
-                <button 
+                {/* <button 
                     className='item-button' 
                     onClick={handleAddToCartButtonClick}
                 >
                     {isAdded ? 'Update Cart' : 'Add to Cart'}
-                </button>
+                </button> */}
+                <div className='item-button' >
+                    View Item
+                </div>
             </div>
             {notification && (
                 <div className='notification'>

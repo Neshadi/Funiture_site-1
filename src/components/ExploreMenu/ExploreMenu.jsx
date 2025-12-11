@@ -6,19 +6,18 @@ import "./ExploreMenu.css";
 import Loading from "../Loading/Loading";
 import { useQuery } from "@tanstack/react-query";
 
-// List of item names that should appear ONLY on iOS
-const IOS_ONLY_ITEMS = [
-  "Dark Wood Round Table",
-  "Table Lamp",
-  "Heavy-Duty Outdoor Bench",
+// Items that should appear ONLY on iOS & iPadOS (not Android)
+const IOS_EXCLUSIVE_ITEMS = [
+  "Light Wood Armchair",
+  "Wooden Storage Shelf",
   "Copper-Tone Saucepan",
-  "Modern Asymmetrical Cube Shelf",
-  "Home Wooden Chair"
+  "Table Lamp",
+  "Dark Wood Round Table"
 ];
 
 const ExploreMenu = ({ category, setCategory }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [platform, setPlatform] = useState("desktop"); // default
+  const [platform, setPlatform] = useState("desktop"); // 'ios', 'android', or 'desktop'
 
   const categories = [
     { name: "Furnitures", image: assets.ellipse1 },
@@ -37,14 +36,15 @@ const ExploreMenu = ({ category, setCategory }) => {
     staleTime: 1000 * 60 * 500,
   });
 
-  // Detect platform (iOS, Android, Desktop)
+  // Accurate platform detection: iOS (iPhone + iPad), Android, Desktop
   useEffect(() => {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(userAgent);
-    const isAndroid = /android/.test(userAgent);
+    const ua = navigator.userAgent.toLowerCase();
+    const isIPadOS = /macintosh/.test(ua) && "ontouchend" in document; // iPad on iPadOS 13+
+    const isIOS = /iphone|ipad|ipod/.test(ua) || isIPadOS;
+    const isAndroid = /android/.test(ua);
 
     if (isIOS) {
-      setPlatform("ios");
+      setPlatform("ios"); // Includes iPhone + iPad
     } else if (isAndroid) {
       setPlatform("android");
     } else {
@@ -52,27 +52,23 @@ const ExploreMenu = ({ category, setCategory }) => {
     }
   }, []);
 
-  // Filter products based on category, search, and platform rules
+  // Filter products by category, search, and platform rules
   const filteredProducts = allProducts.filter((product) => {
-    // Category filter
     const matchesCategory = category === "All" || product.category === category;
-
-    // Search filter
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Platform-specific visibility
+    const isIosExclusiveItem = IOS_EXCLUSIVE_ITEMS.includes(product.name);
+
     let visibleOnPlatform = true;
 
-    const isIosOnlyItem = IOS_ONLY_ITEMS.includes(product.name);
-
     if (platform === "ios") {
-      // On iOS: show only iOS-only items + (if needed, others can be added later)
-      visibleOnPlatform = isIosOnlyItem;
+      // On iPhone & iPad: Show ONLY the exclusive items
+      visibleOnPlatform = isIosExclusiveItem;
     } else if (platform === "android") {
-      // On Android: show everything EXCEPT iOS-only items
-      visibleOnPlatform = !isIosOnlyItem;
+      // On Android: Hide the iOS-exclusive items
+      visibleOnPlatform = !isIosExclusiveItem;
     }
-    // On desktop: show all → visibleOnPlatform remains true
+    // Desktop: show all → no change needed
 
     return matchesCategory && matchesSearch && visibleOnPlatform;
   });
@@ -93,7 +89,7 @@ const ExploreMenu = ({ category, setCategory }) => {
     <div className="explore-menucat" id="explore-menucat">
       <h1>Explore Our Collection</h1>
       <p className="explore-menu-text">
-        Browse our curated selection of furniture and home equipment...
+        Browse our curated selection of furniture and home equipment, designed to blend style with functionality...
       </p>
 
       <input
@@ -134,7 +130,7 @@ const ExploreMenu = ({ category, setCategory }) => {
             />
           ))
         ) : (
-          <div className="no-results">No items found.</div>
+          <div className="no-results">No items found for your current filters.</div>
         )}
       </div>
     </div>

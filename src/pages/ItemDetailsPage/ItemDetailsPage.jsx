@@ -7,7 +7,7 @@ import axios from "axios";
 import QRCode from "react-qr-code";
 import CameraIcon from "../../assets/camera.png";
 
-const ItemDetails = ({ onCartUpdate }) => {
+const ItemDetails = ({ onCartUpdate, setShowLogin, isLoggedIn }) => {
   const { id } = useParams();
 
   useEffect(() => {
@@ -31,6 +31,14 @@ const ItemDetails = ({ onCartUpdate }) => {
     },
     staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
   });
+
+  const handleAuthRequiredAction = (action) => {
+    if (!isLoggedIn) {
+      setShowLogin(true);  // Show login popup
+      return;
+    }
+    action(); // Proceed if logged in
+  };
 
   const { 
     data: reviews = [], // Default to empty array if undefined
@@ -58,7 +66,7 @@ const ItemDetails = ({ onCartUpdate }) => {
     }, 3000);
   };
 
-  const addToCart = async () => {
+const addToCart = async () => {
     try {
       const response = await axios.post(
         "https://new-sever.vercel.app/api/cart",
@@ -83,7 +91,13 @@ const ItemDetails = ({ onCartUpdate }) => {
         refetchProduct();
       }
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      // If unauthorized (401), show login
+      if (error.response?.status === 401) {
+        setShowLogin(true);
+      } else {
+        setNotification("Failed to add item to cart");
+        console.error("Error adding to cart:", error);
+      }
       hideNotification();
     }
   };
@@ -162,7 +176,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             {/* Actions */}
             <div className="actions-row">
               <button
-                onClick={addToCart}
+                onClick={() => handleAuthRequiredAction(addToCart)}
                 className="btn-add-to-cart-desktop"
                 disabled={product.countInStock <= 0}
               >
@@ -191,7 +205,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                 </span>
               </div>
               <button
-                onClick={addToCart}
+                onClick={() => handleAuthRequiredAction(addToCart)}
                 className="btn-add-to-cart-mobile"
                 disabled={product.countInStock <= 0}
               >
@@ -203,7 +217,7 @@ const ItemDetails = ({ onCartUpdate }) => {
               <button
                 className="btn-buy-now"
                 disabled={product.countInStock <= 0}
-                onClick={() => addToCart()}
+                onClick={() => handleAuthRequiredAction(addToCart)}
               >
                 Buy Now
               </button>
