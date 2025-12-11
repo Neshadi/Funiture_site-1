@@ -7,6 +7,10 @@ import axios from "axios";
 import QRCode from "react-qr-code";
 import CameraIcon from "../../assets/camera.png";
 
+// Reliable device detection
+const isIOSDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isAndroidDevice = () => /Android/i.test(navigator.userAgent);
+
 const ItemDetails = ({ onCartUpdate }) => {
   const { id } = useParams();
 
@@ -18,6 +22,10 @@ const ItemDetails = ({ onCartUpdate }) => {
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const navigate = useNavigate();
+
+  // Detect device once
+  const userIsIOS = isIOSDevice();
+  const userIsAndroid = isAndroidDevice();
 
   const { 
     data: product, 
@@ -49,6 +57,19 @@ const ItemDetails = ({ onCartUpdate }) => {
     : 0;
   const numReviews = reviews.length;
   const isLoading = productLoading || reviewsLoading;
+
+  const hasCorrectModel = (() => {
+    if (!product?.modelImageUrl) return false;
+    const modelLower = product.modelImageUrl.toLowerCase();
+    if (userIsIOS) {
+      return modelLower.endsWith('.usdz');
+    } else if (userIsAndroid) {
+      return modelLower.endsWith('.glb');
+    } else {
+      // On desktop → show all (for admin/preview)
+      return true;
+    }
+  })();
 
   // Hide notification after 3s
   const hideNotification = () => {
@@ -100,10 +121,7 @@ const ItemDetails = ({ onCartUpdate }) => {
 
   if (!product) return <p>Product not found.</p>;
 
-  // const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
-  //   product.modelImageUrl
-  // )}&name=${encodeURIComponent(product.name)}`;
-  const arUrl = `https://www.decorit.store/Item-Page/${id}`;
+  const arUrl = `https://www.decorit.store/ar-viewer?model=${encodeURIComponent(product.modelImageUrl)}&name=${encodeURIComponent(product.name)}`;
 
 
   return (
@@ -211,7 +229,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             </div>
 
             {/* QR Code - Bottom Left */}
-            {product.modelImageUrl && (
+            {product.modelImageUrl && hasCorrectModel && (
               <div className="qr-container">
                 <div className="qr-code">
                   <QRCode value={arUrl} size={80} />
@@ -227,7 +245,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             )}
           </div>
           {/* AR Button (Mobile Only - Optional) */}
-          {product.modelImageUrl && (
+          {product.modelImageUrl && hasCorrectModel && (
             <div className="ar-section">
               {/* AR View Button */}
               <button

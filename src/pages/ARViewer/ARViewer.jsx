@@ -124,7 +124,7 @@ const ARViewer = () => {
       return;
     }
 
-    if (extension === 'glb' && device !== 'ios') {  // Wait, earlier said !== 'android', but to enforce, yes
+    if (extension === 'glb' && device !== 'android') {
       alert(".glb models are only supported on Android devices.");
       navigate(-1);
       return;

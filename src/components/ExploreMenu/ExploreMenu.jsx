@@ -47,9 +47,9 @@ const ExploreMenu = ({ category, setCategory }) => {
         let hasCorrectModel = true;
 
         if (userIsIOS) {
-            hasCorrectModel = product.model?.toLowerCase().includes('.usdz') || false;
+            hasCorrectModel = !!product.model && product.model.toLowerCase().endsWith('.usdz');
         } else if (userIsAndroid) {
-            hasCorrectModel = product.model?.toLowerCase().includes('.glb') || false;
+            hasCorrectModel = !!product.model && product.model.toLowerCase().endsWith('.glb');
         }
         // On desktop → show all (for admin/preview)
         // If no model field → still show (maybe image-only product)
