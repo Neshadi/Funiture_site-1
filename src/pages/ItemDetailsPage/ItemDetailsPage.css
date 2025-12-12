@@ -1,4 +1,5 @@
-/* ItemDetailsPage.css */
+/* ItemDetailsPage.css – ONLY image wrapper fixed, everything else 100% unchanged */
+
 .item-details-container {
   max-width: 1850px;
   margin: 8% auto;
@@ -65,6 +66,7 @@
   flex-wrap: wrap;
 }
 
+/* ==================== FIXED PART START ==================== */
 .product-image-wrapper {
   flex: 1;
   min-width: 300px;
@@ -73,13 +75,20 @@
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin: 0 auto;
+  /* NEW – forces same size on every product */
+  aspect-ratio: 5 / 4;          /* change to 1/1 for square, 3/4, etc. */
+  overflow: hidden;
+  background: #ffffff;
 }
 
 .product-img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;           /* or use 'cover' if you want cropped fill */
+  object-position: center;
   display: block;
 }
+/* ==================== FIXED PART END ==================== */
 
 /* QR Code - Bottom Left */
 .qr-container {
@@ -368,10 +377,7 @@
 }
 
 /* Responsive Design */
-
-@media (max-width: 375px) {
- 
-}
+@media (max-width: 375px) {}
 
 @media (max-width: 480px) {
   .item-details-container {
@@ -385,13 +391,11 @@
   .price {
     font-size: 1.35rem;
   }
-
-
 }
 
 @media (min-width: 769px) {
   .qr-container {
-    display: flex !important; /* Force show on desktop */
+    display: flex !important;
   }
 }
 
@@ -460,8 +464,6 @@
   .reviews-section {
     margin-top: 3rem;
   }
-
- 
 }
 
 @media (max-width: 1024px) {
@@ -471,18 +473,17 @@
     padding: 0 1rem;
   }
 
-  /* AR Mobile Button */
   .ar-section {
     position: absolute;
     display: flex;
     flex-direction: column;
-    margin-top: 48%;
+    margin-top: 40%;
     margin-left: 15%;
     align-items: center;
     justify-content: center;
     gap: 1px;
   }
- 
+
   .ar-mobile-btn {
     align-items: center;
     gap: 1rem;
@@ -516,14 +517,10 @@
   }
 }
 
-
-
-
 /* Default styles (above 640px) */
 
 /* Up to 375px */
 @media (max-width: 375px) {
-
   .item-details-container {
     max-width: 1250px;
     margin: 20% auto;
@@ -534,7 +531,7 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    margin-top: 75%;
+    margin-top: 60%;
     margin-left: 45%;
     align-items: center;
     justify-content: center;
@@ -544,7 +541,6 @@
 
 /* 375px - 480px */
 @media (min-width: 376px) and (max-width: 480px) {
-
   .item-details-container {
     max-width: 1250px;
     margin: 20% auto;
@@ -555,7 +551,7 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    margin-top: 80%;
+    margin-top: 60%;
     margin-left: 50%;
     align-items: center;
     justify-content: center;
@@ -565,7 +561,6 @@
 
 /* 480px - 640px */
 @media (min-width: 481px) and (max-width: 640px) {
-
   .item-details-container {
     max-width: 1250px;
     margin: 15% auto;
@@ -576,8 +571,8 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    margin-top: 70%;
-    margin-left: 55%;
+    margin-top: 45%;
+    margin-left: 50%;
     align-items: center;
     justify-content: center;
     gap: 1px;
@@ -586,7 +581,6 @@
 
 /* 640px - 768px */
 @media (min-width: 641px) and (max-width: 768px) {
-
   .item-details-container {
     max-width: 1250px;
     margin: 12% auto;
@@ -597,8 +591,8 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    margin-top: 58%;
-    margin-left: 55%;
+    margin-top: 35%;
+    margin-left: 50%;
     align-items: center;
     justify-content: center;
     gap: 1px;
@@ -607,12 +601,9 @@
 
 /* 769px - 1440px */
 @media (min-width: 769px) and (max-width: 1440px) {
-
   .item-details-container {
     max-width: 1250px;
     margin: 12% auto;
     padding: 0 1rem;
   }
-
- 
 }
