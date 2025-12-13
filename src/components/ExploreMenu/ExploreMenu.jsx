@@ -12,7 +12,10 @@ const IOS_EXCLUSIVE_ITEMS = [
   "Wooden Storage Shelf",
   "Copper-Tone Saucepan",
   "Table Lamp",
-  "Dark Wood Round Table"
+  "Dark Wood Round Table",
+  "Vintage-Style Grey & Beige Medallion Rug",
+  "White Space-Saving Corner Wardrobe"
+
 ];
 
 const ExploreMenu = ({ category, setCategory }) => {
