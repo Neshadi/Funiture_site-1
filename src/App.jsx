@@ -34,7 +34,7 @@ import ARViewFilter from './components/ARViewFilter/ARViewFilter';
 // Reusable Layout Components
 const UserLayout = ({ children, isLoggedIn, handleLogout, setShowLogin }) => (
   <>
-    <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin} />
+    <NavBar isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin}/>
     <main className="page-content">{children}</main>
     <Footer />
   </>
@@ -142,11 +142,15 @@ const App = () => {
           }
         />
 
+        {/* THIS IS THE ONLY CHANGED ROUTE */}
         <Route
           path="/Item-Page/:id"
           element={
             <UserLayout isLoggedIn={isLoggedIn} handleLogout={handleLogout} setShowLogin={setShowLogin}>
-              <ItemDetailsPage />
+              <ItemDetailsPage 
+                setShowLogin={setShowLogin} 
+                isLoggedIn={isLoggedIn} 
+              />
             </UserLayout>
           }
         />

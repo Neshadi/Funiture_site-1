@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { assets } from "../../assets/assets.js";
 import "./NavBar.css";
 
@@ -9,6 +9,7 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation(); // <-- new
 
   const handleButtonClick = () => {
     if (isLoggedIn) {
@@ -20,28 +21,41 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
 
   const handleCartClick = () => {
     navigate("/cart");
-    setIsMenuOpen(false); // Close menu on navigation
+    setIsMenuOpen(false);
   };
 
   const handleProfileClick = () => {
     setShowDropdown(!showDropdown);
-    setIsMenuOpen(false); // Close menu on profile click
+    setIsMenuOpen(false);
   };
 
   const handleSignOut = () => {
     handleLogout();
     setShowDropdown(false);
-    setIsMenuOpen(false); // Close menu on sign out
+    setIsMenuOpen(false);
   };
 
   const handleMenuItemClick = (menuName) => {
     setMenu(menuName);
-    setIsMenuOpen(false); // Close menu when a menu item is clicked
+    setIsMenuOpen(false);
   };
 
   const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen); // Toggle hamburger menu
+    setIsMenuOpen(!isMenuOpen);
   };
+
+  // ===== Sync active menu with current URL =====
+  useEffect(() => {
+    if (location.pathname.startsWith("/category")) {
+      setMenu("category");
+    } else if (location.pathname === "/mobile-app") {
+      setMenu("mobile-app");
+    } else if (location.pathname === "/about-us") {
+      setMenu("about-us");
+    } else {
+      setMenu("home");
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -50,7 +64,6 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -64,7 +77,7 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
         className="logo"
         onClick={() => {
           navigate("/");
-          setIsMenuOpen(false); // Close menu on logo click
+          setIsMenuOpen(false);
         }}
       />
       <ul className={`navbar-menu ${isMenuOpen ? "active" : ""}`}>
@@ -93,31 +106,21 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
           <Link to="/about-us">About Us</Link>
         </li>
       </ul>
+
       <div className="navbar-toggle" onClick={toggleMenu}>
         <span className="bar"></span>
         <span className="bar"></span>
         <span className="bar"></span>
       </div>
+
       <div className="navbar-right">
         {isLoggedIn && (
           <>
-            <div
-              className="profile-image-container"
-              onClick={handleProfileClick}
-            >
-              <img
-                src={assets.profile}
-                alt="profile"
-                className="profile-image"
-              />
+            <div className="profile-image-container" onClick={handleProfileClick}>
+              <img src={assets.profile} alt="profile" className="profile-image" />
             </div>
-            <div
-              className="navbar-search-icon"
-              onClick={handleCartClick}
-              style={{ cursor: "pointer" }}
-            >
+            <div className="navbar-search-icon" onClick={handleCartClick} style={{ cursor: "pointer" }}>
               <img src={assets.cart} alt="cart" className="cart" />
-              {/* Show red dot only if cartItemCount > 0 */}
               {cartItemCount > 0 && <div className="dot"></div>}
             </div>
           </>
@@ -126,6 +129,7 @@ const NavBar = ({ setShowLogin, isLoggedIn, handleLogout, cartItemCount }) => {
           {isLoggedIn ? "Sign Out" : "Sign In"}
         </button>
       </div>
+
       {showDropdown && (
         <div className="profile-dropdown" ref={dropdownRef}>
           <ul>

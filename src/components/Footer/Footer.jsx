@@ -26,7 +26,7 @@ const Footer = ({ className }) => {
 
         <div className="footer-section contact">
           <h3>Contact Us</h3>
-          <p>+94 816 672 827</p>
+          <p>+94 71 1157 220</p>
           <p><a href="mailto:decorit@gmail.com">decorit@gmail.com</a></p>
           <p><Link to="/report-issue">Report an Issue</Link></p>
         </div>

@@ -4,6 +4,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
+// Detect iOS/iPadOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
 // Mock LoadingBar
 const LoadingBar = ({ progress }) => (
   <div
@@ -67,6 +70,10 @@ const ARViewer = () => {
   const isLowEnd = useRef(isLowEndDevice());
 
   const modelUrl = searchParams.get("model");
+  // Add usdzUrl for iOS - assume it's provided or derive from modelUrl
+  const usdzUrl = searchParams.get("usdz") || modelUrl?.replace(/\.glb$/i, '.usdz');
+  // Optional preview image for Quick Look - assume a placeholder if not provided
+  const previewUrl = searchParams.get("preview") || 'https://via.placeholder.com/300x200?text=AR+Preview';
 
   const dragState = useRef({
     isDragging: false,
@@ -74,6 +81,53 @@ const ARViewer = () => {
     prevY: 0,
     lastTime: 0,
   });
+
+  if (isIOS) {
+    // iOS/iPadOS handling with AR Quick Look
+    useEffect(() => {
+      if (!usdzUrl) {
+        alert("No USDZ model URL provided for iOS.");
+        navigate(-1);
+        return;
+      }
+      // Optionally auto-trigger, but requires user interaction; here we just display the link
+    }, [usdzUrl]);
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#000",
+          color: "#fff",
+          zIndex: 1000,
+          flexDirection: "column",
+        }}
+      >
+        <p style={{ marginBottom: "20px", fontSize: "18px" }}>Tap below to view in AR</p>
+        <a rel="ar" href={usdzUrl} style={{ pointerEvents: "auto" }}>
+          <img
+            src={previewUrl}
+            alt="AR Model Preview"
+            style={{
+              width: "300px",
+              height: "200px",
+              borderRadius: "12px",
+              boxShadow: "0 4px 12px rgba(255,255,255,0.2)",
+            }}
+          />
+        </a>
+      </div>
+    );
+  }
+
+  // Non-iOS (Android/WebXR) handling below
 
   // Auto-start AR when component mounts and model is available
   useEffect(() => {
