@@ -192,7 +192,7 @@ const App = () => {
         />
 
         {/* Fullscreen AR Viewer - No Layout */}
-        <Route path="/ar-viewer" element={<ARViewFilter/>} />
+        <Route path="/ar-viewer/:id" element={<ARViewer/>} />
         <Route path="/ar-help" element={<ARHelpPage />} />
 
         {/* Auth Required Routes */}

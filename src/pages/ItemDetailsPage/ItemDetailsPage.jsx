@@ -245,18 +245,12 @@ const addToCart = async () => {
             <div className="ar-section">
               {/* AR View Button */}
               <button
-                className="ar-mobile-btn"
-                onClick={() =>
-                  navigate(
-                    `/ar-viewer?model=${encodeURIComponent(
-                      product.modelImageUrl
-                    )}&name=${encodeURIComponent(product.name)}`
-                  )
-                }
-              >
-                <img src={CameraIcon} alt="AR" className="ar-icon" />
-                <b>AR View</b>
-              </button>
+      className="ar-mobile-btn"
+      onClick={() => navigate(`/ar-viewer/${id}`)}  // Pass ID in path
+    >
+      <img src={CameraIcon} alt="AR" className="ar-icon" />
+      <b>AR View</b>
+    </button>
 
               {/* Blue Help Link  */}
               {window.innerWidth < 1024 && (
