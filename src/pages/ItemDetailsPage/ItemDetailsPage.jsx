@@ -7,50 +7,56 @@ import axios from "axios";
 import QRCode from "react-qr-code";
 import CameraIcon from "../../assets/camera.png";
 
-const ItemDetails = ({ onCartUpdate }) => {
+const ItemDetails = ({ onCartUpdate, setShowLogin, isLoggedIn }) => {
   const { id } = useParams();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [id]);
-
-  const [quantity, setQuantity] = useState(2);
+      window.scrollTo(0, 0);
+    }, [id]);
+    
+  const [quantity, setQuantity] = useState(2); // Default 2 as per design
   const [isAdded, setIsAdded] = useState(false);
   const [notification, setNotification] = useState("");
   const navigate = useNavigate();
 
   const { 
-    data: product,
-    isLoading: productLoading,
-    refetch: refetchProduct
+    data: product, 
+    isLoading: productLoading, 
+    refetch: refetchProduct // We need this to update stock after adding to cart
   } = useQuery({
-    queryKey: ["product", id],
+    queryKey: ['product', id], // Unique ID for cache
     queryFn: async () => {
-      const { data } = await axios.get(
-        `https://new-sever.vercel.app/api/products/${id}`
-      );
+      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
       return data;
+    },
+    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
+  });
+
+  const handleAuthRequiredAction = (action) => {
+    if (!isLoggedIn) {
+      setShowLogin(true);  // Show login popup
+      return;
+    }
+    action(); // Proceed if logged in
+  };
+
+  const { 
+    data: reviews = [], // Default to empty array if undefined
+    isLoading: reviewsLoading 
+  } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: async () => {
+      const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
+      return data || [];
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  // ✅ FIXED: safely extract reviews (fallback to empty array)
-  const reviews = product?.reviews || [];
-
-  // ✅ FIXED: calculate average rating
-  const averageRating =
-    reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
-      : 0;
-
-  // Number of reviews
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
+    : 0;
   const numReviews = reviews.length;
-
-  // No reviewsLoading variable existed → removed
-  const isLoading = productLoading;
-
-
-
+  const isLoading = productLoading || reviewsLoading;
 
   // Hide notification after 3s
   const hideNotification = () => {
@@ -60,7 +66,7 @@ const ItemDetails = ({ onCartUpdate }) => {
     }, 3000);
   };
 
-  const addToCart = async () => {
+const addToCart = async () => {
     try {
       const response = await axios.post(
         "https://new-sever.vercel.app/api/cart",
@@ -85,7 +91,13 @@ const ItemDetails = ({ onCartUpdate }) => {
         refetchProduct();
       }
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      // If unauthorized (401), show login
+      if (error.response?.status === 401) {
+        setShowLogin(true);
+      } else {
+        setNotification("Failed to add item to cart");
+        console.error("Error adding to cart:", error);
+      }
       hideNotification();
     }
   };
@@ -105,7 +117,7 @@ const ItemDetails = ({ onCartUpdate }) => {
   // const arUrl = `${window.location.origin}/ar-viewer?model=${encodeURIComponent(
   //   product.modelImageUrl
   // )}&name=${encodeURIComponent(product.name)}`;
-  const arUrl = `https://funiture-site-1-git-webcash2-neshadis-projects.vercel.app/Item-Page/${id}`;
+  const arUrl = `https://www.decorit.store/Item-Page/${id}`;
 
 
   return (
@@ -164,7 +176,7 @@ const ItemDetails = ({ onCartUpdate }) => {
             {/* Actions */}
             <div className="actions-row">
               <button
-                onClick={addToCart}
+                onClick={() => handleAuthRequiredAction(addToCart)}
                 className="btn-add-to-cart-desktop"
                 disabled={product.countInStock <= 0}
               >
@@ -193,7 +205,7 @@ const ItemDetails = ({ onCartUpdate }) => {
                 </span>
               </div>
               <button
-                onClick={addToCart}
+                onClick={() => handleAuthRequiredAction(addToCart)}
                 className="btn-add-to-cart-mobile"
                 disabled={product.countInStock <= 0}
               >
@@ -205,7 +217,7 @@ const ItemDetails = ({ onCartUpdate }) => {
               <button
                 className="btn-buy-now"
                 disabled={product.countInStock <= 0}
-                onClick={() => addToCart()}
+                onClick={() => handleAuthRequiredAction(addToCart)}
               >
                 Buy Now
               </button>
