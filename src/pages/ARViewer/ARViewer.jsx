@@ -4,8 +4,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useParams, useNavigate } from "react-router-dom";
 
-// Detect iOS
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isLowEndDevice = () => (navigator.deviceMemory || 4) <= 4;
 
 const LoadingBar = ({ progress }) => (
   <div style={{
@@ -20,37 +20,44 @@ const LoadingBar = ({ progress }) => (
   </div>
 );
 
-const isLowEndDevice = () => (navigator.deviceMemory || 4) <= 4;
-
 const ARViewer = () => {
-  const { id } = useParams(); // ← Gets the item ID from URL: /ar-viewer/:id
+  const { id } = useParams(); // e.g., "693c36a87bac051673b9dba0"
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const overlayRef = useRef(null);
   const [isSupported, setIsSupported] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isPlaced, setIsPlaced] = useState(false);
   const [reticleReady, setReticleReady] = useState(false);
 
-  const app = useRef({});
+  const app = useRef({
+    scene: null,
+    renderer: null,
+    camera: null,
+    chair: null,
+    reticle: null,
+    currentSession: null,
+    hitTestSource: null,
+    isModelPlaced: false,
+    reticleAppeared: false,
+    progressInterval: null,
+    hdrLoaded: false,
+  });
+
   const isLowEnd = useRef(isLowEndDevice());
 
-  // If no ID, go back
   if (!id) {
-    alert("No model ID found.");
+    alert("Invalid model ID");
     navigate(-1);
     return null;
   }
 
-  // Dynamic file paths based on item ID
   const glbUrl = `/models/${id}.glb`;
   const usdzUrl = `/models/${id}.usdz`;
   const previewUrl = `/models/${id}-preview.jpg`;
 
-  const dragState = useRef({ isDragging: false, prevX: 0, prevY: 0, lastTime: 0 });
-
-  // ===================== iOS / iPadOS - Quick Look =====================
+  // ===================== iOS =====================
   if (isIOS) {
     return (
       <div style={{
@@ -59,82 +66,42 @@ const ARViewer = () => {
         padding: "20px", textAlign: "center"
       }}>
         <p style={{ fontSize: "18px", marginBottom: "30px" }}>Tap to view in AR</p>
-
         <a rel="ar" href={usdzUrl}>
           <img
             src={previewUrl}
-            alt="AR Preview"
-            onError={(e) => (e.target.style.display = "none")}
-            style={{
-              width: "300px", height: "300px", objectFit: "contain",
-              borderRadius: "16px", boxShadow: "0 8px 32px rgba(0,0,0,0.6)"
-            }}
+            alt="Preview"
+            onError={(e) => e.target.style.display = "none"}
+            style={{ width: "300px", height: "300px", objectFit: "contain", borderRadius: "16px", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}
           />
         </a>
-
-        <button
-          onClick={() => navigate(-1)}
-          style={{ marginTop: "40px", padding: "12px 28px", background: "#333", color: "white", border: "none", borderRadius: "12px" }}
-        >
+        <button onClick={() => navigate(-1)} style={{ marginTop: "40px", padding: "12px 28px", background: "#333", color: "white", border: "none", borderRadius: "12px" }}>
           Go Back
         </button>
       </div>
     );
   }
 
-  // ===================== Android & Desktop - WebXR =====================
+  // ===================== CLEANUP OLD MODEL WHEN ID CHANGES =====================
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (app.current.currentSession === null && isSupported) startAR();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [isSupported]);
-
-  useEffect(() => {
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-
-    const handleTouchStart = (e) => {
-      if (!app.current.chair || !isPlaced || e.target.tagName === "BUTTON") return;
-      const touch = e.touches[0];
-      dragState.current = { isDragging: true, prevX: touch.clientX, prevY: touch.clientY, lastTime: Date.now() };
-    };
-
-    const handleTouchMove = (e) => {
-      if (!dragState.current.isDragging || !app.current.chair || !isPlaced) return;
-      if (Date.now() - dragState.current.lastTime < 16) return;
-      dragState.current.lastTime = Date.now();
-
-      e.preventDefault();
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - dragState.current.prevX;
-      const deltaY = touch.clientY - dragState.current.prevY;
-
-      const model = app.current.chair;
-      model.rotation.y += deltaX * 0.01;
-
-      const forward = new THREE.Vector3();
-      app.current.camera.getWorldDirection(forward);
-      forward.y = 0; forward.normalize();
-      model.position.addScaledVector(forward, -deltaY * 0.002);
-
-      dragState.current.prevX = touch.clientX;
-      dragState.current.prevY = touch.clientY;
-    };
-
-    const handleTouchEnd = () => { dragState.current.isDragging = false; };
-
-    overlay.addEventListener("touchstart", handleTouchStart, { passive: false });
-    overlay.addEventListener("touchmove", handleTouchMove, { passive: false });
-    overlay.addEventListener("touchend", handleTouchEnd);
-
     return () => {
-      overlay.removeEventListener("touchstart", handleTouchStart);
-      overlay.removeEventListener("touchmove", handleTouchMove);
-      overlay.removeEventListener("touchend", handleTouchEnd);
+      const a = app.current;
+      // Clean up previous model
+      if (a.chair) {
+        a.scene?.remove(a.chair);
+        a.chair = null;
+      }
+      if (a.progressInterval) clearInterval(a.progressInterval);
+      setIsLoading(true);
+      setLoadingProgress(0);
+      setIsPlaced(false);
+      setReticleReady(false);
+      a.isModelPlaced = false;
+      a.reticleAppeared = false;
+      a.reticle && (a.reticle.visible = false);
     };
-  }, [isPlaced]);
+  }, [id]);
 
+  // ===================== THREE.JS SETUP (runs once) =====================
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -142,8 +109,8 @@ const ARViewer = () => {
     const a = app.current;
     a.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
     a.camera.position.set(0, 1.6, 0);
-    a.scene = new THREE.Scene();
 
+    a.scene = new THREE.Scene();
     a.scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, isLowEnd.current ? 0.8 : 1));
 
     a.renderer = new THREE.WebGLRenderer({ antialias: !isLowEnd.current, alpha: true });
@@ -167,13 +134,14 @@ const ARViewer = () => {
       setIsSupported(false);
     }
 
-    a.loadHDR = () => {
-      if (a.hdrLoaded || isLowEnd.current) return;
-      new RGBELoader().setDataType(THREE.UnsignedByteType).load(
-        "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/equirectangular/venice_sunset_1k.hdr",
-        (tex) => { tex.mapping = THREE.EquirectangularReflectionMapping; a.scene.environment = tex; a.hdrLoaded = true; }
-      );
-    };
+    // HDR
+    new RGBELoader()
+      .setDataType(THREE.UnsignedByteType)
+      .load("https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/equirectangular/venice_sunset_1k.hdr", (tex) => {
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        a.scene.environment = tex;
+        a.hdrLoaded = true;
+      });
 
     const onResize = () => {
       a.camera.aspect = window.innerWidth / window.innerHeight;
@@ -187,77 +155,88 @@ const ARViewer = () => {
       a.renderer?.dispose();
       container.contains(a.renderer.domElement) && container.removeChild(a.renderer.domElement);
     };
-  }, []);
+  }, []); // Run only once
 
-  const startAR = async () => {
-    const a = app.current;
-    try {
-      const session = await navigator.xr.requestSession("immersive-ar", {
-        requiredFeatures: ["hit-test"],
-        optionalFeatures: ["dom-overlay"],
-        domOverlay: { root: overlayRef.current },
-      });
+  // ===================== START AR & LOAD MODEL WHEN ID CHANGES =====================
+  useEffect(() => {
+    if (!isSupported) return;
 
-      a.renderer.xr.setSession(session);
-      a.currentSession = session;
+    const start = async () => {
+      const a = app.current;
+      try {
+        const session = await navigator.xr.requestSession("immersive-ar", {
+          requiredFeatures: ["hit-test"],
+          optionalFeatures: ["dom-overlay"],
+          domOverlay: { root: overlayRef.current },
+        });
 
-      setIsLoading(true);
-      setLoadingProgress(0);
-      setIsPlaced(false);
-      setReticleReady(false);
-      a.isModelPlaced = false;
-      a.reticle.visible = false;
-      a.reticleAppeared = false;
+        a.renderer.xr.setSession(session);
+        a.currentSession = session;
 
-      a.loadHDR();
-      requestHitTest(a);
-      loadGLBModel(a);
-
-      session.addEventListener("end", () => {
-        a.currentSession = null;
-        a.renderer.setAnimationLoop(null);
-        setIsLoading(false);
+        // Reset state
+        setIsLoading(true);
+        setLoadingProgress(0);
         setIsPlaced(false);
-      });
-    } catch (err) {
-      alert("AR not supported on this device/browser.");
-      setIsSupported(false);
-    }
-  };
+        setReticleReady(false);
+        a.isModelPlaced = false;
+        a.reticle.visible = false;
+        a.reticleAppeared = false;
 
-  const requestHitTest = (a) => {
-    const session = a.renderer.xr.getSession();
-    session?.requestReferenceSpace("viewer").then(refSpace =>
-      session.requestHitTestSource({ space: refSpace }).then(source => a.hitTestSource = source)
-    );
-  };
+        // Request hit test
+        session.requestReferenceSpace("viewer").then(refSpace => {
+          session.requestHitTestSource({ space: refSpace }).then(source => {
+            a.hitTestSource = source;
+          });
+        });
 
-  const loadGLBModel = (a) => {
-    const loader = new GLTFLoader();
-    let prog = 0;
-    const interval = setInterval(() => {
-      if (a.reticleAppeared) clearInterval(interval);
-      else if (prog < 95) setLoadingProgress(Math.round(++prog));
-    }, 100);
-    a.progressInterval = interval;
+        // Load new model
+        const loader = new GLTFLoader();
+        let prog = 0;
+        const interval = setInterval(() => {
+          if (a.reticleAppeared) {
+            clearInterval(interval);
+          } else if (prog < 95) {
+            setLoadingProgress(Math.round(++prog));
+          }
+        }, 100);
+        a.progressInterval = interval;
 
-    loader.load(
-      glbUrl,
-      (gltf) => {
-        a.chair = gltf.scene;
-        a.scene.add(a.chair);
-        a.chair.visible = false;
-        setLoadingProgress(70);
-      },
-      (xhr) => xhr.total && setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 70)),
-      (err) => {
-        console.error("GLB load failed:", err);
-        alert("3D model not found. Check if file exists in public/models/");
-        setIsLoading(false);
+        loader.load(
+          glbUrl,
+          (gltf) => {
+            // Remove old model if exists
+            if (a.chair) a.scene.remove(a.chair);
+            a.chair = gltf.scene;
+            a.scene.add(a.chair);
+            a.chair.visible = false;
+            setLoadingProgress(70);
+            console.log("Model loaded for ID:", id);
+          },
+          (xhr) => xhr.total && setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 70)),
+          (err) => {
+            console.error("Failed to load model:", glbUrl, err);
+            alert("Model not found. Make sure the file exists:\n" + glbUrl);
+            setIsLoading(false);
+          }
+        );
+
+        session.addEventListener("end", () => {
+          a.currentSession = null;
+          a.renderer.setAnimationLoop(null);
+          setIsLoading(false);
+          setIsPlaced(false);
+        });
+      } catch (err) {
+        console.error("AR session failed:", err);
+        alert("AR not supported on this device.");
+        setIsSupported(false);
       }
-    );
-  };
+    };
 
+    start();
+  }, [id, isSupported]); // ← Critical: re-run when ID changes!
+
+  // ===================== ANIMATION LOOP =====================
   useEffect(() => {
     const a = app.current;
     if (!a.renderer) return;
@@ -289,10 +268,11 @@ const ARViewer = () => {
     });
   }, []);
 
+  // ===================== PLACE MODEL ON TAP =====================
   useEffect(() => {
     const a = app.current;
     const controller = a.renderer.xr.getController(0);
-    controller.addEventListener("select", () => {
+    const handler = () => {
       if (!a.reticle.visible || a.isModelPlaced || !a.chair) return;
 
       const pos = new THREE.Vector3().setFromMatrixPosition(a.reticle.matrix);
@@ -300,19 +280,22 @@ const ARViewer = () => {
       a.chair.updateMatrixWorld(true);
 
       const box = new THREE.Box3().setFromObject(a.chair);
-      a.chair.position.y += a.chair.position.y - box.min.y;
+      a.chair.position.y += pos.y - box.min.y; // place bottom on floor
 
       a.chair.visible = true;
       a.reticle.visible = false;
       a.isModelPlaced = true;
       setIsPlaced(true);
-    });
+    };
+    controller.addEventListener("select", handler);
     a.scene.add(controller);
+
+    return () => controller.removeEventListener("select", handler);
   }, []);
 
+  // Controls
   const rotateLeft = () => app.current.chair && (app.current.chair.rotation.y -= 0.3);
   const rotateRight = () => app.current.chair && (app.current.chair.rotation.y += 0.3);
-
   const placeAgain = () => {
     const a = app.current;
     a.chair.visible = false;
@@ -323,7 +306,10 @@ const ARViewer = () => {
     setReticleReady(false);
     setIsLoading(true);
     setLoadingProgress(70);
-    requestHitTest(a);
+    // Re-request hit test
+    a.currentSession?.requestReferenceSpace("viewer").then(refSpace => {
+      a.currentSession.requestHitTestSource({ space: refSpace }).then(source => a.hitTestSource = source);
+    });
   };
 
   return (
