@@ -4,25 +4,48 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useParams, useNavigate } from "react-router-dom";
 
+// Detect iOS
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const isLowEndDevice = () => (navigator.deviceMemory || 4) <= 4;
 
+// Loading Bar
 const LoadingBar = ({ progress }) => (
-  <div style={{
-    position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-    width: "80%", maxWidth: "300px", background: "rgba(0,0,0,0.8)", borderRadius: "12px",
-    padding: "20px", textAlign: "center", color: "white", zIndex: 1002
-  }}>
+  <div
+    style={{
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "80%",
+      maxWidth: "300px",
+      background: "rgba(0,0,0,0.8)",
+      borderRadius: "12px",
+      padding: "20px",
+      textAlign: "center",
+      color: "white",
+      zIndex: 1002,
+    }}
+  >
     <div style={{ marginBottom: "10px" }}>Loading Model... {progress}%</div>
     <div style={{ width: "100%", height: "8px", background: "#333", borderRadius: "4px", overflow: "hidden" }}>
-      <div style={{ width: `${progress}%`, height: "100%", background: "#007bff", borderRadius: "4px", transition: "width 0.3s" }} />
+      <div
+        style={{
+          width: `${progress}%`,
+          height: "100%",
+          background: "#007bff",
+          borderRadius: "4px",
+          transition: "width 0.3s",
+        }}
+      />
     </div>
   </div>
 );
 
+const isLowEndDevice = () => (navigator.deviceMemory || 4) <= 4;
+
 const ARViewer = () => {
-  const { id } = useParams(); // e.g., "693c36a87bac051673b9dba0"
+  const { id } = useParams();
   const navigate = useNavigate();
+
   const containerRef = useRef(null);
   const overlayRef = useRef(null);
   const [isSupported, setIsSupported] = useState(true);
@@ -48,7 +71,7 @@ const ARViewer = () => {
   const isLowEnd = useRef(isLowEndDevice());
 
   if (!id) {
-    alert("Invalid model ID");
+    alert("No item ID provided.");
     navigate(-1);
     return null;
   }
@@ -57,39 +80,61 @@ const ARViewer = () => {
   const usdzUrl = `/models/${id}.usdz`;
   const previewUrl = `/models/${id}-preview.jpg`;
 
-  // ===================== iOS =====================
+  // ==================== iOS Quick Look ====================
   if (isIOS) {
     return (
-      <div style={{
-        position: "fixed", inset: 0, background: "#000", color: "#fff",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        padding: "20px", textAlign: "center"
-      }}>
-        <p style={{ fontSize: "18px", marginBottom: "30px" }}>Tap to view in AR</p>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "#000",
+          color: "#fff",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "20px",
+          textAlign: "center",
+        }}
+      >
+        <p style={{ fontSize: "18px", marginBottom: "30px" }}>Tap below to view in AR</p>
         <a rel="ar" href={usdzUrl}>
           <img
             src={previewUrl}
-            alt="Preview"
-            onError={(e) => e.target.style.display = "none"}
-            style={{ width: "300px", height: "300px", objectFit: "contain", borderRadius: "16px", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}
+            alt="AR Preview"
+            onError={(e) => (e.target.style.display = "none")}
+            style={{
+              width: "300px",
+              height: "300px",
+              objectFit: "contain",
+              borderRadius: "16px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            }}
           />
         </a>
-        <button onClick={() => navigate(-1)} style={{ marginTop: "40px", padding: "12px 28px", background: "#333", color: "white", border: "none", borderRadius: "12px" }}>
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            marginTop: "40px",
+            padding: "12px 28px",
+            background: "#333",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "16px",
+          }}
+        >
           Go Back
         </button>
       </div>
     );
   }
 
-  // ===================== CLEANUP OLD MODEL WHEN ID CHANGES =====================
+  // ==================== Cleanup on ID change ====================
   useEffect(() => {
     return () => {
       const a = app.current;
-      // Clean up previous model
-      if (a.chair) {
-        a.scene?.remove(a.chair);
-        a.chair = null;
-      }
+      if (a.chair) a.scene?.remove(a.chair);
       if (a.progressInterval) clearInterval(a.progressInterval);
       setIsLoading(true);
       setLoadingProgress(0);
@@ -101,19 +146,24 @@ const ARViewer = () => {
     };
   }, [id]);
 
-  // ===================== THREE.JS SETUP (runs once) =====================
+  // ==================== Three.js Setup (once) ====================
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const a = app.current;
+
     a.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
     a.camera.position.set(0, 1.6, 0);
 
     a.scene = new THREE.Scene();
     a.scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, isLowEnd.current ? 0.8 : 1));
 
-    a.renderer = new THREE.WebGLRenderer({ antialias: !isLowEnd.current, alpha: true });
+    a.renderer = new THREE.WebGLRenderer({
+      antialias: !isLowEnd.current,
+      alpha: true,
+      powerPreference: isLowEnd.current ? "low-power" : "high-performance",
+    });
     a.renderer.setPixelRatio(isLowEnd.current ? 1 : Math.min(window.devicePixelRatio, 2));
     a.renderer.setSize(window.innerWidth, window.innerHeight);
     a.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -134,14 +184,17 @@ const ARViewer = () => {
       setIsSupported(false);
     }
 
-    // HDR
+    // HDR Environment
     new RGBELoader()
       .setDataType(THREE.UnsignedByteType)
-      .load("https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/equirectangular/venice_sunset_1k.hdr", (tex) => {
-        tex.mapping = THREE.EquirectangularReflectionMapping;
-        a.scene.environment = tex;
-        a.hdrLoaded = true;
-      });
+      .load(
+        "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/equirectangular/venice_sunset_1k.hdr",
+        (tex) => {
+          tex.mapping = THREE.EquirectangularReflectionMapping;
+          a.scene.environment = tex;
+          a.hdrLoaded = true;
+        }
+      );
 
     const onResize = () => {
       a.camera.aspect = window.innerWidth / window.innerHeight;
@@ -155,25 +208,27 @@ const ARViewer = () => {
       a.renderer?.dispose();
       container.contains(a.renderer.domElement) && container.removeChild(a.renderer.domElement);
     };
-  }, []); // Run only once
+  }, []);
 
-  // ===================== START AR & LOAD MODEL WHEN ID CHANGES =====================
+  // ==================== Start AR Session & Load Model ====================
   useEffect(() => {
     if (!isSupported) return;
 
     const start = async () => {
       const a = app.current;
       try {
+        // Critical fix: Add "local-floor" as optional feature
         const session = await navigator.xr.requestSession("immersive-ar", {
           requiredFeatures: ["hit-test"],
-          optionalFeatures: ["dom-overlay"],
+          optionalFeatures: ["dom-overlay", "local-floor"], // ← This fixes the error
           domOverlay: { root: overlayRef.current },
         });
 
+        // Use local-floor for better floor alignment
+        a.renderer.xr.setReferenceSpaceType("local-floor");
         a.renderer.xr.setSession(session);
         a.currentSession = session;
 
-        // Reset state
         setIsLoading(true);
         setLoadingProgress(0);
         setIsPlaced(false);
@@ -182,14 +237,14 @@ const ARViewer = () => {
         a.reticle.visible = false;
         a.reticleAppeared = false;
 
-        // Request hit test
-        session.requestReferenceSpace("viewer").then(refSpace => {
-          session.requestHitTestSource({ space: refSpace }).then(source => {
+        // Request hit-test source
+        session.requestReferenceSpace("viewer").then((refSpace) => {
+          session.requestHitTestSource({ space: refSpace }).then((source) => {
             a.hitTestSource = source;
           });
         });
 
-        // Load new model
+        // Load GLB model from local public/models/
         const loader = new GLTFLoader();
         let prog = 0;
         const interval = setInterval(() => {
@@ -204,18 +259,19 @@ const ARViewer = () => {
         loader.load(
           glbUrl,
           (gltf) => {
-            // Remove old model if exists
             if (a.chair) a.scene.remove(a.chair);
             a.chair = gltf.scene;
             a.scene.add(a.chair);
             a.chair.visible = false;
             setLoadingProgress(70);
-            console.log("Model loaded for ID:", id);
+            console.log("Model loaded:", glbUrl);
           },
-          (xhr) => xhr.total && setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 70)),
+          (xhr) => {
+            if (xhr.total) setLoadingProgress(Math.round((xhr.loaded / xhr.total) * 70));
+          },
           (err) => {
-            console.error("Failed to load model:", glbUrl, err);
-            alert("Model not found. Make sure the file exists:\n" + glbUrl);
+            console.error("Model load failed:", err);
+            alert(`Failed to load model.\nFile should be at: ${glbUrl}`);
             setIsLoading(false);
           }
         );
@@ -228,15 +284,15 @@ const ARViewer = () => {
         });
       } catch (err) {
         console.error("AR session failed:", err);
-        alert("AR not supported on this device.");
+        alert("AR not supported or failed to start.");
         setIsSupported(false);
       }
     };
 
     start();
-  }, [id, isSupported]); // ← Critical: re-run when ID changes!
+  }, [id, isSupported]);
 
-  // ===================== ANIMATION LOOP =====================
+  // ==================== Animation Loop ====================
   useEffect(() => {
     const a = app.current;
     if (!a.renderer) return;
@@ -268,7 +324,7 @@ const ARViewer = () => {
     });
   }, []);
 
-  // ===================== PLACE MODEL ON TAP =====================
+  // ==================== Place Model on Tap ====================
   useEffect(() => {
     const a = app.current;
     const controller = a.renderer.xr.getController(0);
@@ -280,7 +336,7 @@ const ARViewer = () => {
       a.chair.updateMatrixWorld(true);
 
       const box = new THREE.Box3().setFromObject(a.chair);
-      a.chair.position.y += pos.y - box.min.y; // place bottom on floor
+      a.chair.position.y += pos.y - box.min.y; // Align bottom to floor
 
       a.chair.visible = true;
       a.reticle.visible = false;
@@ -296,6 +352,7 @@ const ARViewer = () => {
   // Controls
   const rotateLeft = () => app.current.chair && (app.current.chair.rotation.y -= 0.3);
   const rotateRight = () => app.current.chair && (app.current.chair.rotation.y += 0.3);
+
   const placeAgain = () => {
     const a = app.current;
     a.chair.visible = false;
@@ -306,9 +363,11 @@ const ARViewer = () => {
     setReticleReady(false);
     setIsLoading(true);
     setLoadingProgress(70);
-    // Re-request hit test
-    a.currentSession?.requestReferenceSpace("viewer").then(refSpace => {
-      a.currentSession.requestHitTestSource({ space: refSpace }).then(source => a.hitTestSource = source);
+
+    a.currentSession?.requestReferenceSpace("viewer").then((refSpace) => {
+      a.currentSession.requestHitTestSource({ space: refSpace }).then((source) => {
+        a.hitTestSource = source;
+      });
     });
   };
 
@@ -318,28 +377,74 @@ const ARViewer = () => {
         {isLoading && <LoadingBar progress={loadingProgress} />}
 
         {!isPlaced && reticleReady && (
-          <div style={{ position: "absolute", top: "20px", left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.8)", color: "#fff", padding: "12px 20px", borderRadius: "25px", fontSize: "14px" }}>
-            Tap floor to place
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(0,0,0,0.8)",
+              color: "#fff",
+              padding: "12px 20px",
+              borderRadius: "25px",
+              fontSize: "14px",
+            }}
+          >
+            Tap floor to place object
           </div>
         )}
 
         {isPlaced && (
           <>
-            <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "15px", pointerEvents: "auto" }}>
+            <div
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                display: "flex",
+                gap: "15px",
+                pointerEvents: "auto",
+              }}
+            >
               <button onClick={rotateLeft} style={btnStyle}>◄ Left</button>
               <button onClick={placeAgain} style={{ ...btnStyle, background: "#00796B" }}>Place Again</button>
               <button onClick={rotateRight} style={btnStyle}>Right ►</button>
             </div>
-            <div style={{ position: "absolute", top: "20px", left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.8)", color: "#fff", padding: "12px 20px", borderRadius: "25px", fontSize: "13px" }}>
+            <div
+              style={{
+                position: "absolute",
+                top: "20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "rgba(0,0,0,0.8)",
+                color: "#fff",
+                padding: "12px 20px",
+                borderRadius: "25px",
+                fontSize: "13px",
+              }}
+            >
               Drag to rotate • Swipe to move
             </div>
           </>
         )}
 
         {!isSupported && (
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(0,0,0,0.8)", color: "white", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "rgba(0,0,0,0.8)",
+              color: "white",
+              padding: "20px",
+              borderRadius: "12px",
+              textAlign: "center",
+            }}
+          >
             <h2>AR Not Supported</h2>
-            <p>Use Chrome on Android</p>
+            <p>Use Chrome on an Android device with AR support</p>
           </div>
         )}
       </div>
@@ -348,10 +453,17 @@ const ARViewer = () => {
 };
 
 const btnStyle = {
-  padding: "12px 24px", background: "rgba(255,255,255,0.08)", color: "#fff",
-  border: "none", borderRadius: "14px", backdropFilter: "blur(14px)",
-  fontSize: "15px", fontWeight: "600", cursor: "pointer",
-  boxShadow: "0 8px 24px rgba(0,0,0,0.25)"
+  padding: "12px 24px",
+  background: "rgba(255,255,255,0.08)",
+  color: "#fff",
+  border: "none",
+  borderRadius: "14px",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+  fontSize: "15px",
+  fontWeight: "600",
+  cursor: "pointer",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
 };
 
 export default ARViewer;
