@@ -4,8 +4,12 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { useParams, useNavigate } from "react-router-dom";
 
-// Detect iOS
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+// Detect iOS more reliably, including iPadOS in desktop mode
+const isIOS = (() => {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform);
+})();
 
 // Loading Bar
 const LoadingBar = ({ progress }) => (

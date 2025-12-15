@@ -36,7 +36,7 @@ const ExploreMenu = ({ category, setCategory }) => {
       const response = await axios.get("https://new-sever.vercel.app/api/products");
       return response.data;
     },
-    staleTime: 1000 * 60 * 500,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 
   // Accurate platform detection: iOS (iPhone + iPad), Android, Desktop

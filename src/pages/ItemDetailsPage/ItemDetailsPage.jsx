@@ -29,7 +29,7 @@ const ItemDetails = ({ onCartUpdate, setShowLogin, isLoggedIn }) => {
       const { data } = await axios.get(`https://new-sever.vercel.app/api/products/${id}`);
       return data;
     },
-    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
+    staleTime: 1000 * 60 * 60 * 24, // Data stays fresh for 24 hours
   });
 
   const handleAuthRequiredAction = (action) => {
@@ -49,7 +49,7 @@ const ItemDetails = ({ onCartUpdate, setShowLogin, isLoggedIn }) => {
       const { data } = await axios.get(`https://new-sever.vercel.app/api/products/reviews/${id}`);
       return data || [];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours
   });
 
   const averageRating = reviews.length > 0
