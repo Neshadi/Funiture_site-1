@@ -56,6 +56,45 @@ const isLowEndDevice = () => {
   return ram || isAndroidLow;
 };
 
+// Cache helpers using Cache API
+const CACHE_NAME = 'ar-models';
+
+async function getFromCache(url) {
+  const cache = await caches.open(CACHE_NAME);
+  const response = await cache.match(url);
+  if (response) {
+    return await response.arrayBuffer();
+  }
+  return null;
+}
+
+async function addToCache(url, arrayBuffer) {
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(url, new Response(arrayBuffer));
+}
+
+async function fetchWithProgress(url, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.responseType = 'arraybuffer';
+    xhr.onprogress = (e) => {
+      if (e.lengthComputable) {
+        onProgress((e.loaded / e.total) * 100);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.response);
+      } else {
+        reject(new Error(`Fetch failed with status ${xhr.status}`));
+      }
+    };
+    xhr.onerror = reject;
+    xhr.send();
+  });
+}
+
 const ARViewer = () => {
   const navigate = useNavigate();
   const containerRef = useRef();
@@ -81,6 +120,13 @@ const ARViewer = () => {
     prevY: 0,
     lastTime: 0,
   });
+
+  // Pre-cache USDZ for iOS if available
+  useEffect(() => {
+    if (isIOS && usdzUrl) {
+      caches.open(CACHE_NAME).then(cache => cache.add(usdzUrl)).catch(console.error);
+    }
+  }, [usdzUrl]);
 
   if (isIOS) {
     // iOS/iPadOS handling with AR Quick Look
@@ -525,9 +571,8 @@ const ARViewer = () => {
     a.renderer.render(a.scene, a.camera);
   };
 
-  const loadModel = (a) => {
+  const loadModel = async (a) => {
     const loader = new GLTFLoader();
-    let modelLoadProgress = 0;
 
     // Start smooth progress animation for reticle detection phase
     const startReticleProgressAnimation = () => {
@@ -548,9 +593,26 @@ const ARViewer = () => {
       a.progressInterval = interval;
     };
 
-    loader.load(
-      modelUrl,
-      (gltf) => {
+    try {
+      let arrayBuffer = await getFromCache(modelUrl);
+      let fromCache = !!arrayBuffer;
+
+      if (!arrayBuffer) {
+        arrayBuffer = await fetchWithProgress(modelUrl, (prog) => {
+          const progress = Math.round(prog * 0.7);
+          setLoadingProgress(progress);
+        });
+        await addToCache(modelUrl, arrayBuffer);
+        fromCache = false;
+      } else {
+        console.log('Loaded from cache');
+      }
+
+      if (fromCache) {
+        setLoadingProgress(70);
+      }
+
+      loader.parse(arrayBuffer, '', (gltf) => {
         const model = gltf.scene;
         a.scene.add(model);
         a.chair = model;
@@ -571,41 +633,23 @@ const ARViewer = () => {
         console.log("Model placed at exact imported scale (1 unit = 1 meter)");
         console.log("===========================================");
 
-        modelLoadProgress = 100;
         setLoadingProgress(70);
         
         // Start smooth animation while waiting for reticle
         startReticleProgressAnimation();
 
         a.renderer.setAnimationLoop((timestamp, frame) => render(a, timestamp, frame));
-      },
-      (xhr) => {
-        if (xhr.total) {
-          modelLoadProgress = Math.round((xhr.loaded / xhr.total) * 100);
-          const progress = Math.round(modelLoadProgress * 0.7);
-          setLoadingProgress(progress);
-        }
-      },
-      (error) => {
-        console.error("GLTF Load Error:", error);
+      }, (error) => {
+        console.error("GLTF Parse Error:", error);
         alert("Failed to load 3D model.");
         setLoadingProgress(0);
         setIsLoading(false);
-      }
-    );
-  };
-
-  const updateLoadingProgress = (a, modelProgress) => {
-    // Show progress based on: 70% model load + 30% waiting for reticle
-    if (a.reticleAppeared) {
-      setLoadingProgress(100);
-      // Hide loading bar after a brief moment to show 100%
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-    } else {
-      const progress = Math.min(70, (modelProgress * 0.7));
-      setLoadingProgress(Math.round(progress));
+      });
+    } catch (error) {
+      console.error("Model Load Error:", error);
+      alert("Failed to load 3D model.");
+      setLoadingProgress(0);
+      setIsLoading(false);
     }
   };
 
